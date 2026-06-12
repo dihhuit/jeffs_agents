@@ -1,6 +1,6 @@
 # Open Agent Definitions
 
-Generic, reusable agent definitions for [OpenCode](https://opencode.ai) and [Grok Build](https://x.ai) (the `grok` CLI from xAI).
+These are generic, reusable agent definitions for [OpenCode](https://opencode.ai) and [Grok Build](https://x.ai) (the `grok` CLI from xAI) which have been distilled from my own, very personal and workflow specific agent definitions into something shareable. How I use these is overlaying my own workflow specific deltas (see below for details) to personalize them for how I like to work. These agents represent a "team" with specific focus or specialization areas. Whenever I'm working on a project, I start with the orchestrator, and have it farm out tasks to the other agents. Having specialized agents like this allows me to a) minimize per-agent context, and b) implement guardrails in the form of inter-agent checks and balances (e.g. to prevent the just-code agent from cheating on tests by updating the tests).
 
 This repository provides a **base layer** of agent definitions designed to be broadly applicable across different projects and users. The prompts have been kept focused on core responsibilities rather than any single team's specific workflows or tooling.
 
