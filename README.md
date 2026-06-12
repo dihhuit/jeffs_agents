@@ -21,13 +21,21 @@ This repository provides a **base layer** of agent definitions designed to be br
 
 ### For Grok Build
 
-Agent profiles live in `grok/agents/`. You can use them directly:
+Run the included deploy script (it automatically installs both OpenCode and Grok Build definitions):
+
+```bash
+./deploy.sh --force
+```
+
+This copies Grok agent profiles from `grok/agents/` into `~/.grok/agents/`.
+
+You can also use profiles directly with:
 
 ```bash
 grok --agent just-code -p "Implement a small feature..."
 ```
 
-Or copy the `.md` files into your user-level (`~/.grok/agents/`) or project-level (`.grok/agents/`) directories so they are always available.
+(Profiles can be copied manually to `~/.grok/agents/` or project `.grok/agents/` if preferred.)
 
 ### Core Agents Included
 

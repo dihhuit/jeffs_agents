@@ -21,6 +21,21 @@ if [[ "${1:-}" == "--force" ]]; then
     DO_COPY=true
 fi
 
+# Safely fail if either tool is not installed
+MISSING=()
+if ! command -v opencode >/dev/null 2>&1; then
+    MISSING+=("opencode")
+fi
+if ! command -v grok >/dev/null 2>&1; then
+    MISSING+=("grok")
+fi
+if [ ${#MISSING[@]} -gt 0 ]; then
+    echo "Error: Required tool(s) not found in PATH: ${MISSING[*]}"
+    echo "This deploy script requires both OpenCode and Grok Build CLI to be installed."
+    echo "Install the missing tool(s) and try again."
+    exit 1
+fi
+
 echo "==> Generic Agent Definitions Deployer (OpenCode + Grok Build)"
 echo "    Source: ${SCRIPT_DIR}"
 echo "    Targets: OpenCode ~/.config/opencode/ , Grok ~/.grok/"
