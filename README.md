@@ -71,7 +71,93 @@ You can invoke them with `grok --agent <name>` (e.g. `grok --agent just-code` or
 
 You can extend or override any of these in your own setups. The old `grok-review` profile is still present for compatibility but `code-reviewer` is the recommended name going forward.
 
+## How the Agents Work Together
+
+These definitions are designed as a **collaborative team** rather than standalone tools. The `orchestrator` acts as the project manager, breaking work into **Minimum Deployable Units (MDUs)** and delegating to specialists. Built-in handoffs (especially mandatory review + test sign-off) create guardrails.
+
+### Orchestrator Delegation Flow
+
+```mermaid
+graph TD
+    User[User Prompt / Task] --> Orch[Orchestrator]
+    Orch --> Arch[Architect<br/>Produces design for current MDU]
+    Orch --> Research[Research<br/>Gathers info if needed]
+    Orch --> JustCode[Just-Code<br/>Implements the MDU]
+    JustCode --> Reviewer[Code-Reviewer<br/>Reviews for quality &amp; issues]
+    Reviewer -->|Issues found| JustCode
+    JustCode --> Tester[Test-Agent<br/>Writes tests &amp; validates]
+    Tester -->|Tests failing| JustCode
+    Tester -->|All green + sign-off| DevOps[DevOps<br/>Deploys the MDU if applicable]
+    DevOps --> QA[QA<br/>Manual validation]
+    QA -->|Pass| Orch
+    Orch -->|Next MDU or done| Done[Summary + Artifacts]
+```
+
+The orchestrator ensures every MDU is **designed → implemented → reviewed → tested → (deployed/validated)** before moving on.
+
+### Just-Code + Review + Test Iteration Loop
+
+The `just-code` agent is deliberately not allowed to declare victory alone:
+
+```mermaid
+graph TD
+    J[Just-Code: Implement per design spec] --> R[Code-Reviewer: Full review<br/>security, style, architecture]
+    R -->|Issues or suggestions| J
+    J --> T[Test-Agent: Add tests<br/>unit + integration + e2e]
+    T -->|Failing tests or gaps| J
+    T -->|All tests pass + sign-off| K[Hand back to Orchestrator<br/>MDU considered complete]
+```
+
+This loop continues until **both** the reviewer and tester are satisfied. The orchestrator will not mark the MDU done without these sign-offs.
+
+### Example Project Prompt
+
+```text
+Build a simple REST API for a todo list using Node.js and Express.
+
+Core requirements:
+- Full CRUD for todos (title, description, completed status)
+- In-memory storage to start (we can add a DB later)
+- Basic input validation and error handling
+- Follow clean, maintainable code practices
+
+Please treat this as a series of Minimum Deployable Units. Start by having the architect produce a short design, then deliver one small, fully tested and reviewed slice at a time. I want working code + tests + review sign-off for each unit before moving to the next.
+```
+
+### How It Triggers the Agents (Example Walkthrough)
+
+1. You run the prompt above against the `orchestrator` (e.g. `grok --agent orchestrator -p "..."` or via your OpenCode setup).
+
+2. **Orchestrator** decomposes into MDUs (e.g.):
+   - MDU 1: Project skeleton + basic Express server + health endpoint
+   - MDU 2: Todo model + GET /todos + POST /todos
+   - MDU 3: PUT /todos/:id + DELETE /todos/:id + validation
+   - MDU 4: Error handling + basic tests across all endpoints
+
+3. For MDU 1 it calls:
+   - `architect` → produces `design-mdu1.md`
+   - `just-code` (passing the design) → implements the server
+
+4. **Just-Code** finishes its changes → hands off.
+
+5. **Iteration Loop** (just-code ↔ reviewer ↔ test-agent):
+   - `code-reviewer` reviews → finds missing error handling on one endpoint → sends feedback
+   - `just-code` fixes → re-submits
+   - `test-agent` writes tests → one test fails because of a status code bug → sends feedback
+   - `just-code` fixes again
+   - Both reviewer and tester now sign off
+
+6. **Orchestrator** receives the completed MDU (with design doc, code diff, review comments, passing tests) and moves to MDU 2 (or calls `devops`/`qa` if this was a deployable slice).
+
+7. Process repeats until all MDUs are delivered. Final response from the orchestrator includes:
+   - Summary of delivered units
+   - Links to design docs, code, tests
+   - Any open questions or next steps
+
+This structure keeps context small per agent while enforcing quality through mandatory collaboration and the MDU discipline.
+
 ## Updating These Definitions with an AI Agent
+
 
 One of the most powerful (and meta) things you can do with this repository is use an AI coding agent to improve the agent definitions themselves.
 
