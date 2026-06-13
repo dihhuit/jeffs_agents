@@ -79,10 +79,7 @@ These definitions are designed as a **collaborative team** rather than standalon
 
 ```mermaid
 graph TD
-    Done[Summary + Artifacts]
     User[User Prompt / Task] --> Orch[Orchestrator]
-    Orch --> Arch[Architect<br/>Produces design for current MDU]
-    Orch --> Research[Research<br/>Gathers info if needed]
     Orch --> JustCode[Just-Code<br/>Implements the MDU]
     JustCode --> Reviewer[Code-Reviewer<br/>Reviews for quality &amp; issues]
     Reviewer -->|Issues found| JustCode
@@ -91,7 +88,9 @@ graph TD
     Tester -->|All green + sign-off| DevOps[DevOps<br/>Deploys the MDU if applicable]
     DevOps --> QA[QA<br/>Manual validation]
     QA -->|Pass| Orch2[Orchestrator]
-    Orch2 -->|Next MDU or done| Done
+    Orch2 -->|Next MDU or done| Done[Summary + Artifacts]
+    Orch --> Arch[Architect<br/>Produces design for current MDU]
+    Orch --> Research[Research<br/>Gathers info if needed]
 ```
 
 The orchestrator ensures every MDU is **designed → implemented → reviewed → tested → (deployed/validated)** before moving on.
