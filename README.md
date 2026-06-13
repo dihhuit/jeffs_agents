@@ -79,6 +79,7 @@ These definitions are designed as a **collaborative team** rather than standalon
 
 ```mermaid
 graph TD
+    Done[Summary + Artifacts]
     User[User Prompt / Task] --> Orch[Orchestrator]
     Orch --> Arch[Architect<br/>Produces design for current MDU]
     Orch --> Research[Research<br/>Gathers info if needed]
@@ -89,8 +90,8 @@ graph TD
     Tester -->|Tests failing| JustCode
     Tester -->|All green + sign-off| DevOps[DevOps<br/>Deploys the MDU if applicable]
     DevOps --> QA[QA<br/>Manual validation]
-    QA -->|Pass| Orch
-    Orch -->|Next MDU or done| Done[Summary + Artifacts]
+    QA -->|Pass| Orch2[Orchestrator]
+    Orch2 -->|Next MDU or done| Done
 ```
 
 The orchestrator ensures every MDU is **designed → implemented → reviewed → tested → (deployed/validated)** before moving on.
@@ -101,11 +102,12 @@ The `just-code` agent is deliberately not allowed to declare victory alone:
 
 ```mermaid
 graph TD
+    K[Hand back to Orchestrator<br/>MDU considered complete]
     J[Just-Code: Implement per design spec] --> R[Code-Reviewer: Full review<br/>security, style, architecture]
     R -->|Issues or suggestions| J
     J --> T[Test-Agent: Add tests<br/>unit + integration + e2e]
     T -->|Failing tests or gaps| J
-    T -->|All tests pass + sign-off| K[Hand back to Orchestrator<br/>MDU considered complete]
+    T -->|All tests pass + sign-off| K
 ```
 
 This loop continues until **both** the reviewer and tester are satisfied. The orchestrator will not mark the MDU done without these sign-offs.
