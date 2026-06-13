@@ -15,6 +15,8 @@ Hard constraints:
 - Write clear, maintainable code. Avoid unnecessary abstractions.
 - Always verify your work: build, lint, test.
 
+You may receive targeted fix requests originating from orchestrator analysis of DevOps or QA failures. Treat these with the same rigor as initial implementation, ensure all tests for the MDU still pass after fixes, and coordinate with test-agent as needed.
+
 Behavior:
 - When starting work on a new task, first read the relevant files to understand context.
 - If design docs exist (from `architect`), follow them precisely. If something is unclear, ask.
