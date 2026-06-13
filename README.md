@@ -86,14 +86,22 @@ graph TD
     JustCode --> Tester[Test-Agent<br/>Writes tests &amp; validates]
     Tester -->|Tests failing| JustCode
     Tester -->|All green + sign-off| DevOps[DevOps<br/>Deploys the MDU if applicable]
-    DevOps --> QA[QA<br/>Manual validation]
-    QA -->|Pass| Orch2[Orchestrator]
+    DevOps -->|success| QA[QA<br/>Manual validation]
+    DevOps -->|failure or issues + report| Orch
+    QA -->|PASS| Orch2[Orchestrator]
+    QA -->|FAIL + detailed bug report| Orch
+    Orch -->|root cause analysis + re-delegate fixes| JustCode
+    Orch -->|root cause analysis + re-delegate fixes| DevOps
     Orch2 -->|Next MDU or done| Done[Summary + Artifacts]
     Orch --> Arch[Architect<br/>Produces design for current MDU]
     Orch --> Research[Research<br/>Gathers info if needed]
 ```
 
-The orchestrator ensures every MDU is **designed → implemented → reviewed → tested → (deployed/validated)** before moving on.
+The orchestrator ensures every MDU is **designed → implemented → reviewed → tested → deployed → validated** before moving on.
+
+**Failure / feedback loops for autonomy:**
+- On DevOps failure or post-deploy issues: DevOps returns a diagnostic report. The orchestrator performs (or delegates) root cause analysis and re-delegates fixes — typically back to DevOps for infra retries, or to Just-Code/Architect if code or config changes are needed. The MDU is re-deployed and re-validated until it succeeds.
+- On QA FAIL: QA returns detailed, severity-ranked bug reports with reproduction steps. The orchestrator routes the fixes (usually to Just-Code + Test-Agent for functional issues, or DevOps for deployment-related problems), then re-executes the deploy + validate phases. The loop continues until the MDU receives a clean PASS from QA (and successful DevOps).
 
 ### Just-Code + Review + Test Iteration Loop
 
@@ -148,12 +156,18 @@ Please treat this as a series of Minimum Deployable Units. Start by having the a
    - `just-code` fixes again
    - Both reviewer and tester now sign off
 
-6. **Orchestrator** receives the completed MDU (with design doc, code diff, review comments, passing tests) and moves to MDU 2 (or calls `devops`/`qa` if this was a deployable slice).
+6. **Orchestrator** receives the completed MDU (with design doc, code diff, review comments, passing tests) and hands it to `devops`.
 
-7. Process repeats until all MDUs are delivered. Final response from the orchestrator includes:
+7. **DevOps** attempts deployment. If it fails or produces errors (e.g., port conflict or missing env var), it returns a diagnostic report. The orchestrator routes the fix (e.g., back to `just-code` for a config change or to `devops` for retry with better logging). The MDU is re-deployed until DevOps succeeds cleanly.
+
+8. **QA** then performs validation. On FAIL (e.g., an endpoint returns 500 under load or a UI flow is broken), QA returns detailed bug reports with reproduction steps. The orchestrator root-causes the issue (delegating to `research` if needed) and re-delegates fixes — typically to `just-code` + `test-agent` for functional bugs, or `devops` for infra-related problems. It then re-triggers deploy + QA until the MDU receives a clean PASS.
+
+9. Process repeats for subsequent MDUs. Final response from the orchestrator includes:
    - Summary of delivered units
-   - Links to design docs, code, tests
+   - Links to design docs, code, tests, deploy outputs
    - Any open questions or next steps
+
+This structure keeps context small per agent while enforcing quality through mandatory collaboration, MDU discipline, **and autonomous failure recovery loops** at every phase (including post-deploy and post-QA).
 
 This structure keeps context small per agent while enforcing quality through mandatory collaboration and the MDU discipline.
 
