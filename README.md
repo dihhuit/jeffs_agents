@@ -2,7 +2,7 @@
 
 > **Disclaimer**: All of the code and agent definitions in this repo were written by AI, not by the author directly, so use with caution. Just because this repo's author trusts them doesn't mean you should.
 
-These are generic, reusable agent definitions for [OpenCode](https://opencode.ai) and [Grok Build](https://x.ai) (the `grok` CLI from xAI) which have been distilled from my own, very personal and workflow specific agent definitions into something shareable. How I use these is overlaying my own workflow specific deltas (see below for details) to personalize them for how I like to work. These agents represent a "team" with specific focus or specialization areas. Whenever I'm working on a project, I start with the orchestrator, and have it farm out tasks to the other agents. Having specialized agents like this allows me to a) minimize per-agent context, and b) implement guardrails in the form of inter-agent checks and balances (e.g. to prevent the just-code agent from cheating on tests by updating the tests).
+These are generic, reusable agent definitions for [OpenCode](https://opencode.ai), [Grok Build](https://x.ai) (the `grok` CLI from xAI), and [Claude Code](https://claude.com/claude-code) (the `claude` CLI from Anthropic) which have been distilled from my own, very personal and workflow specific agent definitions into something shareable. How I use these is overlaying my own workflow specific deltas (see below for details) to personalize them for how I like to work. These agents represent a "team" with specific focus or specialization areas. Whenever I'm working on a project, I start with the orchestrator, and have it farm out tasks to the other agents. Having specialized agents like this allows me to a) minimize per-agent context, and b) implement guardrails in the form of inter-agent checks and balances (e.g. to prevent the just-code agent from cheating on tests by updating the tests).
 
 I'm not promising these are the best agents out there, nor the best agent team/stack, but they are MY agents, and this is the setup I use daily. It's constantly being refined, so if you're following, check back every now and again.
 
@@ -17,7 +17,7 @@ This repository provides a **base layer** of agent definitions designed to be br
    ./build.sh
    ```
 
-3. Deploy to your local OpenCode and/or Grok Build config directories:
+3. Deploy to your local OpenCode, Grok Build, and/or Claude Code config directories:
 
    ```bash
    ./deploy.sh --force
@@ -32,8 +32,13 @@ This repository provides a **base layer** of agent definitions designed to be br
 This installs:
 - **OpenCode**: `opencode.json` and `prompts/` → `~/.config/opencode/`
 - **Grok Build**: `grok/agents/*.md` → `~/.grok/agents/`
+- **Claude Code**: `claude/agents/*.md` → `~/.claude/agents/` (user-level subagents)
+
+`deploy.sh` auto-detects which of the three CLIs (`opencode`, `grok`, `claude`) are installed and only deploys to the ones present; it errors only if none are found.
 
 The `opencode.json` file in the root provides a ready-to-use set of agents. You can use it directly, copy sections from it, or merge it with your existing configuration.
+
+The Claude Code subagents are **generated at build time** from `opencode.json` (roster + descriptions) and `prompts/*.md` (the canonical, provider-neutral system prompts), so there is no separate `claude/` source tree to maintain — they always stay in sync with the OpenCode definitions. Each generated file is Markdown with YAML frontmatter (`name`, `description`) followed by the system prompt body; `model` is intentionally omitted so each subagent inherits your configured Claude Code model.
 
 ### For Grok Build only
 
@@ -46,6 +51,16 @@ grok --agent just-code -p "Implement a small feature..."
 ```
 
 (Profiles can be copied manually to `~/.grok/agents/` or project `.grok/agents/` if preferred.)
+
+### For Claude Code only
+
+After `./deploy.sh --force`, the subagents are installed to `~/.claude/agents/`. Claude Code discovers user-level subagents there automatically — list and inspect them with the interactive `/agents` command, or invoke one for a session with:
+
+```bash
+claude --agent just-code -p "Implement a small feature..."
+```
+
+(Files can be copied manually to `~/.claude/agents/` or project `.claude/agents/` if preferred.)
 
 ### Core Agents Included
 
@@ -78,6 +93,10 @@ A full matching set of profiles is provided so you can use the same agent roles 
 You can invoke them with `grok --agent <name>` (e.g. `grok --agent just-code` or `grok --agent code-reviewer`).
 
 You can extend or override any of these in your own setups. The old `grok-review` profile is still present for compatibility but `code-reviewer` is the recommended name going forward.
+
+**Claude Code subagents** (generated into `claude/agents/` during the build):
+
+The same nine roles are emitted as Claude Code user-level subagents — one `.md` file per agent, mirroring the OpenCode roster exactly (since they are generated from `opencode.json` + `prompts/`). Invoke them with `claude --agent <name>` or pick them in the interactive `/agents` view.
 
 ## How the Agents Work Together
 
@@ -184,7 +203,7 @@ This structure keeps context small per agent while enforcing quality through man
 
 One of the most powerful (and meta) things you can do with this repository is use an AI coding agent to improve the agent definitions themselves.
 
-This repo is structured so that the OpenCode versions live in `prompts/<name>.md` and the corresponding Grok Build versions live in `grok/agents/<name>.md`. This makes it easy to keep behavior consistent across both tools.
+This repo is structured so that the OpenCode versions live in `prompts/<name>.md` and the corresponding Grok Build versions live in `grok/agents/<name>.md`. This makes it easy to keep behavior consistent across both tools. The Claude Code subagents are not hand-authored — they are generated from `prompts/<name>.md` + `opencode.json` during the build, so editing the OpenCode prompt is enough to update the Claude Code version too.
 
 ### Example Prompt to Update Both Versions at Once
 
@@ -228,8 +247,9 @@ Overlay projects consume this base via the `GENERIC_DIR` environment variable (o
 
 1. Run **this repo's** `./build.sh` (or read from `build/` if already staged) to get validated generic definitions.
 2. Merge personal overlays (appended rules, custom agents, MCP config, extra skills).
-3. Validate the combined `build/` output (JSON syntax, prompt file references, Grok frontmatter).
-4. Deploy **only** from the combined `build/` directory — do not re-deploy the generic base separately.
+3. Regenerate Claude Code subagents from the merged `opencode.json` + `prompts/` so overlay deltas flow through to Claude too.
+4. Validate the combined `build/` output (JSON syntax, prompt file references, Grok frontmatter, Claude subagent frontmatter).
+5. Deploy **only** from the combined `build/` directory — do not re-deploy the generic base separately.
 
 ### Creating Your Own Overlay Repository
 
@@ -271,6 +291,8 @@ Global snippets are appended to every base prompt/profile. Per-agent snippets ar
 
 Full files in `overlays/prompts/` or `overlays/grok/agents/` replace the base copy for that agent name.
 
+You don't author overlays for Claude Code separately: because the Claude Code subagents are generated from the merged `opencode.json` + `prompts/` *after* overlays are applied, any global/per-agent snippet or full-prompt override automatically flows into the corresponding `~/.claude/agents/<name>.md` file.
+
 ### What Belongs in an Overlay?
 
 Useful things to put in overlays include:
@@ -293,12 +315,14 @@ Useful things to put in overlays include:
 
 ```
 base_agents/                   # this public repo
-├── build.sh                   # stage source → build/ and validate
+├── build.sh                   # stage source → build/, generate Claude agents, validate
 ├── deploy.sh                  # install from build/ (or root fallback)
 ├── scripts/                   # modular build/deploy implementation
+│   └── lib/gen_claude_agents.py  # generates claude/agents/ from opencode.json + prompts/
 ├── opencode.json              # OpenCode agent registry
-├── prompts/                   # OpenCode prompt bodies
+├── prompts/                   # OpenCode prompt bodies (canonical system prompts)
 └── grok/agents/               # Grok Build agent profiles
+                               # (build/claude/agents/ is generated, not committed)
 ```
 
 ## Getting Started with Your Own Setup

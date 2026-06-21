@@ -19,15 +19,17 @@ log_error() { printf '  [error] %s\n' "$*" >&2; }
 detect_cli_tools() {
   HAS_OPENCODE=false
   HAS_GROK=false
+  HAS_CLAUDE=false
   command -v opencode >/dev/null 2>&1 && HAS_OPENCODE=true
   command -v grok >/dev/null 2>&1 && HAS_GROK=true
-  export HAS_OPENCODE HAS_GROK
+  command -v claude >/dev/null 2>&1 && HAS_CLAUDE=true
+  export HAS_OPENCODE HAS_GROK HAS_CLAUDE
 }
 
 require_at_least_one_cli() {
   detect_cli_tools
-  if [[ "$HAS_OPENCODE" == false && "$HAS_GROK" == false ]]; then
-    log_error "Neither opencode nor grok found in PATH."
+  if [[ "$HAS_OPENCODE" == false && "$HAS_GROK" == false && "$HAS_CLAUDE" == false ]]; then
+    log_error "None of opencode, grok, or claude found in PATH."
     log_error "Install at least one CLI before deploying."
     exit 1
   fi

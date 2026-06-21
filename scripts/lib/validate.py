@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate agent definition build output for OpenCode and Grok Build."""
+"""Validate agent definition build output for OpenCode, Grok Build, and Claude Code."""
 
 from __future__ import annotations
 
@@ -90,6 +90,32 @@ def validate_grok_agents(build_dir: Path) -> list[str]:
     return errors
 
 
+def validate_claude_agents(build_dir: Path) -> list[str]:
+    errors: list[str] = []
+    agents_dir = build_dir / "claude" / "agents"
+    if not agents_dir.is_dir():
+        return ["missing claude/agents/"]
+
+    agent_files = sorted(agents_dir.glob("*.md"))
+    if not agent_files:
+        return ["no Claude agent definitions in claude/agents/"]
+
+    for agent_file in agent_files:
+        text = agent_file.read_text(encoding="utf-8")
+        meta = parse_frontmatter(text)
+        if not meta:
+            errors.append(f"claude agent missing YAML frontmatter: {agent_file.name}")
+            continue
+        if "name" not in meta:
+            errors.append(f"claude agent missing 'name' in frontmatter: {agent_file.name}")
+        if "description" not in meta:
+            errors.append(
+                f"claude agent missing 'description' in frontmatter: {agent_file.name}"
+            )
+
+    return errors
+
+
 def main() -> int:
     build_dir = Path(sys.argv[1] if len(sys.argv) > 1 else "build").resolve()
     print(f"==> Validating build output: {build_dir}")
@@ -97,6 +123,7 @@ def main() -> int:
     errors: list[str] = []
     errors.extend(validate_opencode(build_dir))
     errors.extend(validate_grok_agents(build_dir))
+    errors.extend(validate_claude_agents(build_dir))
 
     if errors:
         print("  [fail]  validation errors:")
@@ -106,8 +133,10 @@ def main() -> int:
 
     agent_count = len(load_json(build_dir / "opencode.json").get("agent", {}))
     grok_count = len(list((build_dir / "grok" / "agents").glob("*.md")))
+    claude_count = len(list((build_dir / "claude" / "agents").glob("*.md")))
     print(f"  [ok]    opencode.json: {agent_count} agents, all prompt refs resolved")
     print(f"  [ok]    grok/agents: {grok_count} profiles with valid frontmatter")
+    print(f"  [ok]    claude/agents: {claude_count} subagents with valid frontmatter")
     return 0
 
 

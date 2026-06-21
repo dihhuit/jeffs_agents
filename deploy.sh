@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Entry point: deploy generic agent definitions to OpenCode and Grok Build.
+# Entry point: deploy generic agent definitions to OpenCode, Grok Build, and Claude Code.
 #
 # Usage:
 #   ./deploy.sh              # dry run

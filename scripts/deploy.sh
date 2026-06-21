@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deploy generic agent definitions to OpenCode and/or Grok Build user config dirs.
+# Deploy generic agent definitions to OpenCode, Grok Build, and/or Claude Code user config dirs.
 #
 # Usage:
 #   ./deploy.sh              # dry run
@@ -28,6 +28,7 @@ OPENCODE_PROMPTS_DIR="${OPENCODE_CONFIG_DIR}/prompts"
 OPENCODE_SKILLS_DIR="${OPENCODE_CONFIG_DIR}/skills"
 GROK_AGENTS_DIR="${HOME}/.grok/agents"
 GROK_SKILLS_DIR="${HOME}/.grok/skills"
+CLAUDE_AGENTS_DIR="${HOME}/.claude/agents"
 
 resolve_sources() {
   if [[ ! -f "${BUILD_DIR}/opencode.json" || "$DO_REBUILD" == true ]]; then
@@ -117,6 +118,20 @@ deploy_grok_agents() {
   fi
 }
 
+deploy_claude_agents() {
+  [[ "$HAS_CLAUDE" == true ]] || return 0
+  [[ -d "${DEPLOY_ROOT}/claude/agents" ]] || return 0
+  local files=("${DEPLOY_ROOT}/claude/agents/"*.md)
+  [[ -e "${files[0]}" ]] || return 0
+  if [[ "$DO_COPY" == true ]]; then
+    mkdir -p "$CLAUDE_AGENTS_DIR"
+    cp "${DEPLOY_ROOT}/claude/agents/"*.md "$CLAUDE_AGENTS_DIR/"
+    log_ok "${#files[@]} claude subagent(s) → ${CLAUDE_AGENTS_DIR}/"
+  else
+    log_info "[dry-run] ${#files[@]} claude subagent(s) → ${CLAUDE_AGENTS_DIR}/"
+  fi
+}
+
 validate_deployed_clis() {
   [[ "$DO_COPY" == true ]] || return 0
   log_step "Validating deployed configs with installed CLIs"
@@ -131,6 +146,13 @@ validate_deployed_clis() {
     [[ "$deployed" -ge "$expected" ]] || { log_error "grok agent count mismatch"; return 1; }
     log_ok "grok agents: ${deployed} profiles deployed"
   fi
+  if [[ "$HAS_CLAUDE" == true ]]; then
+    local expected deployed
+    expected="$(find "${DEPLOY_ROOT}/claude/agents" -maxdepth 1 -name '*.md' | wc -l)"
+    deployed="$(find "$CLAUDE_AGENTS_DIR" -maxdepth 1 -name '*.md' | wc -l)"
+    [[ "$deployed" -ge "$expected" ]] || { log_error "claude agent count mismatch"; return 1; }
+    log_ok "claude agents: ${deployed} subagents deployed"
+  fi
 }
 
 main() {
@@ -141,11 +163,13 @@ main() {
   log_info "Source: ${DEPLOY_ROOT}"
   [[ "$HAS_OPENCODE" == true ]] && log_info "OpenCode target: ${OPENCODE_CONFIG_DIR}"
   [[ "$HAS_GROK" == true ]] && log_info "Grok target: ${GROK_AGENTS_DIR}"
+  [[ "$HAS_CLAUDE" == true ]] && log_info "Claude target: ${CLAUDE_AGENTS_DIR}"
 
   deploy_opencode_json
   deploy_prompts
   deploy_skills
   deploy_grok_agents
+  deploy_claude_agents
   validate_deployed_clis
 
   echo
