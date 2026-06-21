@@ -10,28 +10,34 @@ This repository provides a **base layer** of agent definitions designed to be br
 
 ## Using These Agents As-Is
 
-### For OpenCode
-
 1. Clone or download this repository.
-2. Run the included deploy script:
+2. (Optional) Stage a validated `build/` directory:
+
+   ```bash
+   ./build.sh
+   ```
+
+3. Deploy to your local OpenCode and/or Grok Build config directories:
 
    ```bash
    ./deploy.sh --force
    ```
 
-   This installs the configuration to `~/.config/opencode/`.
+   Or rebuild and deploy in one step:
 
-3. The `opencode.json` file in the root provides a ready-to-use set of agents. You can use it directly, copy sections from it, or merge it with your existing configuration.
+   ```bash
+   ./deploy.sh --force --rebuild
+   ```
 
-### For Grok Build
+This installs:
+- **OpenCode**: `opencode.json` and `prompts/` → `~/.config/opencode/`
+- **Grok Build**: `grok/agents/*.md` → `~/.grok/agents/`
 
-Run the included deploy script (it automatically installs both OpenCode and Grok Build definitions):
+The `opencode.json` file in the root provides a ready-to-use set of agents. You can use it directly, copy sections from it, or merge it with your existing configuration.
 
-```bash
-./deploy.sh --force
-```
+### For Grok Build only
 
-This copies Grok agent profiles from `grok/agents/` into `~/.grok/agents/`.
+After `./deploy.sh --force`, invoke profiles with:
 
 You can also use profiles directly with:
 
@@ -212,61 +218,58 @@ The most powerful way to use this repository is as a **stable base** that you la
 
 This separation keeps the public base clean while letting you (or your team) maintain powerful, opinionated behavior.
 
+### Base ↔ Overlay Contract
+
+This repo is the **public generic base**. Your private or team-specific customizations belong in a **separate overlay repository** — never committed here.
+
+Overlay projects consume this base via the `GENERIC_DIR` environment variable (or by placing this repo as a sibling directory named `base_agents`, `open-agent-definitions`, or `open_agent_definitions`).
+
+**Expected overlay build flow:**
+
+1. Run **this repo's** `./build.sh` (or read from `build/` if already staged) to get validated generic definitions.
+2. Merge personal overlays (appended rules, custom agents, MCP config, extra skills).
+3. Validate the combined `build/` output (JSON syntax, prompt file references, Grok frontmatter).
+4. Deploy **only** from the combined `build/` directory — do not re-deploy the generic base separately.
+
 ### Creating Your Own Overlay Repository
 
-A typical overlay repo can be very small. Here's a recommended starting structure:
+A typical private overlay repo structure:
 
 ```
-my-overlays/
+my-overlays/                   # private repo — your rules, MCPs, custom agents
 ├── README.md
-├── build.sh                 # Combines base + your overlays
+├── build.sh                   # thin entry point → scripts/build.sh
+├── deploy.sh                  # thin entry point → scripts/deploy.sh
+├── scripts/
+│   ├── build.sh               # stage base + merge overlays + validate
+│   ├── deploy.sh              # install from build/ + CLI validation
+│   └── lib/                   # shared helpers (detect GENERIC_DIR, merge JSON, etc.)
 ├── overlays/
-│   ├── prompts/
-│   │   └── common-rules.md  # Rules you want appended to many agents
-│   ├── grok/
-│   │   └── agents/
-│   │       └── my-specialist.md
-│   └── opencode-additions.json
-└── deploy.sh                # Your deploy script (points at build/ output)
+│   ├── manifest.json          # which snippet files apply globally vs per-agent
+│   ├── team-coding-standards.txt   # example: snippet appended to all agents
+│   ├── prompts/               # full prompt overrides (optional)
+│   ├── grok/agents/           # full grok profile overrides (optional)
+│   └── opencode-mcp.json      # MCP servers to merge into opencode.json
+└── build/                     # generated output (gitignored) — deploy from here
 ```
 
-#### Example: Simple Build Script
+#### overlays/manifest.json (recommended)
 
-A minimal `build.sh` might look like this:
+Declare overlay snippets declaratively instead of hard-coding agent names in build scripts:
 
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-
-GENERIC_DIR="${GENERIC_DIR:-../open-agent-definitions}"
-OVERLAY_DIR="./overlays"
-BUILD_DIR="./build"
-
-rm -rf "$BUILD_DIR"
-mkdir -p "$BUILD_DIR/prompts" "$BUILD_DIR/grok/agents"
-
-# Copy generic prompts and append overlay rules
-for prompt in "$GENERIC_DIR"/prompts/*.md; do
-  name=$(basename "$prompt")
-  cp "$prompt" "$BUILD_DIR/prompts/"
-  if [ -f "$OVERLAY_DIR/prompts/common-rules.md" ]; then
-    echo "" >> "$BUILD_DIR/prompts/$name"
-    cat "$OVERLAY_DIR/prompts/common-rules.md" >> "$BUILD_DIR/prompts/$name"
-  fi
-done
-
-# Copy generic Grok profiles + your custom ones
-cp "$GENERIC_DIR"/grok/agents/*.md "$BUILD_DIR/grok/agents/" 2>/dev/null || true
-cp "$OVERLAY_DIR"/grok/agents/*.md "$BUILD_DIR/grok/agents/" 2>/dev/null || true
-
-# Merge opencode.json additions (example using a simple approach)
-cp "$GENERIC_DIR/opencode.json" "$BUILD_DIR/opencode.json"
-# You can use jq, a small Python script, or manual merging here for agent additions/MCPs.
-
-echo "Build complete. Output in $BUILD_DIR"
+```json
+{
+  "global_snippets": ["team-coding-standards.txt"],
+  "agent_snippets": {
+    "devops": ["deploy-safety-rules.txt"],
+    "just-code": ["monorepo-conventions.txt"]
+  }
+}
 ```
 
-Then point your personal `deploy.sh` at the `build/` directory.
+Global snippets are appended to every base prompt/profile. Per-agent snippets are appended only to matching agent stems (e.g. `devops` applies to both `prompts/devops.md` and `grok/agents/devops.md`).
+
+Full files in `overlays/prompts/` or `overlays/grok/agents/` replace the base copy for that agent name.
 
 ### What Belongs in an Overlay?
 
@@ -286,13 +289,26 @@ Useful things to put in overlays include:
 - Version your overlay repo together with your main projects so the combination stays consistent.
 - Document in your overlay README which base agents you use and what customizations you've applied.
 
+## Repository Layout (Base)
+
+```
+base_agents/                   # this public repo
+├── build.sh                   # stage source → build/ and validate
+├── deploy.sh                  # install from build/ (or root fallback)
+├── scripts/                   # modular build/deploy implementation
+├── opencode.json              # OpenCode agent registry
+├── prompts/                   # OpenCode prompt bodies
+└── grok/agents/               # Grok Build agent profiles
+```
+
 ## Getting Started with Your Own Setup
 
-1. Clone this repository as your base.
-2. Create a separate (private or team) overlay repository.
-3. Write a small `build.sh` that produces a combined `build/` directory.
-4. Use or adapt the deploy script to install from your build output.
-5. Iterate on your overlays independently of the generic base.
+1. Clone **this repository** as your public/generic base.
+2. Create a **separate private overlay repository** for your workflow rules, MCP servers, and custom agents.
+3. Point the overlay at this base via `GENERIC_DIR` or a sibling directory.
+4. Have the overlay `build.sh` run this repo's `build.sh`, merge overlays, and validate.
+5. Have the overlay `deploy.sh` install only from the combined `build/` output.
+6. Iterate on overlays independently; pull base updates when the generic layer improves.
 
 This pattern gives you powerful, personalized agents while still benefiting from improvements to the shared foundation.
 
