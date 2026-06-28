@@ -8,6 +8,22 @@ I'm not promising these are the best agents out there, nor the best agent team/s
 
 This repository provides a **base layer** of agent definitions designed to be broadly applicable across different projects and users. The prompts have been kept focused on core responsibilities rather than any single team's specific workflows or tooling.
 
+## Prerequisites
+
+### OpenCode Go Subscription
+
+The OpenCode agent definitions in this repo are configured to use **OpenCode Go** subscription models (`opencode-go/*`) as the primary workhorses for most coding, testing, review, and deployment tasks. These agents reference models like `opencode-go/deepseek-v4-flash`, `opencode-go/kimi-k2.7-code`, and `opencode-go/deepseek-v4-pro` which require an active [OpenCode Go subscription](https://opencode.ai/docs/go) ($10/month).
+
+A few agents use **free Zen models** (`opencode/*` or `opencode-zen/*`) for research and simple fallback tasks, but the default agents for the main MDU loop (just-code, test-agent, code-reviewer, devops, qa, architect) all require Go models.
+
+> **If you don't have an OpenCode Go subscription**, the agents will still deploy but will fail at runtime when they try to call Go models. You'll need to either:
+> - Subscribe to OpenCode Go ($10/month), or
+> - Manually edit `opencode.json` to swap all `opencode-go/*` model references to `opencode/*` (free Zen) models.
+
+### Grok Build / Claude Code
+
+The Grok Build profiles and Claude Code subagents use their own model backends and are not affected by the Go subscription requirement — they work as long as you have the respective CLI installed.
+
 ## Using These Agents As-Is
 
 1. Clone or download this repository.
@@ -64,39 +80,73 @@ claude --agent just-code -p "Implement a small feature..."
 
 ### Core Agents Included
 
+The agent definitions follow a **model tier variant** pattern — each role has multiple clones configured with different models so the orchestrator can spread token cost and choose the cheapest reliable model for each subtask.
+
 **OpenCode agents** (defined in `opencode.json` and `prompts/`):
 
-- `orchestrator` — Primary coordinator that decomposes tasks and delegates to specialists.
-- `just-code` — Focused production coder (writes code that builds, lints, and passes tests).
-- `code-reviewer` — Gatekeeper that reviews changes for quality, security, and maintainability.
-- `architect` — Produces high-level and low-level design documents and architecture.
-- `test-agent` — Writes and maintains tests across the testing pyramid.
-- `devops` — Generic infrastructure and deployment specialist.
-- `qa` — Quality assurance and manual validation.
-- `research` — Web research and documentation gathering.
-- `ui-ux-designer` — UI/UX design, mocks, and interaction flows.
+**Orchestrator:**
+- `orchestrator` — Primary coordinator. Uses free Zen model (big-pickle).
+
+**Research** (free / budget models — cheapest tier):
+- `research` — Quick web lookups (free: deepseek-v4-flash-free)
+- `deepseek-research` — Coding patterns, library docs (free: nemotron-3-ultra-free)
+- `nemotron-research` — Thorough doc research (free: north-mini-code-free)
+- `deep-research` — Comprehensive multi-source research (Go budget: mimo-v2.5)
+
+**Coding** (spread across tiers — most-used role):
+- `just-code` — Default coder (Go budget: deepseek-v4-flash, ~$0.14/M tokens)
+- `just-code-mid` — Complex features needing deeper reasoning (Go mid: kimi-k2.7-code)
+- `just-code-pro` — Architecture-sensitive code, refactoring (Go premium: deepseek-v4-pro)
+- `just-code-free` — Boilerplate, simple changes (free: big-pickle)
+
+**Testing:**
+- `test-agent` — Default test writer (Go budget: deepseek-v4-flash)
+- `test-agent-mid` — Complex test suites, property-based tests (Go mid: minimax-m3)
+- `test-agent-pro` — Security tests, deep coverage (Go premium: kimi-k2.7-code)
+- `test-agent-free` — Simple unit tests (free: big-pickle)
+
+**Code Review:**
+- `code-reviewer` — Standard review (Go mid: minimax-m3)
+- `code-reviewer-pro` — Deep security audit, architecture review (Go premium: deepseek-v4-pro)
+- `code-reviewer-free` — Quick lint/style check (free: big-pickle)
+
+**Architecture:**
+- `architect` — Design docs, API specs (Go premium: deepseek-v4-pro)
+- `architect-premium` — Complex system design, ADRs (Go top-tier: glm-5.2)
+
+**DevOps:**
+- `devops` — Standard deploys, Docker, CI/CD (Go mid: minimax-m3)
+- `devops-pro` — Complex multi-service deploys, IaC (Go premium: deepseek-v4-pro)
+- `devops-free` — Simple config changes (free: big-pickle)
+
+**QA:**
+- `qa` — Standard validation (Go mid: minimax-m3)
+- `qa-pro` — Thorough regression, edge case validation (Go premium: kimi-k2.7-code)
+- `qa-free` — Basic smoke tests (free: big-pickle)
+
+**UI/UX Design:**
+- `ui-ux-designer` — Standard design work (Go mid: minimax-m3)
+- `ui-ux-designer-pro` — Polished production UI, design systems (Go premium: kimi-k2.7-code)
 
 **Grok Build profiles** (in `grok/agents/`):
 
-A full matching set of profiles is provided so you can use the same agent roles with Grok models:
+A matching set of the same agent roles, using Grok models (separate xAI subscription):
 
-- `orchestrator`
-- `just-code`
-- `test-agent`
-- `code-reviewer`
-- `architect`
-- `devops`
-- `qa`
-- `research`
-- `ui-ux-designer`
+- `orchestrator` (grok-4.3)
+- `just-code`, `just-code-mid`, `just-code-pro` (grok-build-0.1 / grok-4.3)
+- `test-agent`, `test-agent-pro` (grok-build-0.1 / grok-4.3)
+- `code-reviewer`, `code-reviewer-pro` (grok-4.3 / grok-4.20-reasoning)
+- `architect`, `architect-premium` (grok-4.3 / grok-4.20-reasoning)
+- `devops`, `devops-pro` (grok-4.3)
+- `qa`, `qa-pro` (grok-4.3)
+- `research` (grok-4.3)
+- `ui-ux-designer`, `ui-ux-designer-pro` (grok-build-0.1 / grok-4.3)
 
-You can invoke them with `grok --agent <name>` (e.g. `grok --agent just-code` or `grok --agent code-reviewer`).
-
-You can extend or override any of these in your own setups. The old `grok-review` profile is still present for compatibility but `code-reviewer` is the recommended name going forward.
+Invoke with `grok --agent <name>` (e.g. `grok --agent just-code` or `grok --agent code-reviewer-pro`).
 
 **Claude Code subagents** (generated into `claude/agents/` during the build):
 
-The same nine roles are emitted as Claude Code user-level subagents — one `.md` file per agent, mirroring the OpenCode roster exactly (since they are generated from `opencode.json` + `prompts/`). Invoke them with `claude --agent <name>` or pick them in the interactive `/agents` view.
+All 26 OpenCode agents are emitted as Claude Code user-level subagents — each `.md` file is generated from `opencode.json` + `prompts/` at build time. The `model` is intentionally omitted so each subagent inherits your configured Claude Code model. Invoke them with `claude --agent <name>` or pick them in the interactive `/agents` view.
 
 ## How the Agents Work Together
 
@@ -319,10 +369,32 @@ base_agents/                   # this public repo
 ├── deploy.sh                  # install from build/ (or root fallback)
 ├── scripts/                   # modular build/deploy implementation
 │   └── lib/gen_claude_agents.py  # generates claude/agents/ from opencode.json + prompts/
-├── opencode.json              # OpenCode agent registry
+├── opencode.json              # OpenCode agent registry (26 agents across model tiers)
 ├── prompts/                   # OpenCode prompt bodies (canonical system prompts)
-└── grok/agents/               # Grok Build agent profiles
-                               # (build/claude/agents/ is generated, not committed)
+│   ├── orchestrator.md        # includes model selection guide for variant-aware delegation
+│   ├── just-code.md           # token-frugal coding instructions
+│   ├── test-agent.md          # token-frugal test writing
+│   ├── code-reviewer.md       # token-frugal review
+│   ├── architect.md           # token-frugal design
+│   ├── devops.md              # token-frugal infrastructure
+│   ├── qa.md                  # token-frugal validation
+│   ├── research.md            # token-frugal information gathering
+│   └── ui-ux-designer.md      # token-frugal design work
+├── grok/agents/               # Grok Build agent profiles (18 profiles)
+│   ├── orchestrator.md
+│   ├── just-code.md / just-code-mid.md / just-code-pro.md
+│   ├── test-agent.md / test-agent-pro.md
+│   ├── code-reviewer.md / code-reviewer-pro.md
+│   ├── architect.md / architect-premium.md
+│   ├── devops.md / devops-pro.md
+│   ├── qa.md / qa-pro.md
+│   ├── research.md
+│   └── ui-ux-designer.md / ui-ux-designer-pro.md
+└── build/                     # generated output (gitignored)
+    ├── opencode.json
+    ├── prompts/
+    ├── grok/agents/
+    └── claude/agents/         # generated Claude Code subagents (26 files)
 ```
 
 ## Getting Started with Your Own Setup
@@ -337,6 +409,10 @@ base_agents/                   # this public repo
 This pattern gives you powerful, personalized agents while still benefiting from improvements to the shared foundation.
 
 **Discoverability note for AI agents / overlay projects**: When this base is used from a personal or team overlay project (often a sibling directory on disk with its own `overlays/`, `build.sh`, and `deploy.sh`), the AI session context will typically start in the overlay project. That project's steering files (README.md or AGENTS.md) will explicitly instruct the AI to read *this* README first for the generic foundation before applying any local overlays. This ensures the root shareable repo is always discoverable.
+
+## TODO
+
+- **Split agent definitions into Go-only and Zen-only variants**: The current `opencode.json` assumes an OpenCode Go subscription for most agents. Create a parallel set of agents that use only free Zen models (`opencode/*`) for users without a Go subscription. This could be a separate `opencode.zen.json` file or a build-time flag. The Go variant should remain the default since it provides the best cost-to-capability ratio, but a Zen-only fallback set would make the repo usable by a wider audience without requiring a subscription.
 
 ## Contributing
 
