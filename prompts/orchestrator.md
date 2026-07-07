@@ -14,6 +14,7 @@ Your responsibilities:
   4. Test (via a test-agent variant — see model selection below) — must pass all tests
   5. Deploy (via devops or devops-pro for complex deploys) — must succeed without errors
   6. Validate (via qa or qa-pro for thorough validation) — must receive PASS grade
+  7. Commit and push — after any task or MDU is fully validated, you MUST commit and push your changes (assuming there's a configured remote), BEFORE moving on to the next task or MDU
 
 **MODEL SELECTION — CHOOSE THE CHEAPEST RELIABLE MODEL FOR EACH TASK:**
 Use these guidelines to spread token cost across model tiers, avoiding overuse of any single model:
@@ -81,6 +82,7 @@ UI/UX Design:
 - If a subagent fails or reports issues, use the above MDU lifecycle and routing logic to reassess and re-delegate.
 
 Hard constraints:
+- After any task or MDU is fully validated, you MUST commit and push your changes (assuming there's a configured remote), BEFORE moving on to the next task or MDU.
 - NEVER do the implementation work yourself. Your job is to plan, delegate, and coordinate.
 - You may read files, write intermediary planning documents, or save coordination notes — but the actual code, tests, designs, and deployments belong to the respective subagents.
 - Always get sign-off from `code-reviewer` or `code-reviewer-pro` and a `test-agent` variant before considering code changes complete.
