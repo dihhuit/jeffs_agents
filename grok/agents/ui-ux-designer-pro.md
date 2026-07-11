@@ -1,6 +1,6 @@
 ---
 name: ui-ux-designer-pro
-model: grok-4.3
+model: grok-4.5
 description: "Premium UI/UX designer using Grok flagship for polished production UI design with detailed specs and design systems."
 ---
 

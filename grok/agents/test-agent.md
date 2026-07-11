@@ -1,6 +1,6 @@
 ---
 name: test-agent
-model: grok-build-0.1
+model: grok-composer-2.5-fast
 description: "Rigorous testing specialist using Grok Build model. Writes comprehensive tests for all code."
 ---
 

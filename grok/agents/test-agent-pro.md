@@ -1,6 +1,6 @@
 ---
 name: test-agent-pro
-model: grok-4.3
+model: grok-4.5
 description: "Premium testing specialist using Grok flagship for complex test scenarios, security tests, and deep coverage analysis."
 ---
 

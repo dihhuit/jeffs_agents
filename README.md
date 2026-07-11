@@ -130,17 +130,19 @@ The agent definitions follow a **model tier variant** pattern — each role has 
 
 **Grok Build profiles** (in `grok/agents/`):
 
-A matching set of the same agent roles, using Grok models (separate xAI subscription):
+A matching set of the same agent roles, using Grok models (separate xAI subscription).
+Grok Build currently exposes two models: **`grok-4.5`** (flagship / reasoning) and
+**`grok-composer-2.5-fast`** (fast coding workhorse). Use `grok models` to confirm.
 
-- `orchestrator` (grok-4.3)
-- `just-code`, `just-code-mid`, `just-code-pro` (grok-build-0.1 / grok-4.3)
-- `test-agent`, `test-agent-pro` (grok-build-0.1 / grok-4.3)
-- `code-reviewer`, `code-reviewer-pro` (grok-4.3 / grok-4.20-reasoning)
-- `architect`, `architect-premium` (grok-4.3 / grok-4.20-reasoning)
-- `devops`, `devops-pro` (grok-4.3)
-- `qa`, `qa-pro` (grok-4.3)
-- `research` (grok-4.3)
-- `ui-ux-designer`, `ui-ux-designer-pro` (grok-build-0.1 / grok-4.3)
+- `orchestrator` (grok-4.5)
+- `just-code` (grok-composer-2.5-fast); `just-code-mid`, `just-code-pro` (grok-4.5)
+- `test-agent` (grok-composer-2.5-fast); `test-agent-pro` (grok-4.5)
+- `code-reviewer`, `code-reviewer-pro` (grok-4.5)
+- `architect`, `architect-premium` (grok-4.5)
+- `devops`, `devops-pro` (grok-4.5)
+- `qa`, `qa-pro` (grok-4.5)
+- `research` (grok-4.5)
+- `ui-ux-designer` (grok-composer-2.5-fast); `ui-ux-designer-pro` (grok-4.5)
 
 Invoke with `grok --agent <name>` (e.g. `grok --agent just-code` or `grok --agent code-reviewer-pro`).
 

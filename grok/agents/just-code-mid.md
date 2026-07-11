@@ -1,6 +1,6 @@
 ---
 name: just-code-mid
-model: grok-4.3
+model: grok-4.5
 description: "Mid-tier coder using Grok flagship model for complex feature implementation that needs deeper reasoning."
 ---
 
