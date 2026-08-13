@@ -10,6 +10,8 @@ from pathlib import Path
 
 PROMPT_REF = re.compile(r"\{file:\./prompts/([^}]+)\}")
 FRONTMATTER = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL)
+# Models allowed in grok/agents frontmatter. Update when a new model ships.
+GROK_MODEL_ALLOWLIST = {"grok-4.6", "grok-4.5"}
 
 
 def load_json(path: Path) -> dict:
@@ -86,6 +88,12 @@ def validate_grok_agents(build_dir: Path) -> list[str]:
             errors.append(f"grok profile missing 'name' in frontmatter: {profile.name}")
         if "model" not in meta:
             errors.append(f"grok profile missing 'model' in frontmatter: {profile.name}")
+            continue
+        if meta["model"] not in GROK_MODEL_ALLOWLIST:
+            errors.append(
+                f"grok profile uses model '{meta['model']}' outside allowlist "
+                f"{sorted(GROK_MODEL_ALLOWLIST)}: {profile.name}"
+            )
 
     return errors
 

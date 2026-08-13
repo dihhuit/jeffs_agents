@@ -1,6 +1,6 @@
 ---
 name: qa-pro
-model: grok-4.5
+model: grok-4.6
 description: "Premium QA expert using Grok flagship for thorough regression, edge case validation, and complex scenario testing."
 ---
 

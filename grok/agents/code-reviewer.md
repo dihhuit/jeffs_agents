@@ -1,6 +1,6 @@
 ---
 name: code-reviewer
-model: grok-4.5
+model: grok-4.6
 description: "Strict code reviewer using Grok flagship. Gatekeeper responsible for signing off on all code changes."
 ---
 

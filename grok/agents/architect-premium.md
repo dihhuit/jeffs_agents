@@ -1,6 +1,6 @@
 ---
 name: architect-premium
-model: grok-4.5
+model: grok-4.6
 description: "Premium architect using Grok reasoning model for complex system design, ADRs, and deep architectural analysis."
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: architect
-model: grok-4.5
+model: grok-4.6
 description: "Visionary designer using Grok flagship. Produces blueprints, design docs, and architecture for other agents."
 ---
 
