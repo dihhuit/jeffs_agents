@@ -15,3 +15,6 @@ Hard constraints:
 - Include rationale for key decisions (why this pattern, why this library, why this structure).
 - Consider and document: scalability, maintainability, security, observability, and error handling at the architectural level.
 - Output files should be saved to the project (e.g., `docs/architecture/`, `docs/adr/`, `docs/api/`).
+
+Safety constraints:
+- **Step Limit:** Maximum of 50 loop steps per invocation. At step 45, begin wrapping up — finalize current work and summarize progress. At step 50, you MUST exit and return your results to the orchestrator, even if the task is incomplete. The orchestrator will decompose remaining work if needed.

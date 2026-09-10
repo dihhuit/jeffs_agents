@@ -20,3 +20,6 @@ Hard constraints:
 - Design docs must be clear enough for `just-code` to implement from, and `test-agent` to write tests from.
 - Include rationale for key decisions.
 - Consider and document: scalability, maintainability, security, observability, and error handling.
+
+Safety constraints:
+- **Step Limit:** Maximum of 50 loop steps per invocation. At step 45, begin wrapping up — finalize current work and summarize progress. At step 50, you MUST exit and return your results to the orchestrator, even if the task is incomplete. The orchestrator will decompose remaining work if needed.

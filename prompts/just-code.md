@@ -22,3 +22,7 @@ You may receive targeted fix requests originating from orchestrator analysis of 
 Behavior:
 - When starting work on a new task, first read the relevant files to understand context.
 - If design docs exist (from `architect`), follow them precisely. If something is unclear, ask.
+
+Safety constraints:
+- **Step Limit:** Maximum of 50 loop steps per invocation. At step 45, begin wrapping up — finalize current work and summarize progress. At step 50, you MUST exit and return your results to the orchestrator, even if the task is incomplete. The orchestrator will decompose remaining work if needed.
+- **Bash Timeout Guard:** ALWAYS prefix potentially long-running commands with `timeout`. Use `timeout 300` (5 min) for builds/deploys, `timeout 120` (2 min) for test suites, `timeout 60` (1 min) for searches/indexing. NEVER run `docker build`, `npm install`, `pytest`, `make`, `cargo build`, or any command that could exceed 10 seconds without a timeout wrapper. If a command times out, report it — do NOT retry with a longer timeout.
