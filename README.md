@@ -1,5 +1,7 @@
 # Open Agent Definitions
 
+[![CI](https://github.com/dihhuit/jeffs_agents/actions/workflows/ci.yml/badge.svg)](https://github.com/dihhuit/jeffs_agents/actions/workflows/ci.yml)
+
 > **Disclaimer**: All of the code and agent definitions in this repo were written by AI, not by the author directly, so use with caution. Just because this repo's author trusts them doesn't mean you should.
 
 These are generic, reusable agent definitions for [OpenCode](https://opencode.ai), [Grok Build](https://x.ai) (the `grok` CLI from xAI), and [Claude Code](https://claude.com/claude-code) (the `claude` CLI from Anthropic) which have been distilled from my own, very personal and workflow specific agent definitions into something shareable. How I use these is overlaying my own workflow specific deltas (see below for details) to personalize them for how I like to work. These agents represent a "team" with specific focus or specialization areas. Whenever I'm working on a project, I start with the orchestrator, and have it farm out tasks to the other agents. Having specialized agents like this allows me to a) minimize per-agent context, and b) implement guardrails in the form of inter-agent checks and balances (e.g. to prevent the just-code agent from cheating on tests by updating the tests).
