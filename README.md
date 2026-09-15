@@ -413,9 +413,18 @@ This pattern gives you powerful, personalized agents while still benefiting from
 
 **Discoverability note for AI agents / overlay projects**: When this base is used from a personal or team overlay project (often a sibling directory on disk with its own `overlays/`, `build.sh`, and `deploy.sh`), the AI session context will typically start in the overlay project. That project's steering files (README.md or AGENTS.md) will explicitly instruct the AI to read *this* README first for the generic foundation before applying any local overlays. This ensures the root shareable repo is always discoverable.
 
-## TODO
+## Roadmap
 
-- **Split agent definitions into Go-only and Zen-only variants**: The current `opencode.json` assumes an OpenCode Go subscription for most agents. Create a parallel set of agents that use only free Zen models (`opencode/*`) for users without a Go subscription. This could be a separate `opencode.zen.json` file or a build-time flag. The Go variant should remain the default since it provides the best cost-to-capability ratio, but a Zen-only fallback set would make the repo usable by a wider audience without requiring a subscription.
+This repo is actively being upgraded to the bleeding edge of autonomous agentic development. See:
+
+- **[GAP_ANALYSIS.md](GAP_ANALYSIS.md)** — a full gap analysis against mid-2026 best practice (memory, skills, MCP, observability, evals, CI, security), including a live demonstration of model drift in the research agent configs.
+- **[FEATURE_BACKLOG.md](FEATURE_BACKLOG.md)** — a prioritized, MDU-sized implementation backlog consumable by this repo's own orchestrator. The agent team builds its own upgrade.
+
+### TODO
+
+- **Split agent definitions into Go-only and Zen-only variants**: The current `opencode.json` assumes an OpenCode Go subscription for most agents. Create a parallel set of agents that use only free Zen models (`opencode/*`) for users without a Go subscription. This could be a separate `opencode.zen.json` file or a build-time flag. (Tracked in `FEATURE_BACKLOG.md` as part of the broader model-drift/registry work.)
+- **Fix stale research-agent model references**: `research` and `nemotron-research` currently reference models that no longer exist (`opencode/deepseek-v4-flash-free`, `opencode/north-mini-code-free`) — see `GAP_ANALYSIS.md` §1 and backlog item MDU-01.
+- **Seed the empty `skills/` directory** with real Agent Skills used by the loop itself — see backlog item MDU-05.
 
 ## Contributing
 
