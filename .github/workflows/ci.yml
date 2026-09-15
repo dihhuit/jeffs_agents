@@ -48,11 +48,11 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
 
-      - name: setup python 3.12 (with pip cache)
+      - name: setup python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: pip
+          # no requirements.txt/pyproject.toml exists at repo root, so pip caching is skipped intentionally
 
       - name: install pytest
         run: pip install pytest
