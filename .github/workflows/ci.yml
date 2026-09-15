@@ -1,0 +1,70 @@
+# CI for open-agent-definitions
+#
+# Gates — keep this file as the single source of truth for "what does main
+# need to pass?". Future maintainers (AI or human): if a check belongs here,
+# wire it as a named step with a clear gate label so failures are diagnosable
+# from the Actions UI without scrolling logs.
+#
+#   1. build.sh — the full validation gate. Stages sources to build/,
+#      regenerates Claude subagents, then runs validate.py (opencode.json
+#      JSON-schema check, prompt-file refs, Grok frontmatter allowlist,
+#      Claude frontmatter, model-registry check). `set -e` here ensures any
+#      validation error fails the job immediately — don't relax it.
+#
+#   2. pytest — 33 unit tests covering scripts/lib/model_registry.py and the
+#      validate.py integration. Kept here (not under build.sh) so a refactor
+#      can run the suite without rebuilding.
+#
+#   3. live model drift — informational diff of the committed registry
+#      snapshot (config/model-registry.txt) against `opencode models`.
+#      Always informational; the script handles a missing `opencode` CLI
+#      gracefully (prints `[info] CLI not on PATH`, exits 0), and we
+#      deliberately do NOT install opencode in this workflow — keeps the job
+#      well under the 3-minute acceptance bar. On drift, the script prints
+#      the `opencode models > config/model-registry.txt` refresh command.
+#
+# No Docker, no npm. Only actions/checkout and actions/setup-python.
+
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Cancel any in-progress run for the same ref so a fast follow-up push/PR
+# doesn't queue behind a slow previous run.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: setup python 3.12 (with pip cache)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: install pytest
+        run: pip install pytest
+
+      - name: gate 1 — build + validate (./build.sh)
+        run: |
+          set -euo pipefail
+          ./build.sh
+
+      - name: gate 2 — unit tests (pytest)
+        run: python3 -m pytest tests/ -q
+
+      - name: gate 3 — live model drift (advisory; never fails; prints refresh instructions on stale snapshot)
+        continue-on-error: true
+        run: python3 scripts/lib/model_registry.py --check opencode.json --live
