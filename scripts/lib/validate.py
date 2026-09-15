@@ -3,10 +3,18 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import re
-import sys
 from pathlib import Path
+
+from model_registry import (
+    DEFAULT_SNAPSHOT,
+    check_live,
+    check_models,
+    find_model_refs,
+    load_registry,
+)
 
 PROMPT_REF = re.compile(r"\{file:\./prompts/([^}]+)\}")
 FRONTMATTER = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL)
@@ -124,14 +132,65 @@ def validate_claude_agents(build_dir: Path) -> list[str]:
     return errors
 
 
-def main() -> int:
-    build_dir = Path(sys.argv[1] if len(sys.argv) > 1 else "build").resolve()
+def validate_model_refs(build_dir: Path, snapshot_path: Path) -> list[str]:
+    """Validate every agent model reference in build_dir/opencode.json."""
+    config_path = build_dir / "opencode.json"
+    if not config_path.is_file():
+        return ["missing opencode.json for model registry check"]
+    if not snapshot_path.is_file():
+        return [f"model registry snapshot not found: {snapshot_path}"]
+    registry = load_registry(snapshot_path)
+    refs = find_model_refs(config_path)
+    return check_models(registry, refs)
+
+
+def print_live_drift(snapshot_path: Path) -> None:
+    """Print snapshot-vs-live drift for `opencode models` (informational only)."""
+    drift = check_live(snapshot_path)
+    if not drift["cli_found"]:
+        print("  [info]  `opencode` CLI not on PATH; skipping live model drift check")
+        return
+    print(
+        f"  [info]  live model drift vs snapshot ({snapshot_path}): "
+        f"{len(drift['removed'])} removed, {len(drift['added'])} added"
+    )
+    for model in drift["removed"]:
+        print(f"          - removed from live: {model}")
+    for model in drift["added"]:
+        print(f"          - added in live: {model}")
+    if drift["removed"] or drift["added"]:
+        print(
+            "  [info]  snapshot is stale. Refresh it with: "
+            "`opencode models > config/model-registry.txt`"
+        )
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        prog="validate.py",
+        description="Validate agent definition build output.",
+    )
+    parser.add_argument(
+        "build_dir",
+        nargs="?",
+        default="build",
+        help="build output directory (default: build)",
+    )
+    parser.add_argument(
+        "--live-models",
+        action="store_true",
+        help="print live model drift vs the registry snapshot (informational)",
+    )
+    args = parser.parse_args(argv)
+
+    build_dir = Path(args.build_dir).resolve()
     print(f"==> Validating build output: {build_dir}")
 
     errors: list[str] = []
     errors.extend(validate_opencode(build_dir))
     errors.extend(validate_grok_agents(build_dir))
     errors.extend(validate_claude_agents(build_dir))
+    errors.extend(validate_model_refs(build_dir, DEFAULT_SNAPSHOT))
 
     if errors:
         print("  [fail]  validation errors:")
@@ -145,6 +204,14 @@ def main() -> int:
     print(f"  [ok]    opencode.json: {agent_count} agents, all prompt refs resolved")
     print(f"  [ok]    grok/agents: {grok_count} profiles with valid frontmatter")
     print(f"  [ok]    claude/agents: {claude_count} subagents with valid frontmatter")
+    print(
+        f"  [ok]    model refs: all agent models present in registry "
+        f"({DEFAULT_SNAPSHOT})"
+    )
+
+    if args.live_models:
+        print_live_drift(DEFAULT_SNAPSHOT)
+
     return 0
 
 

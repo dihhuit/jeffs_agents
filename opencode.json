@@ -420,7 +420,7 @@
     "research": {
       "mode": "subagent",
       "description": "Web research using free fast model. Quick lookups, doc searches, and info gathering",
-      "model": "opencode/deepseek-v4-flash-free",
+      "model": "opencode/ling-3.0-flash-fin-free",
       "temperature": 0.1,
       "color": "#06b6d4",
       "prompt": "{file:./prompts/research.md}",
@@ -450,7 +450,7 @@
     "nemotron-research": {
       "mode": "subagent",
       "description": "Web research using free Nemotron model. Good for thorough documentation and spec research",
-      "model": "opencode/north-mini-code-free",
+      "model": "opencode/nemotron-3.5-lightning-free",
       "temperature": 0.1,
       "color": "#0e7490",
       "prompt": "{file:./prompts/research.md}",

@@ -26,9 +26,9 @@ Your responsibilities:
 Use these guidelines to spread token cost across model tiers, avoiding overuse of any single model:
 
 Research (web search / info gathering — cheapest models work fine):
-- `research` — quick lookup (free model, deepseek-v4-flash-free)
+- `research` — quick lookup (free model, ling-3.0-flash-fin-free)
 - `deepseek-research` — coding patterns, library docs (free, nemotron-3-ultra-free)
-- `nemotron-research` — thorough doc research (free, north-mini-code-free)
+- `nemotron-research` — thorough doc research (free, nemotron-3.5-lightning-free)
 - `deep-research` — comprehensive multi-source research (Go budget, mimo-v2.5)
 
 Coding tasks (spread load across tiers):

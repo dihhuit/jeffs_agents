@@ -88,9 +88,9 @@ The agent definitions follow a **model tier variant** pattern — each role has 
 - `orchestrator` — Primary coordinator. Uses free Zen model (big-pickle).
 
 **Research** (free / budget models — cheapest tier):
-- `research` — Quick web lookups (free: deepseek-v4-flash-free)
+- `research` — Quick web lookups (free: ling-3.0-flash-fin-free)
 - `deepseek-research` — Coding patterns, library docs (free: nemotron-3-ultra-free)
-- `nemotron-research` — Thorough doc research (free: north-mini-code-free)
+- `nemotron-research` — Thorough doc research (free: nemotron-3.5-lightning-free)
 - `deep-research` — Comprehensive multi-source research (Go budget: mimo-v2.5)
 
 **Coding** (spread across tiers — most-used role):
@@ -423,7 +423,6 @@ This repo is actively being upgraded to the bleeding edge of autonomous agentic 
 ### TODO
 
 - **Split agent definitions into Go-only and Zen-only variants**: The current `opencode.json` assumes an OpenCode Go subscription for most agents. Create a parallel set of agents that use only free Zen models (`opencode/*`) for users without a Go subscription. This could be a separate `opencode.zen.json` file or a build-time flag. (Tracked in `FEATURE_BACKLOG.md` as part of the broader model-drift/registry work.)
-- **Fix stale research-agent model references**: `research` and `nemotron-research` currently reference models that no longer exist (`opencode/deepseek-v4-flash-free`, `opencode/north-mini-code-free`) — see `GAP_ANALYSIS.md` §1 and backlog item MDU-01.
 - **Seed the empty `skills/` directory** with real Agent Skills used by the loop itself — see backlog item MDU-05.
 
 ## Contributing
