@@ -212,6 +212,18 @@ This backlog is written so the repo's **current** agent definitions can build th
 - **Suggested agents:** just-code (validator), test-agent (parity tests), devops (CI wiring), qa (validation).
 - **Dependencies:** MDU-02, MDU-03.
 
+### MDU-15 · Cross-CLI run-ledger conformance (schema-inline + re-validation)
+
+- **Why:** The 2026-09-16 headless cross-CLI test (opencode/grok/claude on the same golden task) proved the harness-provenance feature works — all three recorded `harness` correctly — but also caught the ledger schema drifting per CLI: opencode omitted `title`/timestamps and used `qa_grade: "manual-smoke-pass"`; grok never finalized (`in_progress`, null verification); claude used `status: "complete"` + `build: "n/a"`. Root cause: the orchestrator prompt references `docs/observability.md` for the schema, which subagents cannot read in a bare scratch dir. Grok also revealed a session-finalization gap (its run exited 0 but the git-commit phase and ledger finalization never landed).
+- **Description:** Inline the run-manifest contract (required fields + enums + one compact example) directly into the orchestrator prompt (both `prompts/orchestrator.md` and `grok/agents/orchestrator.md`), so any CLI can conform without external docs. Re-run the golden cross-CLI task (reuse `evals/tasks/` "sumdump"-style task or the same golden prompt) through all three harnesses and require: manifest validates on `run_ledger.py validate`, git commit present in all three, final status `completed`. Add a `manual-smoke-pass`→`PASS` normalization rule and the `complete`/`completed` alias question to the prompt. Also document the claude headless permission flag (`--dangerously-skip-permissions`) and re-test grok session finalization (its workflow runner cutoff the final phase).
+- **Acceptance criteria:**
+  1. Orchestrator prompt (both mirrors) embeds the full manifest schema inline (fields, enums, example), no doc lookup required.
+  2. Re-running the golden task headless on all 3 CLIs yields manifests that pass `run_ledger.py validate` with `harness` set correctly and `status: completed`.
+  3. All three workspaces contain a git commit (grok finalization fixed or root-caused).
+  4. Findings + claude permission flag documented in `docs/observability.md`.
+- **Suggested agents:** architect (schema-inline design), just-code (prompt edits both mirrors), test-agent (manifest conformance tests), devops (deploy + headless re-runs), qa (cross-CLI grading).
+- **Dependencies:** none (uses the A-harness work already shipped; can start immediately).
+
 ---
 
 ## Suggested Execution Order

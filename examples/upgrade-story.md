@@ -85,3 +85,47 @@ reconstructions of the earlier MDUs.
    they made the team self-documenting (ledger), self-capable (skills), and
    self-checking (evals in CI). The next upgrade session starts from a much
    stronger base than this one did.
+
+## Cross-CLI Headless Validation (2026-09-16)
+
+After the combined overlay build (base + user overlay) was deployed to all three
+CLIs, the golden "sumdump" Python CLI task was run headless through each
+orchestrator in scratch dirs. Deliverables graded PASS on opencode and claude;
+grok was partial:
+
+- **opencode** (`opencode run --agent orchestrator`): **PASS** — 10/10 tests,
+  used just-code-free + test-agent-free + code-reviewer-free, made git commits,
+  and wrote `runs/mdu-sumdump/manifest.json` with `harness: opencode`. Simplest
+  clean implementation.
+- **grok** (`grok --agent orchestrator -p`): **PARTIAL** — 17/17 tests and the
+  design → implement → test → review → QA loop all passed (QA grade PASS,
+  loaded the mdu-lifecycle + git-autonomy skills, `harness: grok`), but the
+  session ended before the git-commit phase landed: no `.git/` was created and
+  the run manifest stayed `in_progress`. A session-finalization reliability
+  gap worth tracking.
+- **claude** (`claude --agent orchestrator -p --dangerously-skip-permissions`):
+  **PASS** — 33/33 tests (most defensive implementation), full loop including
+  the devops git-commit phase and black-box QA, `harness: claude`.
+- **Permission finding**: claude's FIRST attempt failed cleanly — default
+  headless mode denied Write to its own scratch dir; the orchestrator reported
+  BLOCKED and requested permission. Non-interactive mode needs the
+  `--dangerously-skip-permissions` flag.
+
+### Ledger Conformance Findings
+
+The validator found all three manifests deviated from the base schema, each
+differently: opencode was missing title/timestamps and used
+`qa_grade: "manual-smoke-pass"`; grok was left `in_progress` with null
+verification and no summary/artifacts; claude used `status: "complete"` with
+`build: "n/a"`. Root cause: the orchestrator prompt references
+`docs/observability.md` for the schema, which subagents cannot read in a bare
+scratch dir — so they improvised. Planned fix (tracked backlog item): inline the
+schema (required fields + enums) into the orchestrator prompt, then re-test
+conformance.
+
+### Rollback Baseline
+
+Pre-deploy snapshots were captured at
+`/tmp/opencode/rollback-20260916-054427/`: opencode.json + prompts + skills,
+grok agents/skills/config.toml + MCP list, and claude agents/JSON + MCP list.
+Nothing broke, so the rollback was not executed.
