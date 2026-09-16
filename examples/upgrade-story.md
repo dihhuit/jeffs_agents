@@ -26,7 +26,7 @@ Each MDU landed as a reviewed, tested, QA-passed commit. The real hashes:
 | `8d5a02f` | **MDU-03** — QA permission migration + JSON schema + cleanup |
 | `0d8990d` | **MDU-05 + MDU-07** — 6 Agent Skills + `validate_skills`, run ledger + observability |
 | `5caf6d1` | **MDU-06 / MDU-08 / MDU-12 / MDU-14** — MCP reference, eval harness + CI gate, autonomy ladder + approval gates, cross-CLI parity (17 prompt↔grok pairs) |
-| `TO-BE-FILLED` | **MDU-13** — this README modernization + artifact gallery |
+| `3fa9ca1` | **MDU-13** — this README modernization + artifact gallery |
 
 ## Failure-Recovery Loops That Actually Fired
 
