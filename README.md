@@ -157,6 +157,10 @@ All 26 OpenCode agents are emitted as Claude Code user-level subagents — each 
 
 These definitions are designed as a **collaborative team** rather than standalone tools. The `orchestrator` acts as the project manager, breaking work into **Minimum Deployable Units (MDUs)** and delegating to specialists. Built-in handoffs (especially mandatory review + test sign-off) create guardrails.
 
+### Autonomy & Guardrails
+
+The team currently operates at **L2 (session-autonomous)** on the industry-standard autonomy ladder and is targeting **L3 (goal-directed with approval gates)**. The orchestrator requires human approval before four classes of risky operations: pushing to protected branches, deploying non-green MDUs to production, destructive operations (deletes, DB migrations, irreversible ops), and exceeding 3 fix-retries on the same issue. Everything else flows autonomously. See [docs/autonomy.md](docs/autonomy.md) for the full ladder and gate definitions.
+
 ### Orchestrator Delegation Flow
 
 ```mermaid

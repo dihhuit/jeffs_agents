@@ -23,6 +23,14 @@
 #      well under the 3-minute acceptance bar. On drift, the script prints
 #      the `opencode models > config/model-registry.txt` refresh command.
 #
+#   4. smoke evals — run both eval tasks under evals/tasks/ through the
+#      harness (scripts/lib/run_evals.py). This step doubles as a CI-gated
+#      signal that the eval harness itself is wired up: 01-repo-health
+#      intentionally repeats the build + pytest gates so any harness break
+#      surfaces here with a recognisable failure label. No
+#      continue-on-error: an eval failure must fail the job. Eval manifests
+#      land in evals/results/, which is gitignored.
+#
 # No Docker, no npm. Only actions/checkout and actions/setup-python.
 
 name: ci
@@ -68,3 +76,8 @@ jobs:
       - name: gate 3 — live model drift (advisory; never fails; prints refresh instructions on stale snapshot)
         continue-on-error: true
         run: python3 scripts/lib/model_registry.py --check opencode.json --live
+
+      - name: gate 4 — smoke evals (01-repo-health + 02-registry-alignment; doubles as harness wiring check)
+        run: |
+            python3 scripts/lib/run_evals.py run evals/tasks/01-repo-health && \
+            python3 scripts/lib/run_evals.py run evals/tasks/02-registry-alignment

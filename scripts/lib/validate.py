@@ -24,6 +24,36 @@ FRONTMATTER = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL)
 # Models allowed in grok/agents frontmatter. Update when a new model ships.
 GROK_MODEL_ALLOWLIST = {"grok-4.6", "grok-4.5"}
 
+# Stems in prompts/ whose grok mirrors include tier variants. Every listed
+# mirror must stay behaviorally in sync with the canonical prompt.
+GROK_MIRRORS: dict[str, list[str]] = {
+    "architect": ["architect.md", "architect-premium.md"],
+    "just-code": ["just-code.md", "just-code-mid.md", "just-code-pro.md"],
+    "test-agent": ["test-agent.md", "test-agent-pro.md"],
+    "code-reviewer": ["code-reviewer.md", "code-reviewer-pro.md"],
+    "devops": ["devops.md", "devops-pro.md"],
+    "qa": ["qa.md", "qa-pro.md"],
+    "ui-ux-designer": ["ui-ux-designer.md", "ui-ux-designer-pro.md"],
+    "research": ["research.md"],
+    "orchestrator": ["orchestrator.md"],
+}
+
+# Role-specific contract keywords per stem. Each clause is a tuple of
+# alternative substrings; the clause is satisfied when any alternative is
+# present. Grok mirrors are shorter and phrase things differently, so the
+# check is keyword-presence based rather than sentence matching.
+ROLE_KEYWORDS: dict[str, list[tuple[str, ...]]] = {
+    "just-code": [("never edit test",)],
+    "test-agent": [("never modify source", "never modify production")],
+    "code-reviewer": [("read-only",), ("security",)],
+    "devops": [("roll back",), ("immutable infrastructure", "infrastructure-as-code")],
+    "qa": [("pass grade", "pass or fail grade"), ("fail grade", "pass or fail grade")],
+    "architect": [("never write production code",)],
+    "research": [("never write or edit files",)],
+    "orchestrator": [("mdu",), ("delegat",)],
+    "ui-ux-designer": [("design",)],
+}
+
 
 def load_json(path: Path) -> dict:
     with path.open(encoding="utf-8") as handle:
@@ -176,6 +206,123 @@ def validate_skills(build_dir: Path) -> list[str]:
     return errors
 
 
+def validate_parity(build_dir: Path) -> list[str]:
+    """Check that grok/agents mirrors stay behaviorally in sync with prompts.
+
+    For each ``build_dir/prompts/<stem>.md``, every grok mirror listed in
+    ``GROK_MIRRORS`` must contain the same key behavioral clauses: the
+    structural markers ("Hard constraints", safety/step-limit wording) and the
+    role-specific contract keywords from ``ROLE_KEYWORDS``. Checks are
+    case-insensitive substring matches so shorter grok phrasing is tolerated.
+    Returns a list of error strings; empty when every pair is consistent.
+    """
+    errors: list[str] = []
+    prompts_dir = build_dir / "prompts"
+    grok_dir = build_dir / "grok" / "agents"
+    if not prompts_dir.is_dir() or not grok_dir.is_dir():
+        return []
+
+    for prompt_file in sorted(prompts_dir.glob("*.md")):
+        stem = prompt_file.stem
+        mirrors = GROK_MIRRORS.get(stem)
+        if mirrors is None:
+            continue
+        canonical = prompt_file.read_text(encoding="utf-8").lower()
+        for mirror_name in mirrors:
+            mirror_path = grok_dir / mirror_name
+            if not mirror_path.is_file():
+                errors.append(
+                    f"grok mirror grok/agents/{mirror_name} missing "
+                    f"(expected for prompts/{prompt_file.name})"
+                )
+                continue
+            mirror = mirror_path.read_text(encoding="utf-8").lower()
+            errors.extend(
+                _parity_clause_errors(
+                    stem, canonical, mirror, mirror_name, prompt_file.name
+                )
+            )
+    return errors
+
+
+def _parity_clause_errors(
+    stem: str,
+    canonical: str,
+    mirror: str,
+    mirror_name: str,
+    prompt_name: str,
+) -> list[str]:
+    """Compare one canonical prompt against one grok mirror, clause by clause."""
+    errors: list[str] = []
+
+    # Structural marker: "Hard constraints" section.
+    _check_clause(
+        errors,
+        canonical,
+        mirror,
+        ("hard constraints",),
+        "Hard constraints section",
+        mirror_name,
+        prompt_name,
+    )
+
+    # Structural marker: safety constraints / step-limit statement. The
+    # canonical says "Step Limit"; grok mirrors say "Maximum of 50 loop steps".
+    canonical_safety = (
+        "safety constraints" in canonical
+        or "step limit" in canonical
+        or "loop steps" in canonical
+    )
+    mirror_safety = "safety constraints" in mirror or "loop steps" in mirror
+    if canonical_safety and not mirror_safety:
+        errors.append(
+            f"grok mirror grok/agents/{mirror_name} missing "
+            f"Step Limit statement present in prompts/{prompt_name}"
+        )
+    elif mirror_safety and not canonical_safety:
+        errors.append(
+            f"prompts/{prompt_name} missing "
+            f"Step Limit statement present in grok/agents/{mirror_name}"
+        )
+
+    # Role-specific contract keywords.
+    for clause in ROLE_KEYWORDS.get(stem, ()):
+        _check_clause(
+            errors,
+            canonical,
+            mirror,
+            clause,
+            "/".join(clause),
+            mirror_name,
+            prompt_name,
+        )
+    return errors
+
+
+def _check_clause(
+    errors: list[str],
+    canonical: str,
+    mirror: str,
+    alternatives: tuple[str, ...],
+    label: str,
+    mirror_name: str,
+    prompt_name: str,
+) -> None:
+    """Append a parity error when a clause is present in only one of the files."""
+    in_canonical = any(alt in canonical for alt in alternatives)
+    in_mirror = any(alt in mirror for alt in alternatives)
+    if in_canonical and not in_mirror:
+        errors.append(
+            f"grok mirror grok/agents/{mirror_name} missing "
+            f"{label} present in prompts/{prompt_name}"
+        )
+    elif in_mirror and not in_canonical:
+        errors.append(
+            f"prompts/{prompt_name} missing "
+            f"{label} present in grok/agents/{mirror_name}"
+        )
+
+
 def validate_schema(
     build_dir: Path, schema_path: Path = SCHEMA_PATH
 ) -> tuple[list[str], bool]:
@@ -270,6 +417,7 @@ def main(argv: list[str] | None = None) -> int:
     errors.extend(validate_grok_agents(build_dir))
     errors.extend(validate_claude_agents(build_dir))
     errors.extend(validate_skills(build_dir))
+    errors.extend(validate_parity(build_dir))
     errors.extend(validate_model_refs(build_dir, DEFAULT_SNAPSHOT))
     schema_errors, schema_ran = validate_schema(build_dir)
     errors.extend(schema_errors)
@@ -288,6 +436,12 @@ def main(argv: list[str] | None = None) -> int:
         print("  [ok]    opencode.json: conforms to schemas/opencode.schema.json")
     print(f"  [ok]    grok/agents: {grok_count} profiles with valid frontmatter")
     print(f"  [ok]    claude/agents: {claude_count} subagents with valid frontmatter")
+    parity_pairs = sum(
+        len(GROK_MIRRORS[stem])
+        for stem in GROK_MIRRORS
+        if (build_dir / "prompts" / f"{stem}.md").is_file()
+    )
+    print(f"  [ok]    parity: {parity_pairs} prompt↔grok pairs consistent")
     skills_dir = build_dir / "skills"
     skill_count = len(list(skills_dir.glob("*/SKILL.md"))) if skills_dir.is_dir() else 0
     print(f"  [ok]    skills: {skill_count} valid skill(s)")
