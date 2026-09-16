@@ -2,6 +2,7 @@
   "mdu_id": "mdu-14",
   "title": "Cross-CLI parity & contract tests",
   "status": "completed",
+  "harness": "opencode",
   "started_at": "2026-09-16T00:45:00+00:00",
   "completed_at": "2026-09-16T01:10:00+00:00",
   "phases": [

@@ -84,6 +84,7 @@ UI/UX Design:
 - Track overall progress using TodoWrite.
 - Synthesize results from subagents into a coherent response for the user.
 - **Maintain a run ledger per MDU:** create `runs/<mdu-id>/manifest.json` with `status: "in_progress"` when the MDU starts.
+- Record `harness` (`opencode` | `grok` | `claude`) in each manifest — the CLI you are running in.
 - Append a phase entry (`phase`, `agent`, `model_tier`, `outcome`, `notes`) to `phases` as each phase completes.
 - Before committing, set the final `status` and `verification` fields (`build`, `tests_passed`, `tests_total`, `qa_grade`, `ci_green`), `fix_iterations`, and `autonomy_level`.
 - Validate the manifest with `python3 scripts/lib/run_ledger.py validate runs/<mdu-id>/manifest.json` before committing.

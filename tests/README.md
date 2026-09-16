@@ -4,7 +4,10 @@ This suite covers the offline/live model registry validation added in
 `scripts/lib/model_registry.py` and its integration in
 `scripts/lib/validate.py` (the `--live-models` flag and model-ref check). It
 also covers the `validate_schema` JSON Schema check against
-`schemas/opencode.schema.json` (MDU-03).
+`schemas/opencode.schema.json` (MDU-03) and the per-MDU run ledger
+(`scripts/lib/run_ledger.py`: manifest schema validation incl. the `harness`
+enum, `summarize` aggregation with `by_harness`, and the validate/summarize
+CLI).
 
 ## Files
 
@@ -13,6 +16,7 @@ also covers the `validate_schema` JSON Schema check against
 | `test_model_registry.py` | `load_registry`, `find_model_refs`, `check_models`, `check_live`, and the `model_registry.py` CLI (`--check`, `--snapshot`, `--live`) |
 | `test_validate_integration.py` | `validate_model_refs`, `print_live_drift`, and `validate.main` with `--live-models` |
 | `test_validate_schema.py` | `validate_schema` against `schemas/opencode.schema.json`: valid config passes, violations report the offending field, missing `jsonschema` skips with a warning, missing/malformed schema or config handled gracefully |
+| `test_run_ledger.py` | `validate_manifest` (required fields incl. `harness`, status/harness enums, phase/verification structure), `validate_file`, `load_manifests`, `summarize` (by_status, by_harness, phases, QA) and `format_summary` plus the `validate` / `summarize` CLI paths |
 | `conftest.py` | Puts `scripts/lib/` on `sys.path` so tests import the modules the same way `scripts/build.sh` does |
 
 ## Running

@@ -437,7 +437,7 @@ This repo is actively being upgraded to the bleeding edge of autonomous agentic 
 
 This repository's own orchestrator and subagents executed the backlog above over a single autonomous session. Every change went through the closed loop — **design → implement → review → test → validate** (with deploy included whenever infrastructure was touched) — with code-reviewer sign-off and a QA PASS before the orchestrator committed and pushed. CI (introduced during MDU-02) was green on every push from MDU-02 onward — including one caught-and-fixed workflow failure in the first MDU-02 run (missing pip dependency manifest).
 
-The session grew the test suite from **33 → 128 tests** (all passing) and shipped CI, skills, a run ledger, evals, MCP reference docs, autonomy gates, and cross-CLI parity. The two broken free-tier research agents were repaired to current models.
+The session grew the test suite from **33 → 136 tests** (all passing) and shipped CI, skills, a run ledger, evals, MCP reference docs, autonomy gates, and cross-CLI parity. The two broken free-tier research agents were repaired to current models.
 
 - Full dogfooding narrative, commit trail, and lessons learned: **[examples/upgrade-story.md](examples/upgrade-story.md)**
 - Real run manifests from the session: **[examples/runs/](examples/runs/)** (`mdu-05/`, `mdu-06/`, `mdu-07/`, `mdu-08/`, `mdu-12/`, `mdu-14/` are real session manifests; `mdu-01-example/` and `mdu-02-example/` are illustrative)

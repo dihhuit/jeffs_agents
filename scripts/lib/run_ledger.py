@@ -8,8 +8,9 @@ each phase. This module provides:
 * ``validate`` — check a manifest against the schema (required fields + enums),
   exiting 1 on any violation.
 * ``summarize`` — aggregate every ``runs/*/manifest.json`` under a directory
-  into counts by status, phases done, fix iterations, per-model-tier phase
-  usage, and QA results. Prints a text summary, or ``--json`` for machine use.
+  into counts by status, harness, phases done, fix iterations, per-model-tier
+  phase usage, and QA results. Prints a text summary, or ``--json`` for machine
+  use.
 
 The schema constants are module-level so tests and other tooling can import
 them without re-declaring the enum sets.
@@ -34,11 +35,13 @@ PHASES = {"design", "implement", "review", "test", "deploy", "validate", "commit
 MODEL_TIERS = {"free", "budget", "mid", "premium", "top-tier"}
 OUTCOMES = {"pass", "fail", "pending"}
 QA_GRADES = {"PASS", "FAIL", None}
+HARNESSES = {"opencode", "grok", "claude"}
 
 REQUIRED_FIELDS = (
     "mdu_id",
     "title",
     "status",
+    "harness",
     "started_at",
     "completed_at",
     "phases",
@@ -81,6 +84,11 @@ def validate_manifest(data: dict) -> list[str]:
         errors.append(
             f"invalid status '{data['status']}' (expected one of "
             f"{sorted(STATUSES)})"
+        )
+
+    if "harness" in data and data["harness"] not in HARNESSES:
+        errors.append(
+            f"harness must be one of opencode|grok|claude (got '{data['harness']}')"
         )
 
     for field in ("started_at", "completed_at"):
@@ -234,13 +242,15 @@ def summarize(manifests: list[dict]) -> dict:
     Non-dict entries (e.g. a valid-JSON top-level array or string) are
     skipped so one malformed ledger can't crash the summary.
 
-    Returns counts by status, total phases done, per-phase counts, total fix
-    iterations, per-model-tier phase counts, and QA PASS/FAIL counts.
+    Returns counts by status, per-harness counts, total phases done, per-phase
+    counts, total fix iterations, per-model-tier phase counts, and QA PASS/FAIL
+    counts.
     """
     manifests = [data for data in manifests if isinstance(data, dict)]
     stats = {
         "manifests": len(manifests),
         "by_status": {status: 0 for status in sorted(STATUSES)},
+        "by_harness": {harness: 0 for harness in sorted(HARNESSES)},
         "phases_total": 0,
         "phases_by_phase": {phase: 0 for phase in sorted(PHASES)},
         "phases_by_tier": {tier: 0 for tier in sorted(MODEL_TIERS)},
@@ -254,6 +264,10 @@ def summarize(manifests: list[dict]) -> dict:
         status = data.get("status")
         if status in stats["by_status"]:
             stats["by_status"][status] += 1
+
+        harness = data.get("harness")
+        if harness in stats["by_harness"]:
+            stats["by_harness"][harness] += 1
 
         fix_iterations = data.get("fix_iterations")
         if isinstance(fix_iterations, int):
@@ -298,6 +312,14 @@ def format_summary(stats: dict) -> str:
         if count:
             lines.append(f"  {status:<12} {count}")
     if not any(stats["by_status"].values()):
+        lines.append("  (none)")
+
+    lines.append("")
+    lines.append("by harness:")
+    for harness, count in stats["by_harness"].items():
+        if count:
+            lines.append(f"  {harness:<12} {count}")
+    if not any(stats["by_harness"].values()):
         lines.append("  (none)")
 
     lines.append("")

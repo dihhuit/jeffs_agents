@@ -2,6 +2,7 @@
   "mdu_id": "mdu-06",
   "title": "MCP reference config & browser verification path",
   "status": "completed",
+  "harness": "opencode",
   "started_at": "2026-09-16T00:45:00+00:00",
   "completed_at": "2026-09-16T01:05:00+00:00",
   "phases": [

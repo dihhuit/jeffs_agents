@@ -57,6 +57,9 @@ illustrative examples:
 
 - **8 manifests**, all `completed` — 54 phases: 8 commit, 3 deploy, 8 design,
   10 implement, 8 review, 9 test, 8 validate
+- **Harness**: all 8 recorded by `opencode` (the CLI that drove the session):
+  by harness:
+    opencode     8
 - **Model tiers**: 25 budget, 13 free, 14 mid, 2 premium
 - **QA: PASS 8, FAIL 0** — every MDU passed validation
 - **705/705 tests passed** across the recorded runs

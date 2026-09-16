@@ -13,6 +13,7 @@ live upgrade session.
 | `mdu_id` | string | e.g. `mdu-01` |
 | `title` | string | short human-readable title |
 | `status` | enum | `in_progress` \| `completed` \| `failed` \| `escalated` |
+| `harness` | enum | `opencode` \| `grok` \| `claude` — which agentic CLI executed the MDU |
 | `started_at` | string (ISO-8601) | when the MDU started |
 | `completed_at` | string (ISO-8601) | when the MDU finished |
 | `phases` | array | one entry per phase, see below |
@@ -43,7 +44,8 @@ The `verification` object:
 | `ci_green` | bool \| null | CI pipeline result |
 
 The schema is enforced in code by `scripts/lib/run_ledger.py` (module
-constants `STATUSES`, `PHASES`, `MODEL_TIERS`, `OUTCOMES`, `QA_GRADES`).
+constants `STATUSES`, `PHASES`, `MODEL_TIERS`, `OUTCOMES`, `QA_GRADES`,
+`HARNESSES`).
 
 ## Lifecycle of a manifest
 

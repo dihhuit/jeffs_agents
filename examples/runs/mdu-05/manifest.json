@@ -2,6 +2,7 @@
   "mdu_id": "mdu-05",
   "title": "Seed skills library (6 Agent Skills + validate.py wiring)",
   "status": "completed",
+  "harness": "opencode",
   "started_at": "2026-09-15T23:55:00+00:00",
   "completed_at": "2026-09-16T00:20:00+00:00",
   "phases": [

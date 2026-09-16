@@ -2,6 +2,7 @@
   "mdu_id": "mdu-07",
   "title": "Run ledger & observability hooks",
   "status": "completed",
+  "harness": "opencode",
   "started_at": "2026-09-15T23:55:00+00:00",
   "completed_at": "2026-09-16T00:35:00+00:00",
   "phases": [

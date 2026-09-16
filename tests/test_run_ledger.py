@@ -25,6 +25,7 @@ def _valid_manifest() -> dict:
         "mdu_id": "mdu-99",
         "title": "MDU-99 widget",
         "status": "completed",
+        "harness": "opencode",
         "started_at": "2026-09-15T08:00:00Z",
         "completed_at": "2026-09-15T12:00:00Z",
         "phases": [
@@ -96,6 +97,31 @@ def test_validate_manifest_bad_status_enum() -> None:
     errors = ledger.validate_manifest(data)
     assert any("invalid status 'bogus'" in err for err in errors)
     assert any("expected one of" in err for err in errors)
+
+
+@pytest.mark.parametrize("harness", ["opencode", "grok", "claude"])
+def test_validate_manifest_valid_harness_values(harness: str) -> None:
+    data = _valid_manifest()
+    data["harness"] = harness
+    assert ledger.validate_manifest(data) == []
+
+
+def test_validate_manifest_missing_harness_field() -> None:
+    data = _valid_manifest()
+    del data["harness"]
+    errors = ledger.validate_manifest(data)
+    assert any(err == "missing required field: 'harness'" for err in errors)
+
+
+def test_validate_manifest_invalid_harness() -> None:
+    data = _valid_manifest()
+    data["harness"] = "powershell"
+    errors = ledger.validate_manifest(data)
+    assert any(
+        err
+        == "harness must be one of opencode|grok|claude (got 'powershell')"
+        for err in errors
+    )
 
 
 def test_validate_manifest_bad_model_tier_enum() -> None:
@@ -322,6 +348,7 @@ def test_summarize_aggregates_across_manifests() -> None:
     assert stats["by_status"]["completed"] == 1
     assert stats["by_status"]["in_progress"] == 1
     assert stats["by_status"]["failed"] == 0
+    assert stats["by_harness"] == {"claude": 0, "grok": 0, "opencode": 2}
     assert stats["phases_total"] == 5
     assert stats["phases_by_phase"]["design"] == 1
     assert stats["phases_by_phase"]["implement"] == 1
@@ -341,6 +368,7 @@ def test_summarize_empty_manifest_list_is_zeroed() -> None:
     stats = ledger.summarize([])
     assert stats["manifests"] == 0
     assert all(count == 0 for count in stats["by_status"].values())
+    assert stats["by_harness"] == {"claude": 0, "grok": 0, "opencode": 0}
     assert stats["phases_total"] == 0
     assert all(count == 0 for count in stats["phases_by_phase"].values())
     assert all(count == 0 for count in stats["phases_by_tier"].values())
@@ -348,6 +376,23 @@ def test_summarize_empty_manifest_list_is_zeroed() -> None:
     assert stats["qa"] == {"PASS": 0, "FAIL": 0}
     assert stats["tests_total"] == 0
     assert stats["tests_passed"] == 0
+
+
+def test_summarize_by_harness_counts_mixed_set() -> None:
+    opencode_docs = [
+        _as_manifest("mdu-01"),
+        _as_manifest("mdu-02"),
+    ]
+    grok_doc = _as_manifest("mdu-03")
+    grok_doc["harness"] = "grok"
+    unknown_doc = _as_manifest("mdu-04")
+    unknown_doc["harness"] = "powershell"  # not a valid harness
+
+    stats = ledger.summarize([*opencode_docs, grok_doc, unknown_doc])
+
+    # Unknown harnesses still count as manifests but are not tallied.
+    assert stats["manifests"] == 4
+    assert stats["by_harness"] == {"claude": 0, "grok": 1, "opencode": 2}
 
 
 def test_summarize_ignores_garbage_entries_without_crashing() -> None:
@@ -364,10 +409,41 @@ def test_summarize_ignores_garbage_entries_without_crashing() -> None:
 
 def test_summarize_skips_non_dict_manifest_entries() -> None:
     stats = ledger.summarize(
-        [{"status": "completed"}, ["not", "an", "object"], "just-a-string"]
+        [
+            {"status": "completed", "harness": "opencode"},
+            ["not", "an", "object"],
+            "just-a-string",
+        ]
     )
     assert stats["manifests"] == 1
     assert stats["by_status"]["completed"] == 1
+    assert stats["by_harness"] == {"claude": 0, "grok": 0, "opencode": 1}
+
+
+# ---------------------------------------------------------------------------
+# format_summary
+# ---------------------------------------------------------------------------
+
+def test_format_summary_by_harness_mixed_set() -> None:
+    manifests = [
+        _as_manifest("mdu-01"),
+        _as_manifest("mdu-02"),
+    ]
+    grok_doc = _as_manifest("mdu-03")
+    grok_doc["harness"] = "grok"
+    text = ledger.format_summary(ledger.summarize([*manifests, grok_doc]))
+
+    assert "by harness:" in text
+    assert "  grok         1" in text
+    assert "  opencode     2" in text
+    # Zero-count harnesses are suppressed, not printed as "claude 0".
+    assert "claude" not in text
+
+
+def test_format_summary_by_harness_all_zero_shows_none() -> None:
+    text = ledger.format_summary(ledger.summarize([]))
+    assert "by harness:" in text
+    assert "  (none)" in text
 
 
 # ---------------------------------------------------------------------------
@@ -417,6 +493,7 @@ def test_cli_summarize_prints_text_summary(
     assert "Run ledger summary" in out
     assert "manifests:" in out
     assert "by status:" in out
+    assert "by harness:" in out
     assert "completed" in out
     assert "phases recorded:" in out
 
@@ -432,6 +509,8 @@ def test_cli_summarize_json_is_parseable(
     stats = json.loads(out)
     assert stats["manifests"] == 1
     assert stats["by_status"]["completed"] == 1
+    assert "by_harness" in stats
+    assert stats["by_harness"] == {"claude": 0, "grok": 0, "opencode": 1}
 
 
 def test_cli_summarize_empty_dir_reports_info(
