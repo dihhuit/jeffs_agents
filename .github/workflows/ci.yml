@@ -55,7 +55,7 @@ jobs:
           # no requirements.txt/pyproject.toml exists at repo root, so pip caching is skipped intentionally
 
       - name: install pytest
-        run: pip install pytest
+        run: pip install pytest jsonschema
 
       - name: gate 1 — build + validate (./build.sh)
         run: |

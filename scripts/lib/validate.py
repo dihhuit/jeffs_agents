@@ -16,6 +16,9 @@ from model_registry import (
     load_registry,
 )
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+SCHEMA_PATH = REPO_ROOT / "schemas" / "opencode.schema.json"
+
 PROMPT_REF = re.compile(r"\{file:\./prompts/([^}]+)\}")
 FRONTMATTER = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL)
 # Models allowed in grok/agents frontmatter. Update when a new model ships.
@@ -132,6 +135,41 @@ def validate_claude_agents(build_dir: Path) -> list[str]:
     return errors
 
 
+def validate_schema(
+    build_dir: Path, schema_path: Path = SCHEMA_PATH
+) -> tuple[list[str], bool]:
+    """Validate build_dir/opencode.json against schemas/opencode.schema.json.
+
+    Returns ``(errors, ran)``. When ``jsonschema`` is not installed the check
+    is skipped with a warning (``ran=False``) so environments without the
+    package still complete; CI installs jsonschema so the check always runs
+    there. Schema violations are appended to ``errors`` like the other checks.
+    """
+    config_path = build_dir / "opencode.json"
+    if not config_path.is_file():
+        return ["missing opencode.json for schema check"], True
+    if not schema_path.is_file():
+        return [f"opencode schema not found: {schema_path}"], True
+    try:
+        import jsonschema
+    except ImportError:
+        print(
+            "  [warn]  jsonschema not installed; "
+            "skipping opencode.json schema check"
+        )
+        return [], False
+    try:
+        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        return [f"invalid JSON in schema {schema_path}: {exc}"], True
+    errors: list[str] = []
+    validator_cls = jsonschema.validators.validator_for(schema)
+    for exc in validator_cls(schema).iter_errors(load_json(config_path)):
+        where = f" at {list(exc.absolute_path)}" if exc.absolute_path else ""
+        errors.append(f"opencode.json schema violation: {exc.message}{where}")
+    return errors, True
+
+
 def validate_model_refs(build_dir: Path, snapshot_path: Path) -> list[str]:
     """Validate every agent model reference in build_dir/opencode.json."""
     config_path = build_dir / "opencode.json"
@@ -191,6 +229,8 @@ def main(argv: list[str] | None = None) -> int:
     errors.extend(validate_grok_agents(build_dir))
     errors.extend(validate_claude_agents(build_dir))
     errors.extend(validate_model_refs(build_dir, DEFAULT_SNAPSHOT))
+    schema_errors, schema_ran = validate_schema(build_dir)
+    errors.extend(schema_errors)
 
     if errors:
         print("  [fail]  validation errors:")
@@ -202,6 +242,8 @@ def main(argv: list[str] | None = None) -> int:
     grok_count = len(list((build_dir / "grok" / "agents").glob("*.md")))
     claude_count = len(list((build_dir / "claude" / "agents").glob("*.md")))
     print(f"  [ok]    opencode.json: {agent_count} agents, all prompt refs resolved")
+    if schema_ran:
+        print("  [ok]    opencode.json: conforms to schemas/opencode.schema.json")
     print(f"  [ok]    grok/agents: {grok_count} profiles with valid frontmatter")
     print(f"  [ok]    claude/agents: {claude_count} subagents with valid frontmatter")
     print(

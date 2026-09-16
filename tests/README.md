@@ -2,7 +2,9 @@
 
 This suite covers the offline/live model registry validation added in
 `scripts/lib/model_registry.py` and its integration in
-`scripts/lib/validate.py` (the `--live-models` flag and model-ref check).
+`scripts/lib/validate.py` (the `--live-models` flag and model-ref check). It
+also covers the `validate_schema` JSON Schema check against
+`schemas/opencode.schema.json` (MDU-03).
 
 ## Files
 
@@ -10,6 +12,7 @@ This suite covers the offline/live model registry validation added in
 | --- | --- |
 | `test_model_registry.py` | `load_registry`, `find_model_refs`, `check_models`, `check_live`, and the `model_registry.py` CLI (`--check`, `--snapshot`, `--live`) |
 | `test_validate_integration.py` | `validate_model_refs`, `print_live_drift`, and `validate.main` with `--live-models` |
+| `test_validate_schema.py` | `validate_schema` against `schemas/opencode.schema.json`: valid config passes, violations report the offending field, missing `jsonschema` skips with a warning, missing/malformed schema or config handled gracefully |
 | `conftest.py` | Puts `scripts/lib/` on `sys.path` so tests import the modules the same way `scripts/build.sh` does |
 
 ## Running

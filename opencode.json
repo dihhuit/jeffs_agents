@@ -386,35 +386,59 @@
     },
     "qa": {
       "mode": "subagent",
-      "description": "Quality assurance using mid-tier Go model. Validates delivered functionality and produces bug reports",
+      "description": "Validates delivered functionality and produces bug reports using mid-tier Go model",
       "model": "opencode-go/minimax-m3",
       "prompt": "{file:./prompts/qa.md}",
-      "tools": {
-        "write": true, "edit": true, "bash": false,
-        "grep": true, "glob": true, "webfetch": true,
-        "question": true, "websearch": true
+      "permission": {
+        "edit": "deny",
+        "write": "deny",
+        "bash": { "*": "deny", "git diff*": "allow", "git log*": "allow", "git show*": "allow", "grep *": "allow", "rg *": "allow" },
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow",
+        "list": "allow",
+        "webfetch": "allow",
+        "websearch": "allow",
+        "todowrite": "deny",
+        "task": { "*": "deny" }
       }
     },
     "qa-pro": {
       "mode": "subagent",
-      "description": "Quality assurance using premium Go model. For thorough validation, regression testing, and edge case analysis",
+      "description": "Validates delivered functionality using premium Go model. For thorough validation, regression testing, and edge case analysis",
       "model": "opencode-go/kimi-k2.7-code",
       "prompt": "{file:./prompts/qa.md}",
-      "tools": {
-        "write": true, "edit": true, "bash": false,
-        "grep": true, "glob": true, "webfetch": true,
-        "question": true, "websearch": true
+      "permission": {
+        "edit": "deny",
+        "write": "deny",
+        "bash": { "*": "deny", "git diff*": "allow", "git log*": "allow", "git show*": "allow", "grep *": "allow", "rg *": "allow" },
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow",
+        "list": "allow",
+        "webfetch": "allow",
+        "websearch": "allow",
+        "todowrite": "deny",
+        "task": { "*": "deny" }
       }
     },
     "qa-free": {
       "mode": "subagent",
-      "description": "Quality assurance using free model. For basic smoke tests and quick validations",
+      "description": "Validates delivered functionality using free model. For basic smoke tests and quick validations",
       "model": "opencode-zen/big-pickle",
       "prompt": "{file:./prompts/qa.md}",
-      "tools": {
-        "write": true, "edit": true, "bash": false,
-        "grep": true, "glob": true, "webfetch": true,
-        "question": true, "websearch": true
+      "permission": {
+        "edit": "deny",
+        "write": "deny",
+        "bash": { "*": "deny", "git diff*": "allow", "git log*": "allow", "git show*": "allow", "grep *": "allow", "rg *": "allow" },
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow",
+        "list": "allow",
+        "webfetch": "allow",
+        "websearch": "allow",
+        "todowrite": "deny",
+        "task": { "*": "deny" }
       }
     },
     "research": {

@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "schemas/opencode.schema.json",
+  "title": "OpenCode agent registry config",
+  "description": "Focused JSON Schema for the parts of opencode.json this repo relies on. Additional top-level and agent-level keys are permitted so future opencode config growth does not break CI.",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "default_agent": {
+      "type": "string"
+    },
+    "agent": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "$ref": "#/definitions/agent"
+      }
+    },
+    "provider": {
+      "type": "object"
+    }
+  },
+  "required": ["agent"],
+  "additionalProperties": true,
+  "definitions": {
+    "agent": {
+      "type": "object",
+      "required": ["mode", "description", "prompt"],
+      "properties": {
+        "mode": {
+          "enum": ["primary", "subagent", "all"]
+        },
+        "description": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        },
+        "temperature": {
+          "type": "number"
+        },
+        "color": {
+          "type": "string"
+        },
+        "prompt": {
+          "type": "string"
+        },
+        "permission": {
+          "type": "object"
+        },
+        "tools": {
+          "description": "Deprecated legacy permission style; use 'permission' instead.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "boolean"
+          }
+        },
+        "dynamic": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

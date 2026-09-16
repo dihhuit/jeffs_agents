@@ -38,7 +38,18 @@ def _minimal_build(
     (build / "prompts").mkdir(parents=True)
 
     (build / "opencode.json").write_text(
-        json.dumps({"agent": {"test-agent": {"model": agent_model, "prompt": prompt}}}),
+        json.dumps(
+            {
+                "agent": {
+                    "test-agent": {
+                        "mode": "subagent",
+                        "description": "test",
+                        "model": agent_model,
+                        "prompt": prompt,
+                    }
+                }
+            }
+        ),
         encoding="utf-8",
     )
     (build / "grok" / "agents" / "test.md").write_text(
@@ -131,6 +142,7 @@ def test_validate_main_live_models_passes(
     assert code == 0
     assert "model refs:" in out
     assert "not on PATH" in out
+    assert "conforms to schemas/opencode.schema.json" in out
 
 
 def test_validate_main_fails_on_stale_model(
