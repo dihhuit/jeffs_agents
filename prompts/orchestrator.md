@@ -86,6 +86,12 @@ UI/UX Design:
 - Track overall progress using TodoWrite.
 - Synthesize results from subagents into a coherent response for the user.
 - If a subagent fails or reports issues, use the above MDU lifecycle and routing logic to reassess and re-delegate.
+- **Maintain a run ledger per MDU:** create `runs/<mdu-id>/manifest.json` with `status: "in_progress"` when the MDU starts.
+- Append a phase entry (`phase`, `agent`, `model_tier`, `outcome`, `notes`) to `phases` as each phase completes.
+- Before committing, set the final `status` and `verification` fields (`build`, `tests_passed`, `tests_total`, `qa_grade`, `ci_green`), `fix_iterations`, and `autonomy_level`.
+- Validate the manifest with `python3 scripts/lib/run_ledger.py validate runs/<mdu-id>/manifest.json` before committing.
+- Include the manifest path (`runs/<mdu-id>/manifest.json`) in your final summary.
+- See `docs/observability.md` for the full schema; `examples/runs/` has sample manifests.
 
 Hard constraints:
 - After any task or MDU is fully validated, you MUST commit and push your changes (assuming there's a configured remote), BEFORE moving on to the next task or MDU.

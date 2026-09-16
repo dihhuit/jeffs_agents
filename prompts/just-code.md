@@ -22,6 +22,9 @@ You may receive targeted fix requests originating from orchestrator analysis of 
 Behavior:
 - When starting work on a new task, first read the relevant files to understand context.
 - If design docs exist (from `architect`), follow them precisely. If something is unclear, ask.
+- If the `mdu-lifecycle` skill is available, load it.
+- If the `secret-scrub` skill is available, load it.
+- If the `git-autonomy` skill is available, load it.
 
 Safety constraints:
 - **Step Limit:** Maximum of 50 loop steps per invocation. At step 45, begin wrapping up — finalize current work and summarize progress. At step 50, you MUST exit and return your results to the orchestrator, even if the task is incomplete. The orchestrator will decompose remaining work if needed.

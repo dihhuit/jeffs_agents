@@ -135,6 +135,47 @@ def validate_claude_agents(build_dir: Path) -> list[str]:
     return errors
 
 
+def validate_skills(build_dir: Path) -> list[str]:
+    """Validate Agent Skills frontmatter in build_dir/skills/*/SKILL.md.
+
+    Each skill directory must contain a SKILL.md with YAML frontmatter that
+    declares a kebab-case ``name`` and a ``description``. Missing or broken
+    files are flagged as errors.
+    """
+    errors: list[str] = []
+    skills_dir = build_dir / "skills"
+    if not skills_dir.is_dir():
+        return []
+
+    skill_dirs = sorted(d for d in skills_dir.iterdir() if d.is_dir())
+    if not skill_dirs:
+        return []
+
+    for skill_dir in skill_dirs:
+        skill_file = skill_dir / "SKILL.md"
+        if not skill_file.is_file():
+            errors.append(f"skill directory missing SKILL.md: {skill_dir.name}")
+            continue
+        text = skill_file.read_text(encoding="utf-8")
+        meta = parse_frontmatter(text)
+        if not meta:
+            errors.append(f"skill missing YAML frontmatter: {skill_dir.name}")
+            continue
+        name = meta.get("name", "")
+        if not name:
+            errors.append(f"skill missing 'name' in frontmatter: {skill_dir.name}")
+        elif not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", name):
+            errors.append(
+                f"skill name '{name}' is not kebab-case: {skill_dir.name}"
+            )
+        if "description" not in meta:
+            errors.append(
+                f"skill missing 'description' in frontmatter: {skill_dir.name}"
+            )
+
+    return errors
+
+
 def validate_schema(
     build_dir: Path, schema_path: Path = SCHEMA_PATH
 ) -> tuple[list[str], bool]:
@@ -228,6 +269,7 @@ def main(argv: list[str] | None = None) -> int:
     errors.extend(validate_opencode(build_dir))
     errors.extend(validate_grok_agents(build_dir))
     errors.extend(validate_claude_agents(build_dir))
+    errors.extend(validate_skills(build_dir))
     errors.extend(validate_model_refs(build_dir, DEFAULT_SNAPSHOT))
     schema_errors, schema_ran = validate_schema(build_dir)
     errors.extend(schema_errors)
@@ -246,6 +288,9 @@ def main(argv: list[str] | None = None) -> int:
         print("  [ok]    opencode.json: conforms to schemas/opencode.schema.json")
     print(f"  [ok]    grok/agents: {grok_count} profiles with valid frontmatter")
     print(f"  [ok]    claude/agents: {claude_count} subagents with valid frontmatter")
+    skills_dir = build_dir / "skills"
+    skill_count = len(list(skills_dir.glob("*/SKILL.md"))) if skills_dir.is_dir() else 0
+    print(f"  [ok]    skills: {skill_count} valid skill(s)")
     print(
         f"  [ok]    model refs: all agent models present in registry "
         f"({DEFAULT_SNAPSHOT})"

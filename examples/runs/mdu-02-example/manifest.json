@@ -1,0 +1,80 @@
+{
+  "mdu_id": "mdu-02",
+  "title": "MDU-02 CI pipeline",
+  "status": "completed",
+  "started_at": "2026-09-15T08:05:00Z",
+  "completed_at": "2026-09-15T13:20:00Z",
+  "phases": [
+    {
+      "phase": "design",
+      "agent": "architect",
+      "model_tier": "premium",
+      "outcome": "pass",
+      "notes": "Designed CI workflow wiring build.sh + pytest into .github/workflows."
+    },
+    {
+      "phase": "implement",
+      "agent": "just-code",
+      "model_tier": "budget",
+      "outcome": "pass",
+      "notes": "Implemented CI workflow and test suite wiring."
+    },
+    {
+      "phase": "review",
+      "agent": "code-reviewer",
+      "model_tier": "mid",
+      "outcome": "pass",
+      "notes": "Sign-off received; workflow steps verified."
+    },
+    {
+      "phase": "test",
+      "agent": "test-agent",
+      "model_tier": "budget",
+      "outcome": "pass",
+      "notes": "33 tests passing locally before deploy."
+    },
+    {
+      "phase": "deploy",
+      "agent": "devops",
+      "model_tier": "mid",
+      "outcome": "fail",
+      "notes": "CI failed on pip cache restore: stale cache key, package resolution error."
+    },
+    {
+      "phase": "deploy",
+      "agent": "devops",
+      "model_tier": "mid",
+      "outcome": "pass",
+      "notes": "Fixed pip cache key and re-ran; pipeline green."
+    },
+    {
+      "phase": "validate",
+      "agent": "qa",
+      "model_tier": "mid",
+      "outcome": "pass",
+      "notes": "QA PASS: CI runs build + full test suite on every PR."
+    },
+    {
+      "phase": "commit",
+      "agent": "orchestrator",
+      "model_tier": "budget",
+      "outcome": "pass",
+      "notes": "Committed and pushed after CI went green."
+    }
+  ],
+  "fix_iterations": 1,
+  "autonomy_level": 2,
+  "verification": {
+    "build": true,
+    "tests_passed": 33,
+    "tests_total": 33,
+    "qa_grade": "PASS",
+    "ci_green": true
+  },
+  "artifacts": [
+    ".github/workflows/ci.yml",
+    "tests/",
+    "scripts/build.sh"
+  ],
+  "summary": "Wired CI to run build.sh and the pytest suite on every PR; one deploy failure (pip cache) fixed with a corrected cache key, then green."
+}

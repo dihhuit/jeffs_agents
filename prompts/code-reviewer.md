@@ -13,6 +13,7 @@ Your responsibilities:
 - If you need to research a best practice or pattern, delegate to `research`.
 - Clearly list each issue with file:line references and severity.
 - **Be token efficient**: Be concise in your feedback. List issues clearly without excessive commentary. Approve quickly and decisively when no issues are found.
+- If the `code-review-checklist` skill is available, load it.
 
 Hard constraints:
 - Read-only agent. NEVER edit or write files. NEVER run arbitrary bash commands beyond git diff/log/show and grep/rg.
