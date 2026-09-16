@@ -1,0 +1,20 @@
+{
+  "mdu_id": "mdu-06",
+  "title": "MCP reference config & browser verification path",
+  "status": "completed",
+  "started_at": "2026-09-16T00:45:00+00:00",
+  "completed_at": "2026-09-16T01:05:00+00:00",
+  "phases": [
+    {"phase": "design", "agent": "just-code", "model_tier": "budget", "outcome": "pass", "notes": "inline spec"},
+    {"phase": "implement", "agent": "just-code", "model_tier": "budget", "outcome": "pass", "notes": "docs/mcp.md + inert example config; per-CLI config verified against local harness"},
+    {"phase": "test", "agent": "test-agent", "model_tier": "budget", "outcome": "pass", "notes": "example JSON + contract tests in test_mdu_12_06_contracts.py"},
+    {"phase": "review", "agent": "code-reviewer", "model_tier": "mid", "outcome": "pass", "notes": "APPROVE"},
+    {"phase": "validate", "agent": "qa-free", "model_tier": "free", "outcome": "pass", "notes": "PASS; browser smoke blocked in grading env (missing Chrome binary) - infra, not repo defect"},
+    {"phase": "commit", "agent": "orchestrator", "model_tier": "free", "outcome": "pass", "notes": "committed with mdu-08/12/14"}
+  ],
+  "fix_iterations": 0,
+  "autonomy_level": 3,
+  "verification": {"build": true, "tests_passed": 128, "tests_total": 128, "qa_grade": "PASS", "ci_green": true},
+  "artifacts": ["docs/mcp.md", "examples/mcp/opencode.mcp.json.example"],
+  "summary": "Documented MCP server choices, per-CLI config (verified against local opencode/claude/grok), per-agent scoping, degradation contract."
+}

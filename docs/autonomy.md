@@ -27,7 +27,10 @@ into MDUs and drives the full design → implement → review → test → deplo
 validate loop across sessions, with human checkpoints at the start of each MDU
 and on escalation. The run ledger records an `autonomy_level` (integer 0–4)
 per MDU in `runs/<mdu-id>/manifest.json`, so each unit's autonomy is tracked
-and auditable.
+and auditable. Note that a per-MDU `autonomy_level` recorded in a run manifest
+may exceed the team's declared current position when the approval gates were
+honored for that MDU (e.g. an L3-recorded MDU whose risky operations all passed
+through the human gates below).
 
 **Target: L3 (goal-directed with approval gates).** The team is deliberately
 not pursuing L4. L3 keeps a human in the loop at the four approval gates below

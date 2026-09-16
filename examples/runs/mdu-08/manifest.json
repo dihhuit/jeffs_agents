@@ -1,0 +1,21 @@
+{
+  "mdu_id": "mdu-08",
+  "title": "Golden eval suite scaffold + CI smoke evals",
+  "status": "completed",
+  "started_at": "2026-09-16T00:45:00+00:00",
+  "completed_at": "2026-09-16T01:15:00+00:00",
+  "phases": [
+    {"phase": "design", "agent": "just-code", "model_tier": "budget", "outcome": "pass", "notes": "inline spec: task format + runner + smoke eval"},
+    {"phase": "implement", "agent": "just-code", "model_tier": "budget", "outcome": "pass", "notes": "run_evals.py + 01-repo-health task + evals/README"},
+    {"phase": "implement", "agent": "devops", "model_tier": "mid", "outcome": "pass", "notes": "02-registry-alignment task + CI gate 4 (both evals fail the job)"},
+    {"phase": "test", "agent": "test-agent", "model_tier": "budget", "outcome": "pass", "notes": "23 run_evals tests"},
+    {"phase": "review", "agent": "code-reviewer", "model_tier": "mid", "outcome": "pass", "notes": "APPROVE"},
+    {"phase": "validate", "agent": "qa-free", "model_tier": "free", "outcome": "pass", "notes": "PASS; run_ledger aggregation caveat documented"},
+    {"phase": "commit", "agent": "orchestrator", "model_tier": "free", "outcome": "pass", "notes": "committed with mdu-06/12/14"}
+  ],
+  "fix_iterations": 0,
+  "autonomy_level": 3,
+  "verification": {"build": true, "tests_passed": 128, "tests_total": 128, "qa_grade": "PASS", "ci_green": true},
+  "artifacts": ["scripts/lib/run_evals.py", "evals/tasks/01-repo-health/", "evals/tasks/02-registry-alignment/", "evals/README.md"],
+  "summary": "Scaffolded the eval harness: pure-python runner (no shell=True), 2 CI-executed smoke evals (repo-health, registry-alignment), ledger-shaped result manifests."
+}

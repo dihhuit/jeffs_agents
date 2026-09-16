@@ -1,0 +1,22 @@
+{
+  "mdu_id": "mdu-07",
+  "title": "Run ledger & observability hooks",
+  "status": "completed",
+  "started_at": "2026-09-15T23:55:00+00:00",
+  "completed_at": "2026-09-16T00:35:00+00:00",
+  "phases": [
+    {"phase": "design", "agent": "just-code", "model_tier": "budget", "outcome": "pass", "notes": "schema designed in docs/observability.md"},
+    {"phase": "implement", "agent": "just-code", "model_tier": "budget", "outcome": "pass", "notes": "run_ledger.py + examples + orchestrator prompt wiring"},
+    {"phase": "test", "agent": "test-agent", "model_tier": "budget", "outcome": "pass", "notes": "36 tests; found 2 real bugs (non-dict crash, ISO-8601 lie) + OSError edge"},
+    {"phase": "review", "agent": "code-reviewer", "model_tier": "mid", "outcome": "pass", "notes": "APPROVE; nits only"},
+    {"phase": "implement", "agent": "just-code", "model_tier": "budget", "outcome": "pass", "notes": "bugfix round 1: dict guard, real ISO validation, OSError handling"},
+    {"phase": "test", "agent": "test-agent", "model_tier": "budget", "outcome": "pass", "notes": "xfail marker removed; 87 tests green"},
+    {"phase": "validate", "agent": "qa-free", "model_tier": "free", "outcome": "pass", "notes": "PASS against acceptance criteria"},
+    {"phase": "commit", "agent": "orchestrator", "model_tier": "free", "outcome": "pass", "notes": "committed with mdu-05"}
+  ],
+  "fix_iterations": 2,
+  "autonomy_level": 3,
+  "verification": {"build": true, "tests_passed": 87, "tests_total": 87, "qa_grade": "PASS", "ci_green": null},
+  "artifacts": ["scripts/lib/run_ledger.py", "docs/observability.md", "examples/runs/"],
+  "summary": "Added a machine-readable per-MDU run ledger with validate+summarize CLI, aggregated stats, orchestrator prompt integration, and examples; found and fixed 3 real defects via the test loop (one xfail-pinned)."
+}

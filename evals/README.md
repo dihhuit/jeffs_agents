@@ -96,18 +96,20 @@ with a driver that:
 
 ### CI wiring
 
-The smoke eval is CI-able today. `.github/workflows/ci.yml` is the single
-source of truth for "what does main need to pass?" — a future workflow step
-should add:
+The smoke evals are CI-gated today. `.github/workflows/ci.yml` is the single
+source of truth for "what does main need to pass?" — **gate 4 is committed and
+active** (ci.yml, ~lines 80–83):
 
 ```yaml
-- name: gate 4 — smoke eval (repo-health)
-  run: python3 scripts/lib/run_evals.py run evals/tasks/01-repo-health
+- name: gate 4 — smoke evals (01-repo-health + 02-registry-alignment; doubles as harness wiring check)
+  run: |
+      python3 scripts/lib/run_evals.py run evals/tasks/01-repo-health && \
+      python3 scripts/lib/run_evals.py run evals/tasks/02-registry-alignment
 ```
 
-This documents the intent only; the workflow file is not edited here. The
-agent-driven tasks stay out of CI (LLM cost) and run on demand or in a
-scheduled, labeled workflow.
+Both eval tasks run in CI on **every push to `main` and every PR**, and an eval
+failure fails the job (no `continue-on-error`). The agent-driven tasks stay out
+of CI (LLM cost) and run on demand or in a scheduled, labeled workflow.
 
 ## Results
 

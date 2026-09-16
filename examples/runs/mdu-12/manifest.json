@@ -1,0 +1,20 @@
+{
+  "mdu_id": "mdu-12",
+  "title": "Approval gates & autonomy ladder documentation",
+  "status": "completed",
+  "started_at": "2026-09-16T00:45:00+00:00",
+  "completed_at": "2026-09-16T01:00:00+00:00",
+  "phases": [
+    {"phase": "design", "agent": "just-code", "model_tier": "budget", "outcome": "pass", "notes": "inline spec"},
+    {"phase": "implement", "agent": "just-code", "model_tier": "budget", "outcome": "pass", "notes": "docs/autonomy.md + 4 Human Approval Gates in both orchestrator mirrors + README subsection"},
+    {"phase": "test", "agent": "test-agent", "model_tier": "budget", "outcome": "pass", "notes": "mirror-identical + README link tests"},
+    {"phase": "review", "agent": "code-reviewer", "model_tier": "mid", "outcome": "pass", "notes": "APPROVE; gates complement existing retry cap"},
+    {"phase": "validate", "agent": "qa-free", "model_tier": "free", "outcome": "pass", "notes": "PASS"},
+    {"phase": "commit", "agent": "orchestrator", "model_tier": "free", "outcome": "pass", "notes": "committed with mdu-06/08/14"}
+  ],
+  "fix_iterations": 0,
+  "autonomy_level": 3,
+  "verification": {"build": true, "tests_passed": 128, "tests_total": 128, "qa_grade": "PASS", "ci_green": true},
+  "artifacts": ["docs/autonomy.md"],
+  "summary": "Positioned the team on the L0-L4 autonomy ladder (L2 today, L3 target) and formalized 4 human-approval gates in the orchestrator."
+}

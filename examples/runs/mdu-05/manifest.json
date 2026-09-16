@@ -1,0 +1,20 @@
+{
+  "mdu_id": "mdu-05",
+  "title": "Seed skills library (6 Agent Skills + validate.py wiring)",
+  "status": "completed",
+  "started_at": "2026-09-15T23:55:00+00:00",
+  "completed_at": "2026-09-16T00:20:00+00:00",
+  "phases": [
+    {"phase": "design", "agent": "orchestrator", "model_tier": "free", "outcome": "pass", "notes": "inline spec (Skill format, 6 skills, validate wiring)"},
+    {"phase": "implement", "agent": "just-code", "model_tier": "budget", "outcome": "pass", "notes": "6 SKILL.md + skills/README + validate_skills + 7 prompt wiring lines"},
+    {"phase": "test", "agent": "test-agent", "model_tier": "budget", "outcome": "pass", "notes": "11 validate_skills tests added"},
+    {"phase": "review", "agent": "code-reviewer", "model_tier": "mid", "outcome": "pass", "notes": "APPROVE; additive wiring verified, zero overlap with mdu-07"},
+    {"phase": "validate", "agent": "qa-free", "model_tier": "free", "outcome": "pass", "notes": "PASS against acceptance criteria"},
+    {"phase": "commit", "agent": "orchestrator", "model_tier": "free", "outcome": "pass", "notes": "committed with mdu-07"}
+  ],
+  "fix_iterations": 0,
+  "autonomy_level": 3,
+  "verification": {"build": true, "tests_passed": 40, "tests_total": 40, "qa_grade": "PASS", "ci_green": null},
+  "artifacts": ["skills/mdu-lifecycle/SKILL.md", "skills/code-review-checklist/SKILL.md", "skills/webapp-verification/SKILL.md", "skills/test-patterns/SKILL.md", "skills/secret-scrub/SKILL.md", "skills/git-autonomy/SKILL.md", "skills/README.md"],
+  "summary": "Created a 6-skill Agent Skills library used by the loop itself, wired skill references into 4 prompts, added validate_skills to the build gate."
+}

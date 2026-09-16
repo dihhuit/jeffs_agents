@@ -11,7 +11,7 @@
 #      Claude frontmatter, model-registry check). `set -e` here ensures any
 #      validation error fails the job immediately — don't relax it.
 #
-#   2. pytest — 33 unit tests covering scripts/lib/model_registry.py and the
+#   2. pytest — 128 unit tests covering scripts/lib/model_registry.py and the
 #      validate.py integration. Kept here (not under build.sh) so a refactor
 #      can run the suite without rebuilding.
 #

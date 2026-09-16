@@ -87,48 +87,48 @@ The agent definitions follow a **model tier variant** pattern — each role has 
 **OpenCode agents** (defined in `opencode.json` and `prompts/`):
 
 **Orchestrator:**
-- `orchestrator` — Primary coordinator. Uses free Zen model (big-pickle).
+- [`orchestrator`](prompts/orchestrator.md) — Primary coordinator. Uses free Zen model (big-pickle).
 
 **Research** (free / budget models — cheapest tier):
-- `research` — Quick web lookups (free: ling-3.0-flash-fin-free)
-- `deepseek-research` — Coding patterns, library docs (free: nemotron-3-ultra-free)
-- `nemotron-research` — Thorough doc research (free: nemotron-3.5-lightning-free)
-- `deep-research` — Comprehensive multi-source research (Go budget: mimo-v2.5)
+- [`research`](prompts/research.md) — Quick web lookups (free: ling-3.0-flash-fin-free)
+- [`deepseek-research`](prompts/research.md) — Coding patterns, library docs (free: nemotron-3-ultra-free)
+- [`nemotron-research`](prompts/research.md) — Thorough doc research (free: nemotron-3.5-lightning-free)
+- [`deep-research`](prompts/research.md) — Comprehensive multi-source research (Go budget: mimo-v2.5)
 
 **Coding** (spread across tiers — most-used role):
-- `just-code` — Default coder (Go budget: deepseek-v4-flash, ~$0.14/M tokens)
-- `just-code-mid` — Complex features needing deeper reasoning (Go mid: kimi-k2.7-code)
-- `just-code-pro` — Architecture-sensitive code, refactoring (Go premium: deepseek-v4-pro)
-- `just-code-free` — Boilerplate, simple changes (free: big-pickle)
+- [`just-code`](prompts/just-code.md) — Default coder (Go budget: deepseek-v4-flash, ~$0.14/M tokens)
+- [`just-code-mid`](prompts/just-code.md) — Complex features needing deeper reasoning (Go mid: kimi-k2.7-code)
+- [`just-code-pro`](prompts/just-code.md) — Architecture-sensitive code, refactoring (Go premium: deepseek-v4-pro)
+- [`just-code-free`](prompts/just-code.md) — Boilerplate, simple changes (free: big-pickle)
 
 **Testing:**
-- `test-agent` — Default test writer (Go budget: deepseek-v4-flash)
-- `test-agent-mid` — Complex test suites, property-based tests (Go mid: minimax-m3)
-- `test-agent-pro` — Security tests, deep coverage (Go premium: kimi-k2.7-code)
-- `test-agent-free` — Simple unit tests (free: big-pickle)
+- [`test-agent`](prompts/test-agent.md) — Default test writer (Go budget: deepseek-v4-flash)
+- [`test-agent-mid`](prompts/test-agent.md) — Complex test suites, property-based tests (Go mid: minimax-m3)
+- [`test-agent-pro`](prompts/test-agent.md) — Security tests, deep coverage (Go premium: kimi-k2.7-code)
+- [`test-agent-free`](prompts/test-agent.md) — Simple unit tests (free: big-pickle)
 
 **Code Review:**
-- `code-reviewer` — Standard review (Go mid: minimax-m3)
-- `code-reviewer-pro` — Deep security audit, architecture review (Go premium: deepseek-v4-pro)
-- `code-reviewer-free` — Quick lint/style check (free: big-pickle)
+- [`code-reviewer`](prompts/code-reviewer.md) — Standard review (Go mid: minimax-m3)
+- [`code-reviewer-pro`](prompts/code-reviewer.md) — Deep security audit, architecture review (Go premium: deepseek-v4-pro)
+- [`code-reviewer-free`](prompts/code-reviewer.md) — Quick lint/style check (free: big-pickle)
 
 **Architecture:**
-- `architect` — Design docs, API specs (Go premium: deepseek-v4-pro)
-- `architect-premium` — Complex system design, ADRs (Go top-tier: glm-5.2)
+- [`architect`](prompts/architect.md) — Design docs, API specs (Go premium: deepseek-v4-pro)
+- [`architect-premium`](prompts/architect.md) — Complex system design, ADRs (Go top-tier: glm-5.2)
 
 **DevOps:**
-- `devops` — Standard deploys, Docker, CI/CD (Go mid: minimax-m3)
-- `devops-pro` — Complex multi-service deploys, IaC (Go premium: deepseek-v4-pro)
-- `devops-free` — Simple config changes (free: big-pickle)
+- [`devops`](prompts/devops.md) — Standard deploys, Docker, CI/CD (Go mid: minimax-m3)
+- [`devops-pro`](prompts/devops.md) — Complex multi-service deploys, IaC (Go premium: deepseek-v4-pro)
+- [`devops-free`](prompts/devops.md) — Simple config changes (free: big-pickle)
 
 **QA:**
-- `qa` — Standard validation (Go mid: minimax-m3)
-- `qa-pro` — Thorough regression, edge case validation (Go premium: kimi-k2.7-code)
-- `qa-free` — Basic smoke tests (free: big-pickle)
+- [`qa`](prompts/qa.md) — Standard validation (Go mid: minimax-m3)
+- [`qa-pro`](prompts/qa.md) — Thorough regression, edge case validation (Go premium: kimi-k2.7-code)
+- [`qa-free`](prompts/qa.md) — Basic smoke tests (free: big-pickle)
 
 **UI/UX Design:**
-- `ui-ux-designer` — Standard design work (Go mid: minimax-m3)
-- `ui-ux-designer-pro` — Polished production UI, design systems (Go premium: kimi-k2.7-code)
+- [`ui-ux-designer`](prompts/ui-ux-designer.md) — Standard design work (Go mid: minimax-m3)
+- [`ui-ux-designer-pro`](prompts/ui-ux-designer.md) — Polished production UI, design systems (Go premium: kimi-k2.7-code)
 
 **Grok Build profiles** (in `grok/agents/`):
 
@@ -138,14 +138,14 @@ Grok Build currently exposes two models: **`grok-4.6`** (default / flagship) and
 available on this CLI, so until a cheap code model returns, **all profiles below use
 `grok-4.6`**. Use `grok models` to confirm.
 
-- `orchestrator`, `research`, `grok-review` (grok-4.6)
-- `just-code`, `just-code-mid`, `just-code-pro` (grok-4.6)
-- `test-agent`, `test-agent-pro` (grok-4.6)
-- `code-reviewer`, `code-reviewer-pro` (grok-4.6)
-- `architect`, `architect-premium` (grok-4.6)
-- `devops`, `devops-pro` (grok-4.6)
-- `qa`, `qa-pro` (grok-4.6)
-- `ui-ux-designer`, `ui-ux-designer-pro` (grok-4.6)
+- [`orchestrator`](grok/agents/orchestrator.md), [`research`](grok/agents/research.md), [`grok-review`](grok/agents/grok-review.md) (grok-4.6)
+- [`just-code`](grok/agents/just-code.md), [`just-code-mid`](grok/agents/just-code-mid.md), [`just-code-pro`](grok/agents/just-code-pro.md) (grok-4.6)
+- [`test-agent`](grok/agents/test-agent.md), [`test-agent-pro`](grok/agents/test-agent-pro.md) (grok-4.6)
+- [`code-reviewer`](grok/agents/code-reviewer.md), [`code-reviewer-pro`](grok/agents/code-reviewer-pro.md) (grok-4.6)
+- [`architect`](grok/agents/architect.md), [`architect-premium`](grok/agents/architect-premium.md) (grok-4.6)
+- [`devops`](grok/agents/devops.md), [`devops-pro`](grok/agents/devops-pro.md) (grok-4.6)
+- [`qa`](grok/agents/qa.md), [`qa-pro`](grok/agents/qa-pro.md) (grok-4.6)
+- [`ui-ux-designer`](grok/agents/ui-ux-designer.md), [`ui-ux-designer-pro`](grok/agents/ui-ux-designer-pro.md) (grok-4.6)
 
 Invoke with `grok --agent <name>` (e.g. `grok --agent just-code` or `grok --agent code-reviewer-pro`).
 
@@ -159,7 +159,7 @@ These definitions are designed as a **collaborative team** rather than standalon
 
 ### Autonomy & Guardrails
 
-The team currently operates at **L2 (session-autonomous)** on the industry-standard autonomy ladder and is targeting **L3 (goal-directed with approval gates)**. The orchestrator requires human approval before four classes of risky operations: pushing to protected branches, deploying non-green MDUs to production, destructive operations (deletes, DB migrations, irreversible ops), and exceeding 3 fix-retries on the same issue. Everything else flows autonomously. See [docs/autonomy.md](docs/autonomy.md) for the full ladder and gate definitions.
+The team currently operates at **L2 (session-autonomous)** on the industry-standard autonomy ladder and is targeting **L3 (goal-directed with approval gates)**. The orchestrator requires human approval before four classes of risky operations: pushing to protected branches, deploying non-green MDUs to production, destructive operations (deletes, DB migrations, irreversible ops), and exceeding 3 fix-retries on the same issue. Everything else flows autonomously. See [docs/autonomy.md](docs/autonomy.md) for the full ladder and gate definitions — per-MDU `autonomy_level` recorded in run manifests may exceed the team's declared position when approval gates were honored.
 
 ### Orchestrator Delegation Flow
 
@@ -426,10 +426,21 @@ This repo is actively being upgraded to the bleeding edge of autonomous agentic 
 - **[GAP_ANALYSIS.md](GAP_ANALYSIS.md)** — a full gap analysis against mid-2026 best practice (memory, skills, MCP, observability, evals, CI, security), including a live demonstration of model drift in the research agent configs.
 - **[FEATURE_BACKLOG.md](FEATURE_BACKLOG.md)** — a prioritized, MDU-sized implementation backlog consumable by this repo's own orchestrator. The agent team builds its own upgrade.
 
+**Progress:** **9/14** backlog items are complete as of 2026-09-16 (MDU-01, 02, 03, 05, 06, 07, 08, 12, 14) — see [examples/upgrade-story.md](examples/upgrade-story.md) for how this repo's own agents executed them.
+
 ### TODO
 
 - **Split agent definitions into Go-only and Zen-only variants**: The current `opencode.json` assumes an OpenCode Go subscription for most agents. Create a parallel set of agents that use only free Zen models (`opencode/*`) for users without a Go subscription. This could be a separate `opencode.zen.json` file or a build-time flag. (Tracked in `FEATURE_BACKLOG.md` as part of the broader model-drift/registry work.)
 - **Seed the empty `skills/` directory** with real Agent Skills used by the loop itself — see backlog item MDU-05.
+
+## How This Repo Was Upgraded by Its Own Agents
+
+This repository's own orchestrator and subagents executed the backlog above over a single autonomous session. Every change went through the closed loop — **design → implement → review → test → validate** (with deploy included whenever infrastructure was touched) — with code-reviewer sign-off and a QA PASS before the orchestrator committed and pushed. CI (introduced during MDU-02) was green on every push from MDU-02 onward — including one caught-and-fixed workflow failure in the first MDU-02 run (missing pip dependency manifest).
+
+The session grew the test suite from **33 → 128 tests** (all passing) and shipped CI, skills, a run ledger, evals, MCP reference docs, autonomy gates, and cross-CLI parity. The two broken free-tier research agents were repaired to current models.
+
+- Full dogfooding narrative, commit trail, and lessons learned: **[examples/upgrade-story.md](examples/upgrade-story.md)**
+- Real run manifests from the session: **[examples/runs/](examples/runs/)** (`mdu-05/`, `mdu-06/`, `mdu-07/`, `mdu-08/`, `mdu-12/`, `mdu-14/` are real session manifests; `mdu-01-example/` and `mdu-02-example/` are illustrative)
 
 ## Contributing
 

@@ -1,0 +1,20 @@
+{
+  "mdu_id": "mdu-14",
+  "title": "Cross-CLI parity & contract tests",
+  "status": "completed",
+  "started_at": "2026-09-16T00:45:00+00:00",
+  "completed_at": "2026-09-16T01:10:00+00:00",
+  "phases": [
+    {"phase": "design", "agent": "just-code", "model_tier": "budget", "outcome": "pass", "notes": "inline spec + clause table"},
+    {"phase": "implement", "agent": "just-code", "model_tier": "budget", "outcome": "pass", "notes": "validate_parity: 17 prompt<->grok pairs, bidirectional, leniency rules; 0 grok fixes needed"},
+    {"phase": "test", "agent": "test-agent", "model_tier": "budget", "outcome": "pass", "notes": "14 parity tests incl. real-pair drift guard"},
+    {"phase": "review", "agent": "code-reviewer", "model_tier": "mid", "outcome": "pass", "notes": "APPROVE; low-severity nits only"},
+    {"phase": "validate", "agent": "qa-free", "model_tier": "free", "outcome": "pass", "notes": "PASS"},
+    {"phase": "commit", "agent": "orchestrator", "model_tier": "free", "outcome": "pass", "notes": "committed with mdu-06/08/12"}
+  ],
+  "fix_iterations": 0,
+  "autonomy_level": 3,
+  "verification": {"build": true, "tests_passed": 128, "tests_total": 128, "qa_grade": "PASS", "ci_green": true},
+  "artifacts": ["scripts/lib/validate.py"],
+  "summary": "Canonical prompts and grok mirrors now drift-checked bidirectionally in the build gate; QA-grade wording differences handled via leniency table."
+}
