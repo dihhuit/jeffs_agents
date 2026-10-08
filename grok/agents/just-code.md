@@ -1,6 +1,6 @@
 ---
 name: just-code
-model: grok-4.6
+model: grok-4.7
 description: "Focused production coder using Grok Build model. Writes clean, idiomatic, production-ready code. Does not write tests."
 ---
 

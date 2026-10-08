@@ -1,6 +1,6 @@
 ---
 name: devops-pro
-model: grok-4.6
+model: grok-4.7
 description: "Premium DevOps specialist using Grok flagship for complex multi-service deploys, IaC, and cloud architecture."
 ---
 

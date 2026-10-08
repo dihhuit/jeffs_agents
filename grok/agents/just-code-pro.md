@@ -1,6 +1,6 @@
 ---
 name: just-code-pro
-model: grok-4.6
+model: grok-4.7
 description: "Premium coder using Grok flagship for architecture-sensitive code, refactoring, and performance-critical paths."
 ---
 

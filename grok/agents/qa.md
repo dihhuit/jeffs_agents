@@ -1,6 +1,6 @@
 ---
 name: qa
-model: grok-4.6
+model: grok-4.7
 description: "Quality assurance expert using Grok flagship. Performs manual and automated validation of delivered functionality."
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: ui-ux-designer
-model: grok-4.6
+model: grok-4.7
 description: "UI/UX design specialist using Grok Build model. Ensures good design and generates mocks, wireframes, and flows."
 ---
 

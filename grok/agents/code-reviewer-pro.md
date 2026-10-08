@@ -1,6 +1,6 @@
 ---
 name: code-reviewer-pro
-model: grok-4.6
+model: grok-4.7
 description: "Premium code reviewer using Grok reasoning model for deep security audits, architecture review, and complex change validation."
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: test-agent
-model: grok-4.6
+model: grok-4.7
 description: "Rigorous testing specialist using Grok Build model. Writes comprehensive tests for all code."
 ---
 

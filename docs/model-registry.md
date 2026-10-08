@@ -1,7 +1,7 @@
 # Model Registry
 
 Every model referenced by agents in `opencode.json`, grouped by tier. All
-entries were verified against `opencode models` on **2026-09-15**.
+entries were verified against `opencode models` on **2026-10-08**.
 
 To re-verify (and refresh the committed snapshot `config/model-registry.txt`):
 

@@ -133,19 +133,19 @@ The agent definitions follow a **model tier variant** pattern — each role has 
 **Grok Build profiles** (in `grok/agents/`):
 
 A matching set of the same agent roles, using Grok models (separate xAI subscription).
-Grok Build currently exposes two models: **`grok-4.6`** (default / flagship) and
-**`grok-4.5`** (legacy). The fast coding model `grok-composer-2.5-fast` is no longer
-available on this CLI, so until a cheap code model returns, **all profiles below use
-`grok-4.6`**. Use `grok models` to confirm.
+Grok Build currently exposes **`grok-4.7`** (default / flagship), with
+**`grok-4.6`** (legacy) and **`grok-4.5`** still available. The fast coding model
+`grok-composer-2.5-fast` is no longer available on this CLI, so until a cheap code
+model returns, **all profiles below use `grok-4.7`**. Use `grok models` to confirm.
 
-- [`orchestrator`](grok/agents/orchestrator.md), [`research`](grok/agents/research.md), [`grok-review`](grok/agents/grok-review.md) (grok-4.6)
-- [`just-code`](grok/agents/just-code.md), [`just-code-mid`](grok/agents/just-code-mid.md), [`just-code-pro`](grok/agents/just-code-pro.md) (grok-4.6)
-- [`test-agent`](grok/agents/test-agent.md), [`test-agent-pro`](grok/agents/test-agent-pro.md) (grok-4.6)
-- [`code-reviewer`](grok/agents/code-reviewer.md), [`code-reviewer-pro`](grok/agents/code-reviewer-pro.md) (grok-4.6)
-- [`architect`](grok/agents/architect.md), [`architect-premium`](grok/agents/architect-premium.md) (grok-4.6)
-- [`devops`](grok/agents/devops.md), [`devops-pro`](grok/agents/devops-pro.md) (grok-4.6)
-- [`qa`](grok/agents/qa.md), [`qa-pro`](grok/agents/qa-pro.md) (grok-4.6)
-- [`ui-ux-designer`](grok/agents/ui-ux-designer.md), [`ui-ux-designer-pro`](grok/agents/ui-ux-designer-pro.md) (grok-4.6)
+- [`orchestrator`](grok/agents/orchestrator.md), [`research`](grok/agents/research.md), [`grok-review`](grok/agents/grok-review.md) (grok-4.7)
+- [`just-code`](grok/agents/just-code.md), [`just-code-mid`](grok/agents/just-code-mid.md), [`just-code-pro`](grok/agents/just-code-pro.md) (grok-4.7)
+- [`test-agent`](grok/agents/test-agent.md), [`test-agent-pro`](grok/agents/test-agent-pro.md) (grok-4.7)
+- [`code-reviewer`](grok/agents/code-reviewer.md), [`code-reviewer-pro`](grok/agents/code-reviewer-pro.md) (grok-4.7)
+- [`architect`](grok/agents/architect.md), [`architect-premium`](grok/agents/architect-premium.md) (grok-4.7)
+- [`devops`](grok/agents/devops.md), [`devops-pro`](grok/agents/devops-pro.md) (grok-4.7)
+- [`qa`](grok/agents/qa.md), [`qa-pro`](grok/agents/qa-pro.md) (grok-4.7)
+- [`ui-ux-designer`](grok/agents/ui-ux-designer.md), [`ui-ux-designer-pro`](grok/agents/ui-ux-designer-pro.md) (grok-4.7)
 
 Invoke with `grok --agent <name>` (e.g. `grok --agent just-code` or `grok --agent code-reviewer-pro`).
 
