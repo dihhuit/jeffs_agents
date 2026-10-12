@@ -58,6 +58,8 @@ The `opencode.json` file in the root provides a ready-to-use set of agents. You 
 
 The Claude Code subagents are **generated at build time** from `opencode.json` (roster + descriptions) and `prompts/*.md` (the canonical, provider-neutral system prompts), so there is no separate `claude/` source tree to maintain — they always stay in sync with the OpenCode definitions. Each generated file is Markdown with YAML frontmatter (`name`, `description`) followed by the system prompt body; `model` is intentionally omitted so each subagent inherits your configured Claude Code model.
 
+The shipped `opencode.json` also includes a top-level `permission` block (`permission.external_directory`) that lets all agents read `/tmp` and `/proc` — and write `/tmp` for agents with write access — without prompting. Read-only agents keep their `edit`/`write` deny, so the scratch allowance does not widen their reach.
+
 ### For Grok Build only
 
 After `./deploy.sh --force`, invoke profiles with:

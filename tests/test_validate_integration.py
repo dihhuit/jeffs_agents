@@ -47,7 +47,13 @@ def _minimal_build(
                         "model": agent_model,
                         "prompt": prompt,
                     }
-                }
+                },
+                "permission": {
+                    "external_directory": {
+                        "/tmp/**": "allow",
+                        "/proc/**": "allow",
+                    }
+                },
             }
         ),
         encoding="utf-8",
@@ -156,3 +162,58 @@ def test_validate_main_fails_on_stale_model(
     out = capsys.readouterr().out
     assert code == 1
     assert "model-ghost" in out
+
+
+# ---------------------------------------------------------------------------
+# _check_scratch_permissions
+# ---------------------------------------------------------------------------
+
+_CORRECT_SCRATCH_PERMISSION = {
+    "permission": {
+        "external_directory": {
+            "/tmp/**": "allow",
+            "/proc/**": "allow",
+        }
+    }
+}
+
+
+@pytest.mark.parametrize(
+    ("config", "expected_substring"),
+    [
+        pytest.param({}, "permission", id="missing-permission"),
+        pytest.param(
+            {"permission": {"external_directory": "allow"}},
+            "external_directory",
+            id="external-directory-not-dict",
+        ),
+        pytest.param(
+            {
+                "permission": {
+                    "external_directory": {"/tmp/**": "deny", "/proc/**": "allow"}
+                }
+            },
+            "/tmp/**",
+            id="tmp-not-allow",
+        ),
+        pytest.param(
+            {
+                "permission": {
+                    "external_directory": {"/tmp/**": "allow", "/proc/**": "deny"}
+                }
+            },
+            "/proc/**",
+            id="proc-not-allow",
+        ),
+        pytest.param(_CORRECT_SCRATCH_PERMISSION, None, id="fully-correct"),
+    ],
+)
+def test_check_scratch_permissions(
+    config: dict, expected_substring: str | None
+) -> None:
+    errors = validate._check_scratch_permissions(config)
+    if expected_substring is None:
+        assert errors == []
+    else:
+        assert len(errors) == 1
+        assert expected_substring in errors[0]

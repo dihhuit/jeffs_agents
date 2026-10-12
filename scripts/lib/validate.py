@@ -73,6 +73,38 @@ def parse_frontmatter(text: str) -> dict[str, str]:
     return fields
 
 
+def _check_scratch_permissions(config: dict) -> list[str]:
+    """Verify opencode.json grants /tmp and /proc scratch access globally.
+
+    Agents need to read /proc and read/write /tmp scratch space; without a
+    global ``permission.external_directory`` allow, OpenCode prompts for
+    access on every such path.
+    """
+    errors: list[str] = []
+    permission = config.get("permission")
+    if not isinstance(permission, dict):
+        errors.append(
+            "opencode.json missing global 'permission' block "
+            "(needed for /tmp and /proc scratch access)"
+        )
+        return errors
+    external = permission.get("external_directory")
+    if not isinstance(external, dict):
+        errors.append(
+            "opencode.json 'permission.external_directory' must be an object"
+        )
+        return errors
+    if external.get("/tmp/**") != "allow":
+        errors.append(
+            "opencode.json permission.external_directory must allow '/tmp/**'"
+        )
+    if external.get("/proc/**") != "allow":
+        errors.append(
+            "opencode.json permission.external_directory must allow '/proc/**'"
+        )
+    return errors
+
+
 def validate_opencode(build_dir: Path) -> list[str]:
     errors: list[str] = []
     config_path = build_dir / "opencode.json"
@@ -85,6 +117,8 @@ def validate_opencode(build_dir: Path) -> list[str]:
         config = load_json(config_path)
     except json.JSONDecodeError as exc:
         return [f"invalid JSON in opencode.json: {exc}"]
+
+    errors.extend(_check_scratch_permissions(config))
 
     agents = config.get("agent")
     if not isinstance(agents, dict) or not agents:

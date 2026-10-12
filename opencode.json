@@ -1,6 +1,12 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "default_agent": "orchestrator",
+  "permission": {
+    "external_directory": {
+      "/tmp/**": "allow",
+      "/proc/**": "allow"
+    }
+  },
   "provider": {
     "opencode-zen": {
       "npm": "@ai-sdk/openai-compatible",

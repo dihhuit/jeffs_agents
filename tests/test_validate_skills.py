@@ -53,7 +53,13 @@ def _full_build(tmp_path: Path, *, skill_name: str | None = "test-skill") -> Pat
                         "model": "model-a",
                         "prompt": "You are a test agent.",
                     }
-                }
+                },
+                "permission": {
+                    "external_directory": {
+                        "/tmp/**": "allow",
+                        "/proc/**": "allow",
+                    }
+                },
             }
         ),
         encoding="utf-8",
