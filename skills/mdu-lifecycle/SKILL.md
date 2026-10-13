@@ -18,7 +18,8 @@ An MDU (minimum deployable unit) is the smallest slice of functionality that can
 4. **Test** — via a `test-agent` variant. All tests must pass; coverage gaps reported.
 5. **Deploy** — via `devops` (or `devops-pro` for complex deploys). Must succeed without errors.
 6. **Validate** — via `qa` (or `qa-pro` for thorough validation). Must receive a PASS grade.
-7. **Commit and push** — after the MDU is fully validated, commit and push before moving on.
+7. **Introspect** — via `introspector` after validate, before commit. It reads session logs, writes `agent-improvements.md`, and reports apply-now items. Do not rewrite agent definitions unless the user asked.
+8. **Commit and push** — after the MDU is fully validated, commit and push before moving on.
 
 ## Model-tier selection decision table
 

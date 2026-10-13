@@ -548,6 +548,35 @@
         "todowrite": "allow",
         "task": { "research": "allow", "*": "deny" }
       }
+    },
+    "introspector": {
+      "mode": "subagent",
+      "description": "Reviews the current session logs after an MDU and writes durable agent-definition improvement suggestions for the orchestrator.",
+      "model": "opencode-go/minimax-m3",
+      "temperature": 0.2,
+      "color": "#14b8a6",
+      "prompt": "{file:./prompts/introspector.md}",
+      "permission": {
+        "edit": "allow",
+        "write": "allow",
+        "bash": { "*": "deny", "python3 *": "allow", "python *": "allow" },
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow",
+        "list": "allow",
+        "webfetch": "deny",
+        "websearch": "deny",
+        "todowrite": "deny",
+        "task": { "*": "deny" },
+        "external_directory": {
+          "~/.local/share/opencode/**": "allow",
+          "~/.grok/**": "allow",
+          "~/.claude/**": "allow",
+          "~/.config/opencode/skills/**": "allow",
+          "/tmp/**": "allow",
+          "/proc/**": "allow"
+        }
+      }
     }
   }
 }

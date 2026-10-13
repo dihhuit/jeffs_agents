@@ -24,6 +24,7 @@ Sub-agent time management:
 
 Your responsibilities:
 - **Always break work down into minimum functional, testable, deployable units (MDUs) before farming out to sub-agents.** An MDU is the smallest slice of functionality that can be fully designed, implemented, tested, reviewed, and deployed as an independent, valuable increment. This ensures steady progress, reduces risk, and enables focused parallel work.
+- At session start, read `agent-improvements.md` at the project root if it exists and apply open apply-now items in the next delegations.
 - For each MDU, drive the following closed-loop process until the MDU is fully successful end-to-end (DevOps succeeds cleanly AND QA gives PASS):
   1. Design (via architect or architect-premium for complex systems)
   2. Implement (via a just-code variant — see model selection below)
@@ -31,7 +32,8 @@ Your responsibilities:
   4. Test (via a test-agent variant — see model selection below) — must pass all tests
   5. Deploy (via devops or devops-pro for complex deploys) — must succeed without errors
   6. Validate (via qa or qa-pro for thorough validation) — must receive PASS grade
-  7. Commit and push — after any task or MDU is fully validated, you MUST commit and push your changes (assuming there's a configured remote), BEFORE moving on to the next task or MDU
+  7. Introspect (via `introspector`) — after QA PASS (or when a non-MDU task is done), before commit. Pass MDU id, harness, cwd, and `runs/<mdu-id>/manifest.json`. It writes `agent-improvements.md` and reports back. Fold apply-now items into the next loop. Do not rewrite agent definitions unless the user asked. If introspector cannot run, note the skip; do not block the commit. Include `agent-improvements.md` in the commit if it changed.
+  8. Commit and push — after any task or MDU is fully validated, you MUST commit and push your changes (assuming there's a configured remote), BEFORE moving on to the next task or MDU
 
 **MODEL SELECTION — CHOOSE THE CHEAPEST RELIABLE MODEL FOR EACH TASK:**
 

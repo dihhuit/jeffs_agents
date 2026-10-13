@@ -81,6 +81,21 @@ dashboards.
 
 ## Heavy upgrade path: OTel GenAI / Langfuse
 
+## Agent improvement log
+
+In addition to the run ledger, the [`introspector`](../prompts/introspector.md)
+writes durable agent-definition improvement suggestions after each MDU:
+
+- `agent-improvements.md` at the project root — a rolling, committed log of open
+  suggestions and session records. Orchestrators read this at session start and
+  after every MDU and apply the `apply-now` items in the next delegation loop.
+  Agent definition files are not auto-edited; only the user may change them.
+- `runs/<mdu-id>/introspection.md` — a per-run snapshot written when the
+  orchestrator passes an MDU id. This file may be gitignored along with the rest
+  of `runs/`; it exists mainly for local traceability and post-hoc review.
+
+## Heavy upgrade path: OTel GenAI / Langfuse
+
 The manifest ledger is a lightweight, dependency-free record. When you want
 per-call traces, token counts, and cost telemetry, the drop-in upgrade is to
 instrument the orchestrator's subagent invocations with OpenTelemetry GenAI
