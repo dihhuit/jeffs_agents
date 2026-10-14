@@ -54,7 +54,7 @@ logs are missing, a note is added to the `notes` array and signals may be empty.
 The script emits these signal types:
 
 - `review_reject_streak` — reviewer agents emitted 2+ consecutive rejections before an approval.
-- `long_cycle` — per-agent span exceeded 8 min (warn) or 15 min (high).
+- `long_cycle` — per-agent active time (sum of gaps < 10 min) exceeded 8 min (warn) or 15 min (high); wall clock is recorded but not acted on.
 - `token_hotspot` — an agent consumed >= 80k tokens, or >= 40% of session tokens and >= 20k.
 - `repeated_tool_error` — same agent+tool errored >= 3 times.
 - `permission_thrash` — >= 5 permission requests in the session.
@@ -70,6 +70,10 @@ The script emits these signal types:
 (`agent-improvements.md` and `runs/<mdu-id>/introspection.md`) and returns a short
 report to the orchestrator. The orchestrator folds `apply_now` items into the next
 loop. Only the user may change agent definition files.
+
+Review mode is a user-invoked prompt mode of the same agent, not a second script.
+It proposes concrete definition diffs and writes files only after the user says
+the exact phrase `apply the definition diffs`.
 
 ## Redaction
 

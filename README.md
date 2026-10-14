@@ -193,17 +193,24 @@ The orchestrator ensures every MDU is **designed → implemented → reviewed �
 
 ### Post-MDU introspection
 
-After QA PASS (or when any non-MDU task finishes), the orchestrator delegates to
-[`introspector`](prompts/introspector.md). The introspector reads the current
-session logs, detects friction signals (review rejection streaks, long cycles,
+After QA PASS (or when any non-MDU task finishes), the orchestrator calls
+[`introspector`](prompts/introspector.md) in **loop mode**. It reads the whole
+session tree, detects friction signals (review rejection streaks, long cycles,
 token hotspots, repeated tool errors, permission thrash, context reread, QA fail
 repeat, stalled subagents), and writes durable suggestions to
 `agent-improvements.md` at the project root. When an MDU id is provided, it also
-writes `runs/<mdu-id>/introspection.md`. The introspector reports apply-now
-items back to the orchestrator, and every orchestrator variant
-(`orchestrator`, `grok/agents/orchestrator.md`, the overlay `grokestrator`, and
-the generated Claude orchestrator) folds those items into the next loop.
-Agent definition files are **never auto-edited**; only the user may change them.
+writes `runs/<mdu-id>/introspection.md`. Long-cycle detection uses **active
+time** (excluding idle gaps of 10+ minutes), not wall-clock time. The
+introspector reports apply-now items back to the orchestrator, and every
+orchestrator variant folds those items into the next loop by changing the next
+brief, model tier/variant, and/or MDU slice. Agent definition files are **never
+auto-edited** in loop mode.
+
+**Review mode** is invoked by the user only (for example, when the project is
+paused, blocked, or completed). In review mode the introspector proposes concrete
+agent-definition diffs and records them in the log. It writes definition files
+only after the user says the exact phrase `apply the definition diffs`;
+"start now" and "looks good" are not consent.
 
 **Failure / feedback loops for autonomy:**
 - On DevOps failure or post-deploy issues: DevOps returns a diagnostic report. The orchestrator performs (or delegates) root cause analysis and re-delegates fixes — typically back to DevOps for infra retries, or to Just-Code/Architect if code or config changes are needed. The MDU is re-deployed and re-validated until it succeeds.

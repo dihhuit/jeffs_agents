@@ -98,6 +98,32 @@ def test_approval_resets_rejection_streak() -> None:
     assert not any(s["kind"] == "review_reject_streak" for s in signals)
 
 
+def test_blocking_inside_think_does_not_count_as_rejection() -> None:
+    events = [
+        _event("code-reviewer", "<think>this is blocking</think>", t=1.0),
+        _event("code-reviewer", "<think>still blocking</think>", t=2.0),
+    ]
+    signals = session_signals.collect_signals(events)
+    assert not any(s["kind"] == "review_reject_streak" for s in signals)
+
+
+def test_request_changes_outside_think_counts_as_rejection() -> None:
+    events = [
+        _event(
+            "code-reviewer",
+            "<think>maybe</think> I REQUEST CHANGES because tests are missing",
+            t=1.0,
+        ),
+        _event(
+            "code-reviewer",
+            "<think>maybe</think> I REQUEST CHANGES; docs still missing",
+            t=2.0,
+        ),
+    ]
+    signals = session_signals.collect_signals(events)
+    assert any(s["kind"] == "review_reject_streak" for s in signals)
+
+
 # ---------------------------------------------------------------------------
 # Long cycles
 # ---------------------------------------------------------------------------
@@ -112,6 +138,29 @@ def test_long_cycle_warns_at_500s() -> None:
     sig = next((s for s in signals if s["kind"] == "long_cycle"), None)
     assert sig is not None
     assert sig["severity"] == "warn"
+
+
+def test_no_long_cycle_for_single_idle_gap() -> None:
+    """A resumed session with one idle gap must not emit long_cycle."""
+    events = [
+        _event("just-code", "start", t=0.0),
+        _event("just-code", "finish", t=86400.0),
+    ]
+    signals = session_signals.collect_signals(events)
+    assert not any(s["kind"] == "long_cycle" for s in signals)
+
+
+def test_long_cycle_warns_on_sub_600s_gaps_spanning_500s() -> None:
+    """Several sub-600s gaps adding to 500s active time must emit warn."""
+    events = [
+        _event("just-code", f"step {i}", t=float(i * 100))
+        for i in range(6)
+    ]
+    signals = session_signals.collect_signals(events)
+    sig = next((s for s in signals if s["kind"] == "long_cycle"), None)
+    assert sig is not None
+    assert sig["severity"] == "warn"
+    assert "active" in sig["evidence"]
 
 
 def test_no_long_cycle_at_100s() -> None:

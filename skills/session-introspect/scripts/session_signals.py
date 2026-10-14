@@ -28,7 +28,6 @@ REJECTION_PHRASES = [
     "changes requested",
     "do not approve",
     "not approved",
-    "blocking",
 ]
 
 APPROVAL_PHRASES = ["approve", "lgtm", "sign-off"]
@@ -45,6 +44,7 @@ QA_SUBSTRINGS = ["qa", "grok-qa"]
 LONG_CYCLE_WARN_S = 480
 LONG_CYCLE_HIGH_S = 900
 STALL_HIGH_S = 600
+IDLE_GAP_THRESHOLD_S = 600
 TOKEN_HOTSPOT_ABSOLUTE = 80_000
 TOKEN_HOTSPOT_SHARE = 0.40
 TOKEN_HOTSPOT_MIN = 20_000
@@ -88,17 +88,28 @@ def redact(text: str) -> str:
 # ---------------------------------------------------------------------------
 
 
+def _strip_think(text: str) -> str:
+    """Remove chain-of-thought blocks so they cannot count as verdicts.
+
+    Strips closed ``<think>...</think>`` blocks and an unclosed ``<think>``
+    to end of string (case-insensitive).
+    """
+    text = re.sub(r"(?is)<think>.*?</think>", "", text)
+    text = re.sub(r"(?is)<think>.*", "", text)
+    return text
+
+
 def _contains_any(text: str, phrases: list[str]) -> bool:
     low = text.lower()
     return any(phrase in low for phrase in phrases)
 
 
 def _is_rejection(text: str) -> bool:
-    return _contains_any(text, REJECTION_PHRASES)
+    return _contains_any(_strip_think(text), REJECTION_PHRASES)
 
 
 def _is_approval(text: str) -> bool:
-    low = text.lower()
+    low = _strip_think(text).lower()
     return any(phrase in low for phrase in APPROVAL_PHRASES) and not _is_rejection(
         text
     )
@@ -255,7 +266,7 @@ def collect_signals(events: list[dict]) -> list[dict]:
             sig["evidence"] += f" | prior coder: {prior_coder}"
         signals.append(sig)
 
-    # 2. Long cycles per agent
+    # 2. Long cycles per agent (active time, not wall clock)
     by_agent: dict[str, list[float]] = {}
     for evt in sorted_events:
         agent = str(evt.get("agent") or "")
@@ -265,10 +276,15 @@ def collect_signals(events: list[dict]) -> list[dict]:
     for agent, times in by_agent.items():
         if len(times) < 2:
             continue
-        span = max(times) - min(times)
-        if span >= LONG_CYCLE_HIGH_S:
+        times.sort()
+        wall_clock = max(times) - min(times)
+        active_time = sum(
+            gap for gap in (t2 - t1 for t1, t2 in zip(times, times[1:]))
+            if gap < IDLE_GAP_THRESHOLD_S
+        )
+        if active_time >= LONG_CYCLE_HIGH_S:
             severity = "high"
-        elif span >= LONG_CYCLE_WARN_S:
+        elif active_time >= LONG_CYCLE_WARN_S:
             severity = "warn"
         else:
             continue
@@ -277,7 +293,8 @@ def collect_signals(events: list[dict]) -> list[dict]:
                 kind="long_cycle",
                 severity=severity,
                 agent=agent,
-                evidence=f"{agent} span {span:.0f}s across {len(times)} events",
+                evidence=f"{agent} active {active_time:.0f}s, wall {wall_clock:.0f}s "
+                f"across {len(times)} events",
                 suggestion="The prompt/task was too broad; split the MDU and add an explicit output contract.",
                 apply_now=f"Narrow {agent}'s brief for the next delegation and require a concrete "
                 "deliverable before it proceeds.",
