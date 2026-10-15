@@ -1,6 +1,6 @@
 ---
 name: webapp-verification
-description: Playwright-first recipe for verifying web deliverables — preferred @playwright/mcp, browser-os MCP fallback, and BLOCKED reporting when no browser tooling works. Load when QA-grading a web UI to run navigate, snapshot, interact, console/network, and screenshot checks without silently skipping coverage.
+description: Playwright recipe for verifying web deliverables, with BLOCKED reporting when Playwright is unavailable. Load when QA-grading a web UI to run navigate, snapshot, interact, console/network, and screenshot checks without silently skipping coverage.
 license: Unlicense
 metadata:
   audience: [qa]
@@ -10,10 +10,9 @@ metadata:
 
 Verify the delivered functionality with browser automation, then back it with non-browser checks. Never silently skip browser validation for a web UI, and never give a PASS that implies browser coverage you could not perform.
 
-## Tool preference order
+## Tool
 
-1. **Playwright MCP** (server name typically `playwright`, package `@playwright/mcp`) — PREFERRED. Use it for navigation, snapshots, screenshots, console/network inspection, and testing tools when exposed.
-2. **browser-os MCP** — FALLBACK only if Playwright MCP tools are missing from the tool list, fail to connect, or error on first use.
+**Playwright MCP** (server name typically `playwright`, package `@playwright/mcp`). Use it for navigation, snapshots, screenshots, console/network inspection, and testing tools when exposed.
 
 ## Browser recipe
 
@@ -25,13 +24,13 @@ Verify the delivered functionality with browser automation, then back it with no
 
 ## BLOCKED reporting
 
-If neither Playwright nor browser-os is available, or both fail when you try to use them:
+If Playwright MCP is not available, or it fails when you try to use it:
 
 - Do NOT silently skip; do NOT give a PASS that implies browser coverage.
 - Report a **BLOCKED** status (distinct from PASS/FAIL) including:
-  - Which tools you looked for (Playwright MCP, then browser-os MCP).
+  - Which tools you looked for (Playwright MCP).
   - What failed (not in tool list / connection error / runtime error — include the error text).
-  - That Playwright MCP (preferred) or browser-os MCP needs configuring on the harness (OpenCode, Grok Build, or Claude Code).
+  - That Playwright MCP needs configuring on the harness (OpenCode, Grok Build, or Claude Code).
 - Still run the non-browser checks you can and list what browser coverage was blocked.
 
 ## Non-browser checks (always alongside)

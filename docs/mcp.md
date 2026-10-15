@@ -21,8 +21,8 @@ the built-in ones. The agent loop here needs MCP for three things the built-in
 toolset cannot do well:
 
 1. **Browser verification** — QA must navigate, snapshot, and screenshot real
-   web UIs. The `webapp-verification` skill prefers `@playwright/mcp` with
-   `browser-os` as fallback; without an MCP browser server, QA can only report
+   web UIs. The `webapp-verification` skill uses `@playwright/mcp`; without
+   that MCP browser server, QA can only report
    BLOCKED (see [Degradation contract](#degradation-contract)).
 2. **Git host operations** — PRs, issues, and reviews against GitHub without
    hand-rolled `gh`/curl plumbing in prompts.
@@ -74,11 +74,10 @@ and the GitHub server in particular is token-hungry.
 | --- | --- | --- |
 | **OpenCode** (V2) | `mcp.servers` in project `opencode.json` (or global `~/.config/opencode/opencode.json`). Local servers: `{ "type": "local", "command": ["npx", "-y", "..."], "environment": {...}, "disabled": false, "timeout": { "catalog": 10000, "execution": 10000 } }`. | **Verified** against opencode.ai V2 docs and the installed binary. Note: `.mcp.json` is the Claude Code convention; merge it into `opencode.json` for OpenCode. |
 | **Claude Code** (v2.1.x) | Project-level `.mcp.json` at the repo root; user-level servers in `~/.claude.json`. Manage with `claude mcp add/list`. | **Verified** locally (`claude mcp list` shows the configured `playwright` server; `claude mcp --help` documents project-scoped `.mcp.json`). |
-| **Grok** | `grok mcp add <name> <cmd-or-url>` CLI; config written to `~/.grok/config.toml` (user scope, `-s user`) or `./.grok/config.toml` (project scope, `-s project`) under `[mcp_servers.<name>]`. Diagnose with `grok mcp doctor`. | **Verified** locally (`grok mcp list` shows `playwright` and `browser-os` already configured on this harness). |
+| **Grok** | `grok mcp add <name> <cmd-or-url>` CLI; config written to `~/.grok/config.toml` (user scope, `-s user`) or `./.grok/config.toml` (project scope, `-s project`) under `[mcp_servers.<name>]`. Diagnose with `grok mcp doctor`. | **Verified** locally (`grok mcp list` shows `playwright` configured on this harness). |
 
 The local harness already has `playwright` (`npx -y @playwright/mcp@latest
---caps=devtools,network,testing`) and `browser-os` configured for both Grok and
-Claude Code; OpenCode is the gap this document closes.
+--caps=devtools,network,testing`) configured for Grok and Claude Code.
 
 ### OpenCode config shape (V2 native)
 
@@ -115,7 +114,7 @@ playwright + filesystem + github is in
 
 | Agent role | MCP servers | Rationale |
 | --- | --- | --- |
-| `qa`, `qa-pro`, `qa-free` | **playwright** (browser verification) | The `webapp-verification` skill's preferred tool; `browser-os` only as fallback |
+| `qa`, `qa-pro`, `qa-free` | **playwright** (browser verification) | The `webapp-verification` skill's browser tool |
 | `devops`, `devops-pro`, `devops-free` | **github** | PR/issue/release operations against the git host |
 | `just-code`, `just-code-mid`, `just-code-pro`, `just-code-free` | **filesystem** (read) | Scoped read access to workspace dirs when needed; no write outside the allowlist |
 | `code-reviewer`, `code-reviewer-pro`, `code-reviewer-free` | **none** | Review-only role; MCP tools add context and attack surface without adding review value |
@@ -141,7 +140,7 @@ server/tool enablement (no global `tools` map). Keep unused servers disabled.
 The loop **must** work without MCP. MCP is an enhancement, never a hard
 dependency: the `webapp-verification` skill already mandates **BLOCKED**
 reporting when no browser tooling is available — QA reports which tools it
-looked for, what failed, and that Playwright/browser-os needs configuring, then
+looked for, what failed, and that Playwright needs configuring, then
 still runs the non-browser checks (HTTP, CLI, logs, edge cases). The same
 principle applies to every other server: if an MCP tool is missing or errors,
 fall back to built-in tools (`bash`, `webfetch`, `gh`) or report the gap —
