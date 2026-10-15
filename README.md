@@ -135,6 +135,9 @@ The agent definitions follow a **model tier variant** pattern — each role has 
 **Introspection:**
 - [`introspector`](prompts/introspector.md) — Reviews session logs after an MDU and writes durable agent-definition improvement suggestions for the orchestrator (Go mid: minimax-m3)
 
+**Inception** (user-invoked primary — not part of the orchestrator's MDU loop):
+- [`inception`](prompts/inception.md) — Interviews you on a new project idea and iteratively refines it into an actionable spec (Go budget: deepseek-v4-flash)
+
 **Grok Build profiles** (in `grok/agents/`):
 
 A matching set of the same agent roles, using Grok models (separate xAI subscription).
@@ -152,6 +155,7 @@ model returns, **all profiles below use `grok-4.7`**. Use `grok models` to confi
 - [`qa`](grok/agents/qa.md), [`qa-pro`](grok/agents/qa-pro.md) (grok-4.7)
 - [`ui-ux-designer`](grok/agents/ui-ux-designer.md), [`ui-ux-designer-pro`](grok/agents/ui-ux-designer-pro.md) (grok-4.7)
 - [`introspector`](grok/agents/introspector.md) (grok-4.7)
+- [`inception`](grok/agents/inception.md) (grok-4.7)
 
 Invoke with `grok --agent <name>` (e.g. `grok --agent just-code` or `grok --agent code-reviewer-pro`).
 
@@ -405,7 +409,7 @@ base_agents/                   # this public repo
 ├── deploy.sh                  # install from build/ (or root fallback)
 ├── scripts/                   # modular build/deploy implementation
 │   └── lib/gen_claude_agents.py  # generates claude/agents/ from opencode.json + prompts/
-├── opencode.json              # OpenCode agent registry (27 agents across model tiers)
+├── opencode.json              # OpenCode agent registry (28 agents across model tiers)
 ├── prompts/                   # OpenCode prompt bodies (canonical system prompts)
 │   ├── orchestrator.md        # includes model selection guide for variant-aware delegation
 │   ├── just-code.md           # token-frugal coding instructions
@@ -416,8 +420,9 @@ base_agents/                   # this public repo
 │   ├── qa.md                  # token-frugal validation
 │   ├── research.md            # token-frugal information gathering
 │   ├── ui-ux-designer.md      # token-frugal design work
-│   └── introspector.md        # post-MDU session introspection
-├── grok/agents/               # Grok Build agent profiles (19 profiles)
+│   ├── introspector.md        # post-MDU session introspection
+│   └── inception.md           # user-invoked idea → spec interviewer
+├── grok/agents/               # Grok Build agent profiles (20 profiles)
 │   ├── orchestrator.md
 │   ├── just-code.md / just-code-mid.md / just-code-pro.md
 │   ├── test-agent.md / test-agent-pro.md
@@ -426,12 +431,13 @@ base_agents/                   # this public repo
 │   ├── devops.md / devops-pro.md
 │   ├── qa.md / qa-pro.md
 │   ├── research.md
-│   └── ui-ux-designer.md / ui-ux-designer-pro.md
+│   ├── ui-ux-designer.md / ui-ux-designer-pro.md
+│   └── inception.md
 └── build/                     # generated output (gitignored)
     ├── opencode.json
     ├── prompts/
     ├── grok/agents/
-    └── claude/agents/         # generated Claude Code subagents (27 files)
+    └── claude/agents/         # generated Claude Code subagents (28 files)
 ```
 
 ## Getting Started with Your Own Setup

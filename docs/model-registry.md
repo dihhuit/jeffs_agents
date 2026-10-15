@@ -83,3 +83,11 @@ reference is missing from the snapshot, so a stale reference cannot ship.
 |------------------------|------------------------------------|
 | `ui-ux-designer`       | `opencode-go/minimax-m3`           |
 | `ui-ux-designer-pro`   | `opencode-go/kimi-k2.7-code`       |
+
+## Inception
+
+User-invoked primary. Not part of the orchestrator's MDU loop.
+
+| Agent        | Model                              |
+|--------------|------------------------------------|
+| `inception`  | `opencode-go/deepseek-v4-flash`    |

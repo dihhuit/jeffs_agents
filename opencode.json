@@ -577,6 +577,28 @@
           "/proc/**": "allow"
         }
       }
+    },
+    "inception": {
+      "mode": "primary",
+      "description": "Interviews you on a new project idea and iteratively refines it into an actionable spec document",
+      "model": "opencode-go/deepseek-v4-flash",
+      "temperature": 0.4,
+      "color": "#f97316",
+      "prompt": "{file:./prompts/inception.md}",
+      "permission": {
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow",
+        "list": "allow",
+        "write": "allow",
+        "edit": "allow",
+        "webfetch": "allow",
+        "websearch": "allow",
+        "question": "allow",
+        "todowrite": "allow",
+        "bash": "deny",
+        "task": { "*": "deny" }
+      }
     }
   }
 }

@@ -37,6 +37,7 @@ GROK_MIRRORS: dict[str, list[str]] = {
     "research": ["research.md"],
     "orchestrator": ["orchestrator.md"],
     "introspector": ["introspector.md"],
+    "inception": ["inception.md"],
 }
 
 # Role-specific contract keywords per stem. Each clause is a tuple of
@@ -57,6 +58,13 @@ ROLE_KEYWORDS: dict[str, list[tuple[str, ...]]] = {
         ("agent-improvements.md",),
         ("never edit agent definitions",),
         ("review rejection",),
+    ],
+    "inception": [
+        ("interview",),
+        ("spec.md",),
+        ("moscow",),
+        ("complete enough",),
+        ("question",),
     ],
 }
 
