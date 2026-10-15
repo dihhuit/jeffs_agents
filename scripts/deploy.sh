@@ -136,8 +136,9 @@ validate_deployed_clis() {
   [[ "$DO_COPY" == true ]] || return 0
   log_step "Validating deployed configs with installed CLIs"
   if [[ "$HAS_OPENCODE" == true ]]; then
-    opencode agent list >/dev/null 2>&1 || { log_error "opencode agent list failed"; return 1; }
-    log_ok "opencode agent list succeeded"
+    # V2 dropped `opencode agent list`. `debug agents` prints the loaded registry.
+    opencode debug agents >/dev/null 2>&1 || { log_error "opencode debug agents failed"; return 1; }
+    log_ok "opencode debug agents succeeded"
   fi
   if [[ "$HAS_GROK" == true ]]; then
     local expected deployed
