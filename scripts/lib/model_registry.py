@@ -44,7 +44,7 @@ def find_model_refs(opencode_json_path: Path) -> list[tuple[str, str]]:
     name a single registry model.
     """
     config = json.loads(opencode_json_path.read_text(encoding="utf-8"))
-    agents = config.get("agent") or {}
+    agents = config.get("agents") or {}
     refs: list[tuple[str, str]] = []
     for name, definition in agents.items():
         if not isinstance(definition, dict):

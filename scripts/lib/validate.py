@@ -91,30 +91,31 @@ def _check_scratch_permissions(config: dict) -> list[str]:
     """Verify opencode.json grants /tmp and /proc scratch access globally.
 
     Agents need to read /proc and read/write /tmp scratch space; without a
-    global ``permission.external_directory`` allow, OpenCode prompts for
-    access on every such path.
+    top-level ``permissions`` array allowing ``external_directory`` resources,
+    OpenCode prompts for access on every such path.
     """
     errors: list[str] = []
-    permission = config.get("permission")
-    if not isinstance(permission, dict):
+    permissions = config.get("permissions")
+    if not isinstance(permissions, list):
         errors.append(
-            "opencode.json missing global 'permission' block "
+            "opencode.json missing top-level 'permissions' array "
             "(needed for /tmp and /proc scratch access)"
         )
         return errors
-    external = permission.get("external_directory")
-    if not isinstance(external, dict):
+    allowed = {
+        p.get("resource")
+        for p in permissions
+        if isinstance(p, dict)
+        and p.get("action") == "external_directory"
+        and p.get("effect") == "allow"
+    }
+    if "/tmp/**" not in allowed:
         errors.append(
-            "opencode.json 'permission.external_directory' must be an object"
+            "opencode.json permissions array must allow external_directory '/tmp/**'"
         )
-        return errors
-    if external.get("/tmp/**") != "allow":
+    if "/proc/**" not in allowed:
         errors.append(
-            "opencode.json permission.external_directory must allow '/tmp/**'"
-        )
-    if external.get("/proc/**") != "allow":
-        errors.append(
-            "opencode.json permission.external_directory must allow '/proc/**'"
+            "opencode.json permissions array must allow external_directory '/proc/**'"
         )
     return errors
 
@@ -134,7 +135,7 @@ def validate_opencode(build_dir: Path) -> list[str]:
 
     errors.extend(_check_scratch_permissions(config))
 
-    agents = config.get("agent")
+    agents = config.get("agents")
     if not isinstance(agents, dict) or not agents:
         errors.append("opencode.json has no agents")
 
@@ -142,10 +143,10 @@ def validate_opencode(build_dir: Path) -> list[str]:
         if not isinstance(definition, dict):
             errors.append(f"agent '{name}' is not an object")
             continue
-        prompt = definition.get("prompt", "")
-        if not isinstance(prompt, str):
+        system = definition.get("system", "")
+        if not isinstance(system, str):
             continue
-        match = PROMPT_REF.search(prompt)
+        match = PROMPT_REF.search(system)
         if not match:
             continue
         prompt_file = prompts_dir / match.group(1)
@@ -476,7 +477,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"          - {err}")
         return 1
 
-    agent_count = len(load_json(build_dir / "opencode.json").get("agent", {}))
+    agent_count = len(load_json(build_dir / "opencode.json").get("agents", {}))
     grok_count = len(list((build_dir / "grok" / "agents").glob("*.md")))
     claude_count = len(list((build_dir / "claude" / "agents").glob("*.md")))
     print(f"  [ok]    opencode.json: {agent_count} agents, all prompt refs resolved")

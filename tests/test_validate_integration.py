@@ -40,20 +40,26 @@ def _minimal_build(
     (build / "opencode.json").write_text(
         json.dumps(
             {
-                "agent": {
+                "agents": {
                     "test-agent": {
                         "mode": "subagent",
                         "description": "test",
                         "model": agent_model,
-                        "prompt": prompt,
+                        "system": prompt,
                     }
                 },
-                "permission": {
-                    "external_directory": {
-                        "/tmp/**": "allow",
-                        "/proc/**": "allow",
-                    }
-                },
+                "permissions": [
+                    {
+                        "action": "external_directory",
+                        "resource": "/tmp/**",
+                        "effect": "allow",
+                    },
+                    {
+                        "action": "external_directory",
+                        "resource": "/proc/**",
+                        "effect": "allow",
+                    },
+                ],
             }
         ),
         encoding="utf-8",
@@ -169,38 +175,62 @@ def test_validate_main_fails_on_stale_model(
 # ---------------------------------------------------------------------------
 
 _CORRECT_SCRATCH_PERMISSION = {
-    "permission": {
-        "external_directory": {
-            "/tmp/**": "allow",
-            "/proc/**": "allow",
-        }
-    }
+    "permissions": [
+        {
+            "action": "external_directory",
+            "resource": "/tmp/**",
+            "effect": "allow",
+        },
+        {
+            "action": "external_directory",
+            "resource": "/proc/**",
+            "effect": "allow",
+        },
+    ]
 }
 
 
 @pytest.mark.parametrize(
     ("config", "expected_substring"),
     [
-        pytest.param({}, "permission", id="missing-permission"),
+        pytest.param({}, "permissions", id="missing-permissions"),
         pytest.param(
-            {"permission": {"external_directory": "allow"}},
-            "external_directory",
-            id="external-directory-not-dict",
+            {"permissions": {"external_directory": "allow"}},
+            "permissions",
+            id="permissions-not-array",
         ),
         pytest.param(
             {
-                "permission": {
-                    "external_directory": {"/tmp/**": "deny", "/proc/**": "allow"}
-                }
+                "permissions": [
+                    {
+                        "action": "external_directory",
+                        "resource": "/tmp/**",
+                        "effect": "deny",
+                    },
+                    {
+                        "action": "external_directory",
+                        "resource": "/proc/**",
+                        "effect": "allow",
+                    },
+                ]
             },
             "/tmp/**",
             id="tmp-not-allow",
         ),
         pytest.param(
             {
-                "permission": {
-                    "external_directory": {"/tmp/**": "allow", "/proc/**": "deny"}
-                }
+                "permissions": [
+                    {
+                        "action": "external_directory",
+                        "resource": "/tmp/**",
+                        "effect": "allow",
+                    },
+                    {
+                        "action": "external_directory",
+                        "resource": "/proc/**",
+                        "effect": "deny",
+                    },
+                ]
             },
             "/proc/**",
             id="proc-not-allow",

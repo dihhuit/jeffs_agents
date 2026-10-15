@@ -33,44 +33,44 @@ Your responsibilities:
 Use these guidelines to spread token cost across model tiers, avoiding overuse of any single model:
 
 Research (web search / info gathering — cheapest models work fine):
-- `research` — quick lookup (free model, ling-3.0-flash-fin-free)
+- `research` — quick lookup (free model, mimo-v2.6-flash-free)
 - `deepseek-research` — coding patterns, library docs (free, nemotron-3-ultra-free)
 - `nemotron-research` — thorough doc research (free, nemotron-3.5-lightning-free)
 - `deep-research` — comprehensive multi-source research (Go budget, mimo-v2.5)
 
 Coding tasks (spread load across tiers):
-- `just-code` — default coding (Go budget, deepseek-v4-flash — excellent for ~90% of coding)
+- `just-code` — default coding (Go budget, deepseek-v4.1-flash — excellent for ~90% of coding)
 - `just-code-mid` — complex feature implementation needing deeper reasoning (Go mid, kimi-k2.7-code)
-- `just-code-pro` — architecture-sensitive code, refactoring, performance-critical (Go premium, deepseek-v4-pro)
+- `just-code-pro` — architecture-sensitive code, refactoring, performance-critical (Go premium, glm-5.2)
 - `just-code-free` — boilerplate, simple changes, or when Go budget is tight (free, big-pickle)
 
 Testing:
-- `test-agent` — default test writing (Go budget, deepseek-v4-flash)
-- `test-agent-mid` — complex test suites, property-based tests (Go mid, minimax-m3)
+- `test-agent` — default test writing (Go budget, deepseek-v4.1-flash)
+- `test-agent-mid` — complex test suites, property-based tests (Go mid, mimo-v2.5)
 - `test-agent-pro` — security tests, deep coverage analysis (Go premium, kimi-k2.7-code)
 - `test-agent-free` — simple unit tests, quick coverage (free, big-pickle)
 
 Code Review:
-- `code-reviewer` — standard review (Go mid, minimax-m3)
-- `code-reviewer-pro` — deep security audit, architecture review (Go premium, deepseek-v4-pro)
+- `code-reviewer` — standard review (Go mid, mimo-v2.5)
+- `code-reviewer-pro` — deep security audit, architecture review (Go premium, glm-5.2)
 - `code-reviewer-free` — quick lint/format/style check (free, big-pickle)
 
 Architecture:
-- `architect` — design docs, API specs, component design (Go premium, deepseek-v4-pro)
+- `architect` — design docs, API specs, component design (Go premium, glm-5.2)
 - `architect-premium` — complex system architecture, ADRs, trade-off analysis (Go top-tier, glm-5.2)
 
 DevOps:
-- `devops` — standard deployments, Docker, CI/CD (Go mid, minimax-m3)
-- `devops-pro` — complex multi-service deploys, IaC, cloud architecture (Go premium, deepseek-v4-pro)
+- `devops` — standard deployments, Docker, CI/CD (Go mid, mimo-v2.5)
+- `devops-pro` — complex multi-service deploys, IaC, cloud architecture (Go premium, glm-5.2)
 - `devops-free` — simple config changes (free, big-pickle)
 
 QA:
-- `qa` — standard validation (Go mid, minimax-m3)
+- `qa` — standard validation (Go mid, mimo-v2.5)
 - `qa-pro` — thorough regression, edge case validation (Go premium, kimi-k2.7-code)
 - `qa-free` — basic smoke tests (free, big-pickle)
 
 UI/UX Design:
-- `ui-ux-designer` — standard design work (Go mid, minimax-m3)
+- `ui-ux-designer` — standard design work (Go mid, mimo-v2.5)
 - `ui-ux-designer-pro` — polished production UI with design systems (Go premium, kimi-k2.7-code)
 
 **TOKEN FRUGALITY RULES:**

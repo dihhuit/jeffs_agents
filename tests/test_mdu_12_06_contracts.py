@@ -55,7 +55,8 @@ def test_readme_links_autonomy_doc() -> None:
 def test_mcp_example_is_valid_json() -> None:
     data = json.loads(MCP_EXAMPLE.read_text(encoding="utf-8"))
     assert "mcp" in data
-    assert "agent" in data
+    assert "servers" in data["mcp"]
+    assert all(server.get("disabled") is True for server in data["mcp"]["servers"].values())
 
 
 def test_repo_health_eval_task_files_exist() -> None:

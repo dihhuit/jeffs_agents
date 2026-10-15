@@ -17,13 +17,13 @@ reference is missing from the snapshot, so a stale reference cannot ship.
 
 | Agent            | Model                    |
 |------------------|--------------------------|
-| `orchestrator`   | `opencode-zen/big-pickle` |
+| `orchestrator`   | `opencode/big-pickle` |
 
 ## Research (free)
 
 | Agent                 | Model                              |
 |-----------------------|------------------------------------|
-| `research`            | `opencode/ling-3.0-flash-fin-free` |
+| `research`            | `opencode/mimo-v2.6-flash-free` |
 | `deepseek-research`   | `opencode/nemotron-3-ultra-free`   |
 | `nemotron-research`   | `opencode/nemotron-3.5-lightning-free` |
 | `deep-research`       | `opencode-go/mimo-v2.5` (Go budget) |
@@ -32,56 +32,56 @@ reference is missing from the snapshot, so a stale reference cannot ship.
 
 | Agent             | Model                              |
 |-------------------|------------------------------------|
-| `just-code`       | `opencode-go/deepseek-v4-flash`    |
+| `just-code`       | `opencode-go/deepseek-v4.1-flash`    |
 | `just-code-mid`   | `opencode-go/kimi-k2.7-code`       |
-| `just-code-pro`   | `opencode-go/deepseek-v4-pro`      |
-| `just-code-free`  | `opencode-zen/big-pickle`          |
+| `just-code-pro`   | `opencode-go/glm-5.2`      |
+| `just-code-free`  | `opencode/big-pickle`          |
 
 ## Testing
 
 | Agent             | Model                              |
 |-------------------|------------------------------------|
-| `test-agent`      | `opencode-go/deepseek-v4-flash`    |
-| `test-agent-mid`  | `opencode-go/minimax-m3`           |
+| `test-agent`      | `opencode-go/deepseek-v4.1-flash`    |
+| `test-agent-mid`  | `opencode-go/mimo-v2.5`           |
 | `test-agent-pro`  | `opencode-go/kimi-k2.7-code`       |
-| `test-agent-free` | `opencode-zen/big-pickle`          |
+| `test-agent-free` | `opencode/big-pickle`          |
 
 ## Review
 
 | Agent                 | Model                              |
 |-----------------------|------------------------------------|
-| `code-reviewer`       | `opencode-go/minimax-m3`           |
-| `code-reviewer-pro`   | `opencode-go/deepseek-v4-pro`      |
-| `code-reviewer-free`  | `opencode-zen/big-pickle`          |
+| `code-reviewer`       | `opencode-go/mimo-v2.5`           |
+| `code-reviewer-pro`   | `opencode-go/glm-5.2`      |
+| `code-reviewer-free`  | `opencode/big-pickle`          |
 
 ## Architecture
 
 | Agent                | Model                              |
 |----------------------|------------------------------------|
-| `architect`          | `opencode-go/deepseek-v4-pro`      |
+| `architect`          | `opencode-go/glm-5.2`      |
 | `architect-premium`  | `opencode-go/glm-5.2`              |
 
 ## DevOps
 
 | Agent          | Model                              |
 |----------------|------------------------------------|
-| `devops`       | `opencode-go/minimax-m3`           |
-| `devops-pro`   | `opencode-go/deepseek-v4-pro`      |
-| `devops-free`  | `opencode-zen/big-pickle`          |
+| `devops`       | `opencode-go/mimo-v2.5`           |
+| `devops-pro`   | `opencode-go/glm-5.2`      |
+| `devops-free`  | `opencode/big-pickle`          |
 
 ## QA
 
 | Agent    | Model                              |
 |----------|------------------------------------|
-| `qa`     | `opencode-go/minimax-m3`           |
+| `qa`     | `opencode-go/mimo-v2.5`           |
 | `qa-pro` | `opencode-go/kimi-k2.7-code`       |
-| `qa-free`| `opencode-zen/big-pickle`          |
+| `qa-free`| `opencode/big-pickle`          |
 
 ## UI/UX
 
 | Agent                  | Model                              |
 |------------------------|------------------------------------|
-| `ui-ux-designer`       | `opencode-go/minimax-m3`           |
+| `ui-ux-designer`       | `opencode-go/mimo-v2.5`           |
 | `ui-ux-designer-pro`   | `opencode-go/kimi-k2.7-code`       |
 
 ## Inception
@@ -90,4 +90,4 @@ User-invoked primary. Not part of the orchestrator's MDU loop.
 
 | Agent        | Model                              |
 |--------------|------------------------------------|
-| `inception`  | `opencode-go/deepseek-v4-flash`    |
+| `inception`  | `opencode-go/deepseek-v4.1-flash`    |

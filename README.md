@@ -14,9 +14,9 @@ This repository provides a **base layer** of agent definitions designed to be br
 
 ### OpenCode Go Subscription
 
-The OpenCode agent definitions in this repo are configured to use **OpenCode Go** subscription models (`opencode-go/*`) as the primary workhorses for most coding, testing, review, and deployment tasks. These agents reference models like `opencode-go/deepseek-v4-flash`, `opencode-go/kimi-k2.7-code`, and `opencode-go/deepseek-v4-pro` which require an active [OpenCode Go subscription](https://opencode.ai/docs/go) ($10/month).
+The OpenCode agent definitions in this repo are configured to use **OpenCode Go** subscription models (`opencode-go/*`) as the primary workhorses for most coding, testing, review, and deployment tasks. These agents reference models like `opencode-go/deepseek-v4.1-flash`, `opencode-go/kimi-k2.7-code`, and `opencode-go/glm-5.2` which require an active [OpenCode Go subscription](https://opencode.ai/docs/go) ($10/month).
 
-A few agents use **free Zen models** (`opencode/*` or `opencode-zen/*`) for research and simple fallback tasks, but the default agents for the main MDU loop (just-code, test-agent, code-reviewer, devops, qa, architect) all require Go models.
+A few agents use **free Zen models** (`opencode/*`) for research and simple fallback tasks, but the default agents for the main MDU loop (just-code, test-agent, code-reviewer, devops, qa, architect) all require Go models.
 
 > **If you don't have an OpenCode Go subscription**, the agents will still deploy but will fail at runtime when they try to call Go models. You'll need to either:
 > - Subscribe to OpenCode Go ($10/month), or
@@ -58,7 +58,7 @@ The `opencode.json` file in the root provides a ready-to-use set of agents. You 
 
 The Claude Code subagents are **generated at build time** from `opencode.json` (roster + descriptions) and `prompts/*.md` (the canonical, provider-neutral system prompts), so there is no separate `claude/` source tree to maintain — they always stay in sync with the OpenCode definitions. Each generated file is Markdown with YAML frontmatter (`name`, `description`) followed by the system prompt body; `model` is intentionally omitted so each subagent inherits your configured Claude Code model.
 
-The shipped `opencode.json` also includes a top-level `permission` block (`permission.external_directory`) that lets all agents read `/tmp` and `/proc` — and write `/tmp` for agents with write access — without prompting. Read-only agents keep their `edit`/`write` deny, so the scratch allowance does not widen their reach.
+The shipped `opencode.json` also includes a top-level `permissions` array that lets all agents read `/tmp` and `/proc` — and write `/tmp` for agents with write access — without prompting. Read-only agents keep their `edit`/`write` deny, so the scratch allowance does not widen their reach.
 
 ### For Grok Build only
 
@@ -92,51 +92,51 @@ The agent definitions follow a **model tier variant** pattern — each role has 
 - [`orchestrator`](prompts/orchestrator.md) — Primary coordinator. Uses free Zen model (big-pickle).
 
 **Research** (free / budget models — cheapest tier):
-- [`research`](prompts/research.md) — Quick web lookups (free: ling-3.0-flash-fin-free)
+- [`research`](prompts/research.md) — Quick web lookups (free: mimo-v2.6-flash-free)
 - [`deepseek-research`](prompts/research.md) — Coding patterns, library docs (free: nemotron-3-ultra-free)
 - [`nemotron-research`](prompts/research.md) — Thorough doc research (free: nemotron-3.5-lightning-free)
 - [`deep-research`](prompts/research.md) — Comprehensive multi-source research (Go budget: mimo-v2.5)
 
 **Coding** (spread across tiers — most-used role):
-- [`just-code`](prompts/just-code.md) — Default coder (Go budget: deepseek-v4-flash, ~$0.14/M tokens)
+- [`just-code`](prompts/just-code.md) — Default coder (Go budget: deepseek-v4.1-flash)
 - [`just-code-mid`](prompts/just-code.md) — Complex features needing deeper reasoning (Go mid: kimi-k2.7-code)
-- [`just-code-pro`](prompts/just-code.md) — Architecture-sensitive code, refactoring (Go premium: deepseek-v4-pro)
+- [`just-code-pro`](prompts/just-code.md) — Architecture-sensitive code, refactoring (Go premium: glm-5.2)
 - [`just-code-free`](prompts/just-code.md) — Boilerplate, simple changes (free: big-pickle)
 
 **Testing:**
-- [`test-agent`](prompts/test-agent.md) — Default test writer (Go budget: deepseek-v4-flash)
-- [`test-agent-mid`](prompts/test-agent.md) — Complex test suites, property-based tests (Go mid: minimax-m3)
+- [`test-agent`](prompts/test-agent.md) — Default test writer (Go budget: deepseek-v4.1-flash)
+- [`test-agent-mid`](prompts/test-agent.md) — Complex test suites, property-based tests (Go mid: mimo-v2.5)
 - [`test-agent-pro`](prompts/test-agent.md) — Security tests, deep coverage (Go premium: kimi-k2.7-code)
 - [`test-agent-free`](prompts/test-agent.md) — Simple unit tests (free: big-pickle)
 
 **Code Review:**
-- [`code-reviewer`](prompts/code-reviewer.md) — Standard review (Go mid: minimax-m3)
-- [`code-reviewer-pro`](prompts/code-reviewer.md) — Deep security audit, architecture review (Go premium: deepseek-v4-pro)
+- [`code-reviewer`](prompts/code-reviewer.md) — Standard review (Go mid: mimo-v2.5)
+- [`code-reviewer-pro`](prompts/code-reviewer.md) — Deep security audit, architecture review (Go premium: glm-5.2)
 - [`code-reviewer-free`](prompts/code-reviewer.md) — Quick lint/style check (free: big-pickle)
 
 **Architecture:**
-- [`architect`](prompts/architect.md) — Design docs, API specs (Go premium: deepseek-v4-pro)
+- [`architect`](prompts/architect.md) — Design docs, API specs (Go premium: glm-5.2)
 - [`architect-premium`](prompts/architect.md) — Complex system design, ADRs (Go top-tier: glm-5.2)
 
 **DevOps:**
-- [`devops`](prompts/devops.md) — Standard deploys, Docker, CI/CD (Go mid: minimax-m3)
-- [`devops-pro`](prompts/devops.md) — Complex multi-service deploys, IaC (Go premium: deepseek-v4-pro)
+- [`devops`](prompts/devops.md) — Standard deploys, Docker, CI/CD (Go mid: mimo-v2.5)
+- [`devops-pro`](prompts/devops.md) — Complex multi-service deploys, IaC (Go premium: glm-5.2)
 - [`devops-free`](prompts/devops.md) — Simple config changes (free: big-pickle)
 
 **QA:**
-- [`qa`](prompts/qa.md) — Standard validation (Go mid: minimax-m3)
+- [`qa`](prompts/qa.md) — Standard validation (Go mid: mimo-v2.5)
 - [`qa-pro`](prompts/qa.md) — Thorough regression, edge case validation (Go premium: kimi-k2.7-code)
 - [`qa-free`](prompts/qa.md) — Basic smoke tests (free: big-pickle)
 
 **UI/UX Design:**
-- [`ui-ux-designer`](prompts/ui-ux-designer.md) — Standard design work (Go mid: minimax-m3)
+- [`ui-ux-designer`](prompts/ui-ux-designer.md) — Standard design work (Go mid: mimo-v2.5)
 - [`ui-ux-designer-pro`](prompts/ui-ux-designer.md) — Polished production UI, design systems (Go premium: kimi-k2.7-code)
 
 **Introspection:**
-- [`introspector`](prompts/introspector.md) — Reviews session logs after an MDU and writes durable agent-definition improvement suggestions for the orchestrator (Go mid: minimax-m3)
+- [`introspector`](prompts/introspector.md) — Reviews session logs after an MDU and writes durable agent-definition improvement suggestions for the orchestrator (Go mid: mimo-v2.5)
 
 **Inception** (user-invoked primary — not part of the orchestrator's MDU loop):
-- [`inception`](prompts/inception.md) — Interviews you on a new project idea and iteratively refines it into an actionable spec (Go budget: deepseek-v4-flash)
+- [`inception`](prompts/inception.md) — Interviews you on a new project idea and iteratively refines it into an actionable spec (Go budget: deepseek-v4.1-flash)
 
 **Grok Build profiles** (in `grok/agents/`):
 

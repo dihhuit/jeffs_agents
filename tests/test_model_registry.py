@@ -56,7 +56,7 @@ def _write_opencode(tmp_path: Path, *, agents: dict | None = None, raw: str | No
     if raw is not None:
         path.write_text(raw, encoding="utf-8")
     else:
-        path.write_text(json.dumps({"agent": agents or {}}), encoding="utf-8")
+        path.write_text(json.dumps({"agents": agents or {}}), encoding="utf-8")
     return path
 
 
@@ -105,7 +105,7 @@ def test_find_model_refs_skips_non_dict_agent_definitions(tmp_path: Path) -> Non
     assert find_model_refs(path) == [("agent-c", "model-1")]
 
 
-def test_find_model_refs_no_agent_key_returns_empty(tmp_path: Path) -> None:
+def test_find_model_refs_no_agents_key_returns_empty(tmp_path: Path) -> None:
     path = tmp_path / "opencode.json"
     path.write_text(json.dumps({"skills": []}), encoding="utf-8")
     assert find_model_refs(path) == []

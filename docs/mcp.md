@@ -72,7 +72,7 @@ and the GitHub server in particular is token-hungry.
 
 | CLI | Location | Verified? |
 | --- | --- | --- |
-| **OpenCode** (v1.17.x) | `mcp` key in project `opencode.json` (or global `~/.config/opencode/opencode.json`). Local servers: `{ "type": "local", "command": ["npx", "-y", "..."], "environment": {...}, "enabled": true }`. Per-agent scoping via the `tools` key (glob `"playwright_*": true` on the agent, `"playwright*": false` globally). | **Verified** against opencode.ai docs and the installed v1.17.11 binary/source. Note: `.mcp.json` is **not** auto-loaded by OpenCode 1.17.x; it is the Claude Code convention. Use `.mcp.json` only as a portable cross-tool file and merge it into `opencode.json` for OpenCode. |
+| **OpenCode** (V2) | `mcp.servers` in project `opencode.json` (or global `~/.config/opencode/opencode.json`). Local servers: `{ "type": "local", "command": ["npx", "-y", "..."], "environment": {...}, "disabled": false, "timeout": { "catalog": 10000, "execution": 10000 } }`. | **Verified** against opencode.ai V2 docs and the installed binary. Note: `.mcp.json` is the Claude Code convention; merge it into `opencode.json` for OpenCode. |
 | **Claude Code** (v2.1.x) | Project-level `.mcp.json` at the repo root; user-level servers in `~/.claude.json`. Manage with `claude mcp add/list`. | **Verified** locally (`claude mcp list` shows the configured `playwright` server; `claude mcp --help` documents project-scoped `.mcp.json`). |
 | **Grok** | `grok mcp add <name> <cmd-or-url>` CLI; config written to `~/.grok/config.toml` (user scope, `-s user`) or `./.grok/config.toml` (project scope, `-s project`) under `[mcp_servers.<name>]`. Diagnose with `grok mcp doctor`. | **Verified** locally (`grok mcp list` shows `playwright` and `browser-os` already configured on this harness). |
 
@@ -80,34 +80,35 @@ The local harness already has `playwright` (`npx -y @playwright/mcp@latest
 --caps=devtools,network,testing`) and `browser-os` configured for both Grok and
 Claude Code; OpenCode is the gap this document closes.
 
-### OpenCode config shape (v1 style, matches this repo's `opencode.json`)
+### OpenCode config shape (V2 native)
 
 ```jsonc
 {
   "$schema": "https://opencode.ai/config.json",
   "mcp": {
-    "playwright": {
-      "type": "local",
-      "command": ["npx", "-y", "@playwright/mcp@latest", "--caps=devtools,network,testing"],
-      "enabled": true
-    },
-    "github": {
-      "type": "local",
-      "command": ["npx", "-y", "@modelcontextprotocol/server-github"],
-      "environment": { "GITHUB_PERSONAL_ACCESS_TOKEN": "{env:GITHUB_PERSONAL_ACCESS_TOKEN}" },
-      "enabled": true
+    "servers": {
+      "playwright": {
+        "type": "local",
+        "command": ["npx", "-y", "@playwright/mcp@latest", "--caps=devtools,network,testing"],
+        "disabled": false,
+        "timeout": { "catalog": 10000, "execution": 10000 }
+      },
+      "github": {
+        "type": "local",
+        "command": ["npx", "-y", "@modelcontextprotocol/server-github"],
+        "environment": { "GITHUB_PERSONAL_ACCESS_TOKEN": "{env:GITHUB_PERSONAL_ACCESS_TOKEN}" },
+        "disabled": false
+      }
     }
-  },
-  "tools": { "playwright*": false, "github*": false },
-  "agent": {
-    "qa": { "tools": { "playwright*": true } },
-    "devops": { "tools": { "github*": true } }
   }
 }
 ```
 
 `{env:VAR}` is substituted from the environment at load time — never inline a
-token. A ready-to-copy variant with playwright + filesystem + github is in
+token. In OpenCode V2, `enabled` is inverted to `disabled`, servers live under
+`mcp.servers`, and `timeout` is split into `timeout.catalog` and
+`timeout.execution`. A ready-to-copy inert variant (all servers disabled) with
+playwright + filesystem + github is in
 [`examples/mcp/opencode.mcp.json.example`](../examples/mcp/opencode.mcp.json.example).
 
 ## Per-agent scoping
@@ -120,17 +121,16 @@ token. A ready-to-copy variant with playwright + filesystem + github is in
 | `code-reviewer`, `code-reviewer-pro`, `code-reviewer-free` | **none** | Review-only role; MCP tools add context and attack surface without adding review value |
 | `orchestrator`, `research`, `architect`, `test-agent*`, `ui-ux-designer*` | **none by default** | Keep context lean; add per-task if a concrete need appears |
 
-In OpenCode, enforce this with the `tools` key: disable MCP servers globally
-(`"playwright*": false`), then re-enable per agent (`"playwright*": true`).
+In OpenCode V2, scope MCP servers with the `disabled` flag and client-side
+server/tool enablement (no global `tools` map). Keep unused servers disabled.
 
 ## Quick start
 
 1. Pick the servers you need from the reference table (start with playwright
    for QA, github for devops).
-2. Add them to your CLI's config (per-CLI table above) with `enabled: true`
+2. Add them to your CLI's config (per-CLI table above) with `disabled: false`
    and tokens via `{env:VAR}`.
-3. Scope servers to agents with the `tools` key (OpenCode) or equivalent
-   per-agent tool permissions.
+3. Disable servers you are not actively using.
 4. Sanity-check with the client's own tooling: `opencode mcp list`,
    `claude mcp list`, or `grok mcp doctor`.
 5. If a server fails to start or connect, the loop still runs — see the

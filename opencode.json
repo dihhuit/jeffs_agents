@@ -1,603 +1,2070 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "default_agent": "orchestrator",
-  "permission": {
-    "external_directory": {
-      "/tmp/**": "allow",
-      "/proc/**": "allow"
-    }
-  },
-  "provider": {
-    "opencode-zen": {
-      "npm": "@ai-sdk/openai-compatible",
-      "name": "OpenCode Zen",
-      "options": {
-        "baseURL": "https://opencode.ai/zen/v1"
-      },
-      "models": {
-        "big-pickle": {
-          "name": "Big Pickle"
-        }
-      }
+  "permissions": [
+    {
+      "action": "external_directory",
+      "resource": "/tmp/**",
+      "effect": "allow"
     },
-    "opencode-go": {
-      "npm": "@ai-sdk/openai-compatible",
-      "name": "OpenCode Go",
-      "options": {
-        "baseURL": "https://opencode.ai/zen/go/v1"
-      },
-      "models": {
-        "deepseek-v4-flash": { "name": "DeepSeek V4 Flash" },
-        "deepseek-v4-pro": { "name": "DeepSeek V4 Pro" },
-        "kimi-k2.7-code": { "name": "Kimi K2.7 Code" },
-        "minimax-m3": { "name": "MiniMax M3" },
-        "glm-5.2": { "name": "GLM-5.2" },
-        "mimo-v2.5": { "name": "MiMo-V2.5" }
-      }
+    {
+      "action": "external_directory",
+      "resource": "/proc/**",
+      "effect": "allow"
     }
-  },
-  "agent": {
+  ],
+  "agents": {
     "orchestrator": {
       "mode": "primary",
       "description": "Primary coordinator that decomposes tasks and delegates to specialized subagents",
-      "model": "opencode-zen/big-pickle",
-      "temperature": 0.2,
+      "model": "opencode/big-pickle",
       "color": "#a855f7",
-      "prompt": "{file:./prompts/orchestrator.md}",
-      "permission": {
-        "task": { "*": "allow" },
-        "edit": "allow",
-        "write": "allow",
-        "bash": "allow",
-        "read": "allow",
-        "glob": "allow",
-        "grep": "allow",
-        "list": "allow",
-        "webfetch": "allow",
-        "websearch": "allow",
-        "todowrite": "allow"
-      }
+      "system": "{file:./prompts/orchestrator.md}",
+      "request": {
+        "body": {
+          "temperature": 0.2
+        }
+      },
+      "permissions": [
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "read",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "glob",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "grep",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "list",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "webfetch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "websearch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "todowrite",
+          "resource": "*",
+          "effect": "allow"
+        }
+      ]
     },
     "just-code": {
       "mode": "all",
       "description": "Writes production code using Go budget model. Code must build, lint, and pass tests",
-      "model": "opencode-go/deepseek-v4-flash",
-      "temperature": 0.5,
+      "model": "opencode-go/deepseek-v4.1-flash",
       "color": "#22c55e",
-      "prompt": "{file:./prompts/just-code.md}",
-      "permission": {
-        "edit": "allow",
-        "write": "allow",
-        "bash": "allow",
-        "read": "allow",
-        "glob": "allow",
-        "grep": "allow",
-        "list": "allow",
-        "webfetch": "allow",
-        "websearch": "allow",
-        "todowrite": "allow",
-        "task": { "research": "allow", "*": "deny" }
-      }
+      "system": "{file:./prompts/just-code.md}",
+      "request": {
+        "body": {
+          "temperature": 0.5
+        }
+      },
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "read",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "glob",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "grep",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "list",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "webfetch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "websearch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "todowrite",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "research",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ]
     },
     "just-code-mid": {
       "mode": "subagent",
       "description": "Writes production code using mid-tier coding-optimized model. Best for complex feature implementation",
       "model": "opencode-go/kimi-k2.7-code",
-      "temperature": 0.5,
       "color": "#16a34a",
-      "prompt": "{file:./prompts/just-code.md}",
-      "permission": {
-        "edit": "allow",
-        "write": "allow",
-        "bash": "allow",
-        "read": "allow",
-        "glob": "allow",
-        "grep": "allow",
-        "list": "allow",
-        "webfetch": "allow",
-        "websearch": "allow",
-        "todowrite": "allow",
-        "task": { "research": "allow", "*": "deny" }
-      }
+      "system": "{file:./prompts/just-code.md}",
+      "request": {
+        "body": {
+          "temperature": 0.5
+        }
+      },
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "read",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "glob",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "grep",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "list",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "webfetch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "websearch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "todowrite",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "research",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ]
     },
     "just-code-pro": {
       "mode": "subagent",
       "description": "Writes production code using premium model. For complex, architecture-sensitive code requiring deeper reasoning",
-      "model": "opencode-go/deepseek-v4-pro",
-      "temperature": 0.4,
+      "model": "opencode-go/glm-5.2",
       "color": "#15803d",
-      "prompt": "{file:./prompts/just-code.md}",
-      "permission": {
-        "edit": "allow",
-        "write": "allow",
-        "bash": "allow",
-        "read": "allow",
-        "glob": "allow",
-        "grep": "allow",
-        "list": "allow",
-        "webfetch": "allow",
-        "websearch": "allow",
-        "todowrite": "allow",
-        "task": { "research": "allow", "*": "deny" }
-      }
+      "system": "{file:./prompts/just-code.md}",
+      "request": {
+        "body": {
+          "temperature": 0.4
+        }
+      },
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "read",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "glob",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "grep",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "list",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "webfetch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "websearch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "todowrite",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "research",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ]
     },
     "just-code-free": {
       "mode": "subagent",
       "description": "Writes production code using free model. For simple changes, boilerplate, or when Go budget is tight",
-      "model": "opencode-zen/big-pickle",
-      "temperature": 0.5,
+      "model": "opencode/big-pickle",
       "color": "#86efac",
-      "prompt": "{file:./prompts/just-code.md}",
-      "permission": {
-        "edit": "allow",
-        "write": "allow",
-        "bash": "allow",
-        "read": "allow",
-        "glob": "allow",
-        "grep": "allow",
-        "list": "allow",
-        "webfetch": "allow",
-        "websearch": "allow",
-        "todowrite": "allow",
-        "task": { "research": "allow", "*": "deny" }
-      }
+      "system": "{file:./prompts/just-code.md}",
+      "request": {
+        "body": {
+          "temperature": 0.5
+        }
+      },
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "read",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "glob",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "grep",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "list",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "webfetch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "websearch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "todowrite",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "research",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ]
     },
     "test-agent": {
       "mode": "subagent",
       "description": "Writes tests using Go budget model. Writes unit, integration, e2e, and fuzz tests",
-      "model": "opencode-go/deepseek-v4-flash",
+      "model": "opencode-go/deepseek-v4.1-flash",
       "color": "#ef4444",
-      "prompt": "{file:./prompts/test-agent.md}",
-      "permission": {
-        "edit": "allow",
-        "write": "allow",
-        "bash": "allow",
-        "read": "allow",
-        "glob": "allow",
-        "grep": "allow",
-        "list": "allow",
-        "webfetch": "allow",
-        "websearch": "allow",
-        "todowrite": "allow",
-        "task": { "research": "allow", "*": "deny" }
-      }
+      "system": "{file:./prompts/test-agent.md}",
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "read",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "glob",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "grep",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "list",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "webfetch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "websearch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "todowrite",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "research",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ]
     },
     "test-agent-mid": {
       "mode": "subagent",
       "description": "Writes tests using mid-tier Go model. For complex test suites, property-based tests, and integration coverage",
-      "model": "opencode-go/minimax-m3",
+      "model": "opencode-go/mimo-v2.5",
       "color": "#dc2626",
-      "prompt": "{file:./prompts/test-agent.md}",
-      "permission": {
-        "edit": "allow",
-        "write": "allow",
-        "bash": "allow",
-        "read": "allow",
-        "glob": "allow",
-        "grep": "allow",
-        "list": "allow",
-        "webfetch": "allow",
-        "websearch": "allow",
-        "todowrite": "allow",
-        "task": { "research": "allow", "*": "deny" }
-      }
+      "system": "{file:./prompts/test-agent.md}",
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "read",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "glob",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "grep",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "list",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "webfetch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "websearch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "todowrite",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "research",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ]
     },
     "test-agent-pro": {
       "mode": "subagent",
       "description": "Writes tests using premium Go model. For deep coverage analysis, security tests, and complex integration scenarios",
       "model": "opencode-go/kimi-k2.7-code",
       "color": "#b91c1c",
-      "prompt": "{file:./prompts/test-agent.md}",
-      "permission": {
-        "edit": "allow",
-        "write": "allow",
-        "bash": "allow",
-        "read": "allow",
-        "glob": "allow",
-        "grep": "allow",
-        "list": "allow",
-        "webfetch": "allow",
-        "websearch": "allow",
-        "todowrite": "allow",
-        "task": { "research": "allow", "*": "deny" }
-      }
+      "system": "{file:./prompts/test-agent.md}",
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "read",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "glob",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "grep",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "list",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "webfetch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "websearch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "todowrite",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "research",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ]
     },
     "test-agent-free": {
       "mode": "subagent",
       "description": "Writes tests using free model. For simple unit tests or when Go budget is tight",
-      "model": "opencode-zen/big-pickle",
+      "model": "opencode/big-pickle",
       "color": "#fca5a5",
-      "prompt": "{file:./prompts/test-agent.md}",
-      "permission": {
-        "edit": "allow",
-        "write": "allow",
-        "bash": "allow",
-        "read": "allow",
-        "glob": "allow",
-        "grep": "allow",
-        "list": "allow",
-        "webfetch": "allow",
-        "websearch": "allow",
-        "todowrite": "allow",
-        "task": { "research": "allow", "*": "deny" }
-      }
+      "system": "{file:./prompts/test-agent.md}",
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "read",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "glob",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "grep",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "list",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "webfetch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "websearch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "todowrite",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "research",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ]
     },
     "code-reviewer": {
       "mode": "subagent",
       "description": "Reviews code using mid-tier Go model. Signs off on changes for quality, security, and maintainability",
-      "model": "opencode-go/minimax-m3",
-      "temperature": 0.1,
+      "model": "opencode-go/mimo-v2.5",
       "color": "#3b82f6",
-      "prompt": "{file:./prompts/code-reviewer.md}",
-      "permission": {
-        "edit": "deny",
-        "write": "deny",
-        "bash": { "*": "deny", "git diff*": "allow", "git log*": "allow", "git show*": "allow", "grep *": "allow", "rg *": "allow" },
-        "read": "allow",
-        "glob": "allow",
-        "grep": "allow",
-        "list": "allow",
-        "webfetch": "deny",
-        "websearch": "deny",
-        "todowrite": "deny",
-        "task": { "research": "allow", "*": "deny" }
-      }
+      "system": "{file:./prompts/code-reviewer.md}",
+      "request": {
+        "body": {
+          "temperature": 0.1
+        }
+      },
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "git diff*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "git log*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "git show*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "grep *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "rg *",
+          "effect": "allow"
+        },
+        {
+          "action": "read",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "glob",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "grep",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "list",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "webfetch",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "websearch",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "todowrite",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "subagent",
+          "resource": "research",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ]
     },
     "code-reviewer-pro": {
       "mode": "subagent",
       "description": "Reviews code using premium Go model. For deep security audits, architecture review, and complex change validation",
-      "model": "opencode-go/deepseek-v4-pro",
-      "temperature": 0.1,
+      "model": "opencode-go/glm-5.2",
       "color": "#2563eb",
-      "prompt": "{file:./prompts/code-reviewer.md}",
-      "permission": {
-        "edit": "deny",
-        "write": "deny",
-        "bash": { "*": "deny", "git diff*": "allow", "git log*": "allow", "git show*": "allow", "grep *": "allow", "rg *": "allow" },
-        "read": "allow",
-        "glob": "allow",
-        "grep": "allow",
-        "list": "allow",
-        "webfetch": "deny",
-        "websearch": "deny",
-        "todowrite": "deny",
-        "task": { "research": "allow", "*": "deny" }
-      }
+      "system": "{file:./prompts/code-reviewer.md}",
+      "request": {
+        "body": {
+          "temperature": 0.1
+        }
+      },
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "git diff*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "git log*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "git show*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "grep *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "rg *",
+          "effect": "allow"
+        },
+        {
+          "action": "read",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "glob",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "grep",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "list",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "webfetch",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "websearch",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "todowrite",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "subagent",
+          "resource": "research",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ]
     },
     "code-reviewer-free": {
       "mode": "subagent",
       "description": "Reviews code using free model. For quick lint/format checks and simple reviews",
-      "model": "opencode-zen/big-pickle",
-      "temperature": 0.1,
+      "model": "opencode/big-pickle",
       "color": "#93c5fd",
-      "prompt": "{file:./prompts/code-reviewer.md}",
-      "permission": {
-        "edit": "deny",
-        "write": "deny",
-        "bash": { "*": "deny", "git diff*": "allow", "git log*": "allow", "git show*": "allow", "grep *": "allow", "rg *": "allow" },
-        "read": "allow",
-        "glob": "allow",
-        "grep": "allow",
-        "list": "allow",
-        "webfetch": "deny",
-        "websearch": "deny",
-        "todowrite": "deny",
-        "task": { "research": "allow", "*": "deny" }
-      }
+      "system": "{file:./prompts/code-reviewer.md}",
+      "request": {
+        "body": {
+          "temperature": 0.1
+        }
+      },
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "git diff*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "git log*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "git show*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "grep *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "rg *",
+          "effect": "allow"
+        },
+        {
+          "action": "read",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "glob",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "grep",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "list",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "webfetch",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "websearch",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "todowrite",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "subagent",
+          "resource": "research",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ]
     },
     "architect": {
       "mode": "subagent",
       "description": "Produces design docs and architecture using premium Go model. Generates blueprints for other agents",
-      "model": "opencode-go/deepseek-v4-pro",
-      "temperature": 0.7,
+      "model": "opencode-go/glm-5.2",
       "color": "#eab308",
-      "prompt": "{file:./prompts/architect.md}",
-      "permission": {
-        "edit": "allow",
-        "write": "allow",
-        "bash": "deny",
-        "read": "allow",
-        "glob": "allow",
-        "grep": "allow",
-        "list": "allow",
-        "webfetch": "allow",
-        "websearch": "allow",
-        "todowrite": "allow",
-        "task": { "research": "allow", "*": "deny" }
-      }
+      "system": "{file:./prompts/architect.md}",
+      "request": {
+        "body": {
+          "temperature": 0.7
+        }
+      },
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "read",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "glob",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "grep",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "list",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "webfetch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "websearch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "todowrite",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "research",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ]
     },
     "architect-premium": {
       "mode": "subagent",
       "description": "Produces architecture using top-tier reasoning model. For complex system design, ADRs, and deep architectural analysis",
       "model": "opencode-go/glm-5.2",
-      "temperature": 0.7,
       "color": "#ca8a04",
-      "prompt": "{file:./prompts/architect.md}",
-      "permission": {
-        "edit": "allow",
-        "write": "allow",
-        "bash": "deny",
-        "read": "allow",
-        "glob": "allow",
-        "grep": "allow",
-        "list": "allow",
-        "webfetch": "allow",
-        "websearch": "allow",
-        "todowrite": "allow",
-        "task": { "research": "allow", "*": "deny" }
-      }
+      "system": "{file:./prompts/architect.md}",
+      "request": {
+        "body": {
+          "temperature": 0.7
+        }
+      },
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "read",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "glob",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "grep",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "list",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "webfetch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "websearch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "todowrite",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "research",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ]
     },
     "devops": {
       "mode": "subagent",
       "description": "Builds and debugs infrastructure, deploys the stack using mid-tier Go model",
-      "model": "opencode-go/minimax-m3",
-      "temperature": 0.1,
+      "model": "opencode-go/mimo-v2.5",
       "color": "#6b7280",
-      "prompt": "{file:./prompts/devops.md}",
-      "permission": {
-        "edit": "allow",
-        "write": "allow",
-        "bash": "allow",
-        "read": "allow",
-        "glob": "allow",
-        "grep": "allow",
-        "list": "allow",
-        "webfetch": "allow",
-        "websearch": "allow",
-        "todowrite": "allow",
-        "task": { "research": "allow", "*": "deny" }
-      }
+      "system": "{file:./prompts/devops.md}",
+      "request": {
+        "body": {
+          "temperature": 0.1
+        }
+      },
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "read",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "glob",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "grep",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "list",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "webfetch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "websearch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "todowrite",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "research",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ]
     },
     "devops-pro": {
       "mode": "subagent",
       "description": "Infrastructure and deployment using premium Go model. For complex multi-service deploys and IaC",
-      "model": "opencode-go/deepseek-v4-pro",
-      "temperature": 0.1,
+      "model": "opencode-go/glm-5.2",
       "color": "#4b5563",
-      "prompt": "{file:./prompts/devops.md}",
-      "permission": {
-        "edit": "allow",
-        "write": "allow",
-        "bash": "allow",
-        "read": "allow",
-        "glob": "allow",
-        "grep": "allow",
-        "list": "allow",
-        "webfetch": "allow",
-        "websearch": "allow",
-        "todowrite": "allow",
-        "task": { "research": "allow", "*": "deny" }
-      }
+      "system": "{file:./prompts/devops.md}",
+      "request": {
+        "body": {
+          "temperature": 0.1
+        }
+      },
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "read",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "glob",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "grep",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "list",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "webfetch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "websearch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "todowrite",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "research",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ]
     },
     "devops-free": {
       "mode": "subagent",
       "description": "Infrastructure tasks using free model. For simple config changes and basic deployments",
-      "model": "opencode-zen/big-pickle",
-      "temperature": 0.1,
+      "model": "opencode/big-pickle",
       "color": "#9ca3af",
-      "prompt": "{file:./prompts/devops.md}",
-      "permission": {
-        "edit": "allow",
-        "write": "allow",
-        "bash": "allow",
-        "read": "allow",
-        "glob": "allow",
-        "grep": "allow",
-        "list": "allow",
-        "webfetch": "allow",
-        "websearch": "allow",
-        "todowrite": "allow",
-        "task": { "research": "allow", "*": "deny" }
-      }
+      "system": "{file:./prompts/devops.md}",
+      "request": {
+        "body": {
+          "temperature": 0.1
+        }
+      },
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "read",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "glob",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "grep",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "list",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "webfetch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "websearch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "todowrite",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "research",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ]
     },
     "qa": {
       "mode": "subagent",
       "description": "Validates delivered functionality and produces bug reports using mid-tier Go model",
-      "model": "opencode-go/minimax-m3",
-      "prompt": "{file:./prompts/qa.md}",
-      "permission": {
-        "edit": "deny",
-        "write": "deny",
-        "bash": { "*": "deny", "git diff*": "allow", "git log*": "allow", "git show*": "allow", "grep *": "allow", "rg *": "allow" },
-        "read": "allow",
-        "glob": "allow",
-        "grep": "allow",
-        "list": "allow",
-        "webfetch": "allow",
-        "websearch": "allow",
-        "todowrite": "deny",
-        "task": { "*": "deny" }
-      }
+      "model": "opencode-go/mimo-v2.5",
+      "system": "{file:./prompts/qa.md}",
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "git diff*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "git log*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "git show*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "grep *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "rg *",
+          "effect": "allow"
+        },
+        {
+          "action": "read",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "glob",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "grep",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "list",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "webfetch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "websearch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "todowrite",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ]
     },
     "qa-pro": {
       "mode": "subagent",
       "description": "Validates delivered functionality using premium Go model. For thorough validation, regression testing, and edge case analysis",
       "model": "opencode-go/kimi-k2.7-code",
-      "prompt": "{file:./prompts/qa.md}",
-      "permission": {
-        "edit": "deny",
-        "write": "deny",
-        "bash": { "*": "deny", "git diff*": "allow", "git log*": "allow", "git show*": "allow", "grep *": "allow", "rg *": "allow" },
-        "read": "allow",
-        "glob": "allow",
-        "grep": "allow",
-        "list": "allow",
-        "webfetch": "allow",
-        "websearch": "allow",
-        "todowrite": "deny",
-        "task": { "*": "deny" }
-      }
+      "system": "{file:./prompts/qa.md}",
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "git diff*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "git log*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "git show*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "grep *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "rg *",
+          "effect": "allow"
+        },
+        {
+          "action": "read",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "glob",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "grep",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "list",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "webfetch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "websearch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "todowrite",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ]
     },
     "qa-free": {
       "mode": "subagent",
       "description": "Validates delivered functionality using free model. For basic smoke tests and quick validations",
-      "model": "opencode-zen/big-pickle",
-      "prompt": "{file:./prompts/qa.md}",
-      "permission": {
-        "edit": "deny",
-        "write": "deny",
-        "bash": { "*": "deny", "git diff*": "allow", "git log*": "allow", "git show*": "allow", "grep *": "allow", "rg *": "allow" },
-        "read": "allow",
-        "glob": "allow",
-        "grep": "allow",
-        "list": "allow",
-        "webfetch": "allow",
-        "websearch": "allow",
-        "todowrite": "deny",
-        "task": { "*": "deny" }
-      }
+      "model": "opencode/big-pickle",
+      "system": "{file:./prompts/qa.md}",
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "git diff*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "git log*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "git show*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "grep *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "rg *",
+          "effect": "allow"
+        },
+        {
+          "action": "read",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "glob",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "grep",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "list",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "webfetch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "websearch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "todowrite",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ]
     },
     "research": {
       "mode": "subagent",
       "description": "Web research using free fast model. Quick lookups, doc searches, and info gathering",
-      "model": "opencode/ling-3.0-flash-fin-free",
-      "temperature": 0.1,
+      "model": "opencode/mimo-v2.6-flash-free",
       "color": "#06b6d4",
-      "prompt": "{file:./prompts/research.md}",
-      "permission": {
-        "websearch": "allow", "webfetch": "allow", "read": "allow",
-        "glob": "allow", "grep": "allow", "list": "allow",
-        "edit": "deny", "write": "deny", "bash": "deny",
-        "todowrite": "deny",
-        "task": { "*": "deny" }
-      }
+      "system": "{file:./prompts/research.md}",
+      "request": {
+        "body": {
+          "temperature": 0.1
+        }
+      },
+      "permissions": [
+        {
+          "action": "websearch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "webfetch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "read",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "glob",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "grep",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "list",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "ask"
+        },
+        {
+          "action": "todowrite",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ]
     },
     "deepseek-research": {
       "mode": "subagent",
       "description": "Web research using free DeepSeek model. Capable multi-step research on coding patterns and libraries",
       "model": "opencode/nemotron-3-ultra-free",
-      "temperature": 0.1,
       "color": "#0891b2",
-      "prompt": "{file:./prompts/research.md}",
-      "permission": {
-        "websearch": "allow", "webfetch": "allow", "read": "allow",
-        "glob": "allow", "grep": "allow", "list": "allow",
-        "edit": "deny", "write": "deny", "bash": "deny",
-        "todowrite": "deny",
-        "task": { "*": "deny" }
-      }
+      "system": "{file:./prompts/research.md}",
+      "request": {
+        "body": {
+          "temperature": 0.1
+        }
+      },
+      "permissions": [
+        {
+          "action": "websearch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "webfetch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "read",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "glob",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "grep",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "list",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "ask"
+        },
+        {
+          "action": "todowrite",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ]
     },
     "nemotron-research": {
       "mode": "subagent",
       "description": "Web research using free Nemotron model. Good for thorough documentation and spec research",
       "model": "opencode/nemotron-3.5-lightning-free",
-      "temperature": 0.1,
       "color": "#0e7490",
-      "prompt": "{file:./prompts/research.md}",
-      "permission": {
-        "websearch": "allow", "webfetch": "allow", "read": "allow",
-        "glob": "allow", "grep": "allow", "list": "allow",
-        "edit": "deny", "write": "deny", "bash": "deny",
-        "todowrite": "deny",
-        "task": { "*": "deny" }
-      }
+      "system": "{file:./prompts/research.md}",
+      "request": {
+        "body": {
+          "temperature": 0.1
+        }
+      },
+      "permissions": [
+        {
+          "action": "websearch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "webfetch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "read",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "glob",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "grep",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "list",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "ask"
+        },
+        {
+          "action": "todowrite",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ]
     },
     "deep-research": {
       "mode": "subagent",
       "description": "In-depth multi-source research using Go budget model. For comprehensive investigations spanning many sources",
       "model": "opencode-go/mimo-v2.5",
-      "temperature": 0.1,
       "color": "#155e75",
-      "prompt": "{file:./prompts/research.md}",
-      "permission": {
-        "websearch": "allow", "webfetch": "allow", "read": "allow",
-        "glob": "allow", "grep": "allow", "list": "allow",
-        "edit": "deny", "write": "deny", "bash": "deny",
-        "todowrite": "deny",
-        "task": { "*": "deny" }
-      }
+      "system": "{file:./prompts/research.md}",
+      "request": {
+        "body": {
+          "temperature": 0.1
+        }
+      },
+      "permissions": [
+        {
+          "action": "websearch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "webfetch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "read",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "glob",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "grep",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "list",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "todowrite",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ]
     },
     "ui-ux-designer": {
       "mode": "subagent",
       "description": "UI/UX design using mid-tier Go model. Generates mocks, wireframes, and UI flow diagrams",
-      "model": "opencode-go/minimax-m3",
-      "temperature": 0.8,
+      "model": "opencode-go/mimo-v2.5",
       "color": "#f8f9fa",
-      "prompt": "{file:./prompts/ui-ux-designer.md}",
-      "permission": {
-        "edit": "allow",
-        "write": "allow",
-        "bash": { "*": "deny", "npm run dev": "allow", "npx *": "allow" },
-        "read": "allow",
-        "glob": "allow",
-        "grep": "allow",
-        "list": "allow",
-        "webfetch": "allow",
-        "websearch": "allow",
-        "todowrite": "allow",
-        "task": { "research": "allow", "*": "deny" }
-      }
+      "system": "{file:./prompts/ui-ux-designer.md}",
+      "request": {
+        "body": {
+          "temperature": 0.8
+        }
+      },
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "npm run dev",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "npx *",
+          "effect": "allow"
+        },
+        {
+          "action": "read",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "glob",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "grep",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "list",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "webfetch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "websearch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "todowrite",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "research",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ]
     },
     "ui-ux-designer-pro": {
       "mode": "subagent",
       "description": "UI/UX design using premium Go model. For polished production UI design with detailed specs and design systems",
       "model": "opencode-go/kimi-k2.7-code",
-      "temperature": 0.8,
       "color": "#e5e7eb",
-      "prompt": "{file:./prompts/ui-ux-designer.md}",
-      "permission": {
-        "edit": "allow",
-        "write": "allow",
-        "bash": { "*": "deny", "npm run dev": "allow", "npx *": "allow" },
-        "read": "allow",
-        "glob": "allow",
-        "grep": "allow",
-        "list": "allow",
-        "webfetch": "allow",
-        "websearch": "allow",
-        "todowrite": "allow",
-        "task": { "research": "allow", "*": "deny" }
-      }
+      "system": "{file:./prompts/ui-ux-designer.md}",
+      "request": {
+        "body": {
+          "temperature": 0.8
+        }
+      },
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "npm run dev",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "npx *",
+          "effect": "allow"
+        },
+        {
+          "action": "read",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "glob",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "grep",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "list",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "webfetch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "websearch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "todowrite",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "research",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ]
     },
     "introspector": {
       "mode": "subagent",
       "description": "Reviews the current session logs after an MDU and writes durable agent-definition improvement suggestions for the orchestrator.",
-      "model": "opencode-go/minimax-m3",
-      "temperature": 0.2,
+      "model": "opencode-go/mimo-v2.5",
       "color": "#14b8a6",
-      "prompt": "{file:./prompts/introspector.md}",
-      "permission": {
-        "edit": "allow",
-        "write": "allow",
-        "bash": { "*": "deny", "python3 *": "allow", "python *": "allow" },
-        "read": "allow",
-        "glob": "allow",
-        "grep": "allow",
-        "list": "allow",
-        "webfetch": "deny",
-        "websearch": "deny",
-        "todowrite": "deny",
-        "task": { "*": "deny" },
-        "external_directory": {
-          "~/.local/share/opencode/**": "allow",
-          "~/.grok/**": "allow",
-          "~/.claude/**": "allow",
-          "~/.config/opencode/skills/**": "allow",
-          "/tmp/**": "allow",
-          "/proc/**": "allow"
+      "system": "{file:./prompts/introspector.md}",
+      "request": {
+        "body": {
+          "temperature": 0.2
         }
-      }
+      },
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "python3 *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "python *",
+          "effect": "allow"
+        },
+        {
+          "action": "read",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "glob",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "grep",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "list",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "webfetch",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "websearch",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "todowrite",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "external_directory",
+          "resource": "~/.local/share/opencode/**",
+          "effect": "allow"
+        },
+        {
+          "action": "external_directory",
+          "resource": "~/.grok/**",
+          "effect": "allow"
+        },
+        {
+          "action": "external_directory",
+          "resource": "~/.claude/**",
+          "effect": "allow"
+        },
+        {
+          "action": "external_directory",
+          "resource": "~/.config/opencode/skills/**",
+          "effect": "allow"
+        },
+        {
+          "action": "external_directory",
+          "resource": "/tmp/**",
+          "effect": "allow"
+        },
+        {
+          "action": "external_directory",
+          "resource": "/proc/**",
+          "effect": "allow"
+        }
+      ]
     },
     "inception": {
       "mode": "primary",
-      "description": "Interviews you on a new project idea and iteratively refines it into an actionable spec document",
-      "model": "opencode-go/deepseek-v4-flash",
-      "temperature": 0.4,
-      "color": "#f97316",
-      "prompt": "{file:./prompts/inception.md}",
-      "permission": {
-        "read": "allow",
-        "glob": "allow",
-        "grep": "allow",
-        "list": "allow",
-        "write": "allow",
-        "edit": "allow",
-        "webfetch": "allow",
-        "websearch": "allow",
-        "question": "allow",
-        "todowrite": "allow",
-        "bash": "deny",
-        "task": { "*": "deny" }
+      "description": "Project inception specialist \u2014 interviews you on a new idea and iteratively refines it into a complete spec/requirements document",
+      "model": "opencode-go/deepseek-v4.1-flash",
+      "system": "{file:./prompts/inception.md}",
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "read",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "glob",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "grep",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "webfetch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "websearch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "question",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "todowrite",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ],
+      "request": {
+        "body": {
+          "temperature": 0.4
+        }
       }
     }
   }

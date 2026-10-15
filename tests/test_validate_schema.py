@@ -24,16 +24,16 @@ VALID_AGENT = {
     "mode": "subagent",
     "description": "test",
     "model": "model-a",
-    "prompt": "You are a test agent.",
+    "system": "You are a test agent.",
 }
 
 
 def _write_config(tmp_path: Path, agents: dict) -> Path:
-    """Write build/opencode.json with the given ``agent`` mapping."""
+    """Write build/opencode.json with the given ``agents`` mapping."""
     build = tmp_path / "build"
     build.mkdir(parents=True, exist_ok=True)
     (build / "opencode.json").write_text(
-        json.dumps({"agent": agents}), encoding="utf-8"
+        json.dumps({"agents": agents}), encoding="utf-8"
     )
     return build
 
@@ -65,9 +65,9 @@ def test_validate_schema_invalid_mode_reports_field(tmp_path: Path) -> None:
 
 
 def test_validate_schema_missing_required_fields_reported(tmp_path: Path) -> None:
-    # Regression: the pre-MDU-03 fixture shape (only model + prompt) is invalid.
+    # Regression: the pre-MDU-03 fixture shape (only model + system) is invalid.
     build = _write_config(
-        tmp_path, {"test-agent": {"model": "model-a", "prompt": "You are a test agent."}}
+        tmp_path, {"test-agent": {"model": "model-a", "system": "You are a test agent."}}
     )
     errors, ran = validate.validate_schema(build)
     assert ran is True

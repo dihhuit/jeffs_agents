@@ -11,23 +11,26 @@
     "default_agent": {
       "type": "string"
     },
-    "agent": {
+    "permissions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/permission"
+      }
+    },
+    "agents": {
       "type": "object",
       "minProperties": 1,
       "additionalProperties": {
         "$ref": "#/definitions/agent"
       }
-    },
-    "provider": {
-      "type": "object"
     }
   },
-  "required": ["agent"],
+  "required": ["agents"],
   "additionalProperties": true,
   "definitions": {
     "agent": {
       "type": "object",
-      "required": ["mode", "description", "prompt"],
+      "required": ["mode", "description", "system"],
       "properties": {
         "mode": {
           "enum": ["primary", "subagent", "all"]
@@ -38,23 +41,19 @@
         "model": {
           "type": "string"
         },
-        "temperature": {
-          "type": "number"
-        },
         "color": {
           "type": "string"
         },
-        "prompt": {
+        "system": {
           "type": "string"
         },
-        "permission": {
+        "request": {
           "type": "object"
         },
-        "tools": {
-          "description": "Deprecated legacy permission style; use 'permission' instead.",
-          "type": "object",
-          "additionalProperties": {
-            "type": "boolean"
+        "permissions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/permission"
           }
         },
         "dynamic": {
@@ -62,6 +61,22 @@
         }
       },
       "additionalProperties": true
+    },
+    "permission": {
+      "type": "object",
+      "required": ["action", "resource", "effect"],
+      "properties": {
+        "action": {
+          "type": "string"
+        },
+        "resource": {
+          "type": "string"
+        },
+        "effect": {
+          "enum": ["allow", "deny", "ask"]
+        }
+      },
+      "additionalProperties": false
     }
   }
 }

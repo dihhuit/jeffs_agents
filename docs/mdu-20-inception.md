@@ -15,10 +15,10 @@ with the OpenCode and Grok mirrors behaviorally aligned and parity-validated.
 
 ## Model choice
 
-`opencode-go/deepseek-v4-flash` — already in the base `provider` block and
-`config/model-registry.txt`, and it is the budget tier this repo assigns to
-structured-writing roles (just-code, test-agent), which matches inception's low-compute
-interview-and-write workload.
+`opencode-go/deepseek-v4.1-flash` — already in `config/model-registry.txt`,
+and it is the budget tier this repo assigns to structured-writing roles
+(just-code, test-agent), which matches inception's low-compute interview-and-write
+workload.
 
 ## File list
 
@@ -30,7 +30,7 @@ Edit:
 - `opencode.json` — add the `inception` agent entry (snippet below).
 - `scripts/lib/validate.py` — add `"inception": ["inception.md"]` to `GROK_MIRRORS`
   and an `"inception"` entry to `ROLE_KEYWORDS`.
-- `docs/model-registry.md` — add an `inception` row (new "Inception" section, model `opencode-go/deepseek-v4-flash`).
+- `docs/model-registry.md` — add an `inception` row (new "Inception" section, model `opencode-go/deepseek-v4.1-flash`).
 - `README.md` — roster entry + layout counts (see README touch points).
 
 No change needed: `config/model-registry.txt`, `provider` block, schema (`permission`
@@ -44,24 +44,22 @@ Insert inside `"agent"`:
 "inception": {
   "mode": "primary",
   "description": "Interviews you on a new project idea and iteratively refines it into an actionable spec document",
-  "model": "opencode-go/deepseek-v4-flash",
-  "temperature": 0.4,
+  "model": "opencode-go/deepseek-v4.1-flash",
   "color": "#f97316",
-  "prompt": "{file:./prompts/inception.md}",
-  "permission": {
-    "read": "allow",
-    "glob": "allow",
-    "grep": "allow",
-    "list": "allow",
-    "write": "allow",
-    "edit": "allow",
-    "webfetch": "allow",
-    "websearch": "allow",
-    "question": "allow",
-    "todowrite": "allow",
-    "bash": "deny",
-    "task": { "*": "deny" }
-  }
+  "system": "{file:./prompts/inception.md}",
+  "request": { "body": { "temperature": 0.4 } },
+  "permissions": [
+    { "action": "edit", "resource": "*", "effect": "allow" },
+    { "action": "read", "resource": "*", "effect": "allow" },
+    { "action": "glob", "resource": "*", "effect": "allow" },
+    { "action": "grep", "resource": "*", "effect": "allow" },
+    { "action": "webfetch", "resource": "*", "effect": "allow" },
+    { "action": "websearch", "resource": "*", "effect": "allow" },
+    { "action": "question", "resource": "*", "effect": "allow" },
+    { "action": "todowrite", "resource": "*", "effect": "allow" },
+    { "action": "shell", "resource": "*", "effect": "deny" },
+    { "action": "subagent", "resource": "*", "effect": "deny" }
+  ]
 }
 ```
 
@@ -131,14 +129,14 @@ parity keywords and must appear verbatim in both):
    complete enough, question).
 3. `grok/agents/inception.md` frontmatter: `name: inception`, `model: grok-4.7`
    (allowlisted), `description` present.
-4. `opencode.json` `inception` entry: `mode: primary`, model `opencode-go/deepseek-v4-flash`,
-   prompt ref `{file:./prompts/inception.md}`, `permission` block with `bash: "deny"`,
-   `task: { "*": "deny" }`, and **no `tools` key, no `xai/` model**.
+4. `opencode.json` `inception` entry: `mode: primary`, model `opencode-go/deepseek-v4.1-flash`,
+   `system` ref `{file:./prompts/inception.md}`, `permissions` array with `shell: "deny"`,
+   `subagent: { "resource": "*", "effect": "deny" }`, and **no `tools` key, no `xai/` model**.
 5. `scripts/lib/validate.py` `GROK_MIRRORS` includes `"inception": ["inception.md"]` and
    `ROLE_KEYWORDS` includes `"inception"`.
 6. `python3 -m pytest tests/ -q && ./build.sh` passes; validator reports 28 agents,
    20 grok profiles, and the parity pair count includes inception.
-7. `docs/model-registry.md` lists `inception` → `opencode-go/deepseek-v4-flash`.
+7. `docs/model-registry.md` lists `inception` → `opencode-go/deepseek-v4.1-flash`.
 8. README lists inception (user-invoked primary) and shows 28/20/28 counts.
 9. No test files modified by the implementer.
 

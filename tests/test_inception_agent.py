@@ -52,8 +52,8 @@ def _read(path: Path) -> str:
 
 def _inception_agent() -> dict:
     config = json.loads(OPENCODE_JSON.read_text(encoding="utf-8"))
-    agents = config.get("agent")
-    assert isinstance(agents, dict), "opencode.json missing 'agent' object"
+    agents = config.get("agents")
+    assert isinstance(agents, dict), "opencode.json missing 'agents' object"
     assert "inception" in agents, "opencode.json missing agent 'inception'"
     agent = agents["inception"]
     assert isinstance(agent, dict), "opencode.json agent 'inception' must be an object"
@@ -110,14 +110,21 @@ def test_grok_inception_frontmatter() -> None:
 def test_opencode_inception_agent_entry() -> None:
     agent = _inception_agent()
     assert agent.get("mode") == "primary"
-    assert agent.get("model") == "opencode-go/deepseek-v4-flash"
-    assert agent.get("prompt") == "{file:./prompts/inception.md}"
+    assert agent.get("model") == "opencode-go/deepseek-v4.1-flash"
+    assert agent.get("system") == "{file:./prompts/inception.md}"
 
-    permission = agent.get("permission")
-    assert isinstance(permission, dict), "inception.permission must be an object"
-    assert permission.get("bash") == "deny"
-    # deny-all: every task tool is denied, not a single named task.
-    assert permission.get("task") == {"*": "deny"}
+    permissions = agent.get("permissions")
+    assert isinstance(permissions, list), "inception.permissions must be an array"
+    # shell deny
+    assert any(
+        p.get("action") == "shell" and p.get("resource") == "*" and p.get("effect") == "deny"
+        for p in permissions
+    ), "inception must deny shell *"
+    # subagent deny-all
+    assert any(
+        p.get("action") == "subagent" and p.get("resource") == "*" and p.get("effect") == "deny"
+        for p in permissions
+    ), "inception must deny subagent *"
 
     assert "tools" not in agent, "inception must not use a legacy tools block"
     blob = json.dumps(agent)

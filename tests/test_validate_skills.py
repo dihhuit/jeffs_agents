@@ -46,20 +46,26 @@ def _full_build(tmp_path: Path, *, skill_name: str | None = "test-skill") -> Pat
     (build / "opencode.json").write_text(
         json.dumps(
             {
-                "agent": {
+                "agents": {
                     "test-agent": {
                         "mode": "subagent",
                         "description": "test",
                         "model": "model-a",
-                        "prompt": "You are a test agent.",
+                        "system": "You are a test agent.",
                     }
                 },
-                "permission": {
-                    "external_directory": {
-                        "/tmp/**": "allow",
-                        "/proc/**": "allow",
-                    }
-                },
+                "permissions": [
+                    {
+                        "action": "external_directory",
+                        "resource": "/tmp/**",
+                        "effect": "allow",
+                    },
+                    {
+                        "action": "external_directory",
+                        "resource": "/proc/**",
+                        "effect": "allow",
+                    },
+                ],
             }
         ),
         encoding="utf-8",

@@ -319,12 +319,12 @@ def test_validate_main_exits_one_on_parity_violation(
     (build / "opencode.json").write_text(
         json.dumps(
             {
-                "agent": {
+                "agents": {
                     "test-agent": {
                         "mode": "subagent",
                         "description": "test agent",
                         "model": "model-a",
-                        "prompt": "{file:./prompts/just-code.md}",
+                        "system": "{file:./prompts/just-code.md}",
                     }
                 }
             }

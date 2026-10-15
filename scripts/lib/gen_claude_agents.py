@@ -43,17 +43,17 @@ def yaml_quote(value: str) -> str:
 
 def resolve_body(definition: dict, prompts_dir: Path) -> str | None:
     """Resolve an agent's system-prompt body from its opencode definition."""
-    prompt = definition.get("prompt", "")
-    if not isinstance(prompt, str):
+    system = definition.get("system", "")
+    if not isinstance(system, str):
         return None
-    match = PROMPT_REF.search(prompt)
+    match = PROMPT_REF.search(system)
     if match:
         prompt_file = prompts_dir / match.group(1)
         if prompt_file.is_file():
             return prompt_file.read_text(encoding="utf-8").rstrip() + "\n"
         return None
-    if prompt.strip():
-        return prompt.rstrip() + "\n"
+    if system.strip():
+        return system.rstrip() + "\n"
     return None
 
 
@@ -78,7 +78,7 @@ def main() -> int:
         print(f"  [error] invalid JSON in {config_path}: {exc}", file=sys.stderr)
         return 1
 
-    agents = config.get("agent") or {}
+    agents = config.get("agents") or {}
     out_dir.mkdir(parents=True, exist_ok=True)
 
     written = 0
