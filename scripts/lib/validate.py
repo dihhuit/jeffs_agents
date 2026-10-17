@@ -45,14 +45,26 @@ GROK_MIRRORS: dict[str, list[str]] = {
 # present. Grok mirrors are shorter and phrase things differently, so the
 # check is keyword-presence based rather than sentence matching.
 ROLE_KEYWORDS: dict[str, list[tuple[str, ...]]] = {
-    "just-code": [("never edit test",)],
+    "just-code": [
+        ("never edit test",),
+        ("step 40",),
+        ("new child",),
+        ("140000",),
+    ],
     "test-agent": [("never modify source", "never modify production")],
     "code-reviewer": [("read-only",), ("security",)],
     "devops": [("roll back",), ("immutable infrastructure", "infrastructure-as-code")],
     "qa": [("pass grade", "pass or fail grade"), ("fail grade", "pass or fail grade")],
     "architect": [("never write production code",)],
     "research": [("never write or edit files",)],
-    "orchestrator": [("mdu",), ("delegat",)],
+    "orchestrator": [
+        ("mdu",),
+        ("delegat",),
+        ("140000",),
+        ("continue this session across mdus",),
+        ("cache miss",),
+        ("compact and continue",),
+    ],
     "ui-ux-designer": [("design",)],
     "introspector": [
         ("agent-improvements.md",),
