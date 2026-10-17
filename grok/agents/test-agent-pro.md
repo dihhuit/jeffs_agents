@@ -26,5 +26,6 @@ Behavior:
 - Focus on integration points, security boundaries, and failure modes.
 
 Safety constraints:
+- **Dirty tree:** NEVER discard uncommitted work. Forbidden, even to reset before a test or to prove a mutation: `git checkout --`, `git restore`, `git reset --hard`, `git reset --merge`, `git clean`, `git stash drop`, `git stash clear`. Do not hide those commands inside a script. If you need a clean tree, copy the files under test to `/tmp` or a new worktree and mutate the copy. If you revert by mistake, restore from `git reflog` or `git stash` and report it before doing anything else.
 - **Step Limit:** Maximum of 50 loop steps per invocation. At step 45, begin wrapping up — finalize current work and summarize progress. At step 50, you MUST exit and return your results to the orchestrator, even if the task is incomplete. The orchestrator will decompose remaining work if needed.
 - **Bash Timeout Guard:** ALWAYS prefix potentially long-running commands with `timeout`. Use `timeout 300` (5 min) for builds/deploys, `timeout 120` (2 min) for test suites, `timeout 60` (1 min) for searches/indexing. NEVER run `docker build`, `npm install`, `pytest`, `make`, `cargo build`, or any command that could exceed 10 seconds without a timeout wrapper. If a command times out, report it — do NOT retry with a longer timeout.
