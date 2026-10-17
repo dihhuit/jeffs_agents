@@ -15,7 +15,59 @@ Sub-agent time management:
 
 - **Max Retry Count:** Maximum 3 retry attempts per MDU per failure type. After 3 failures on the same issue, STOP and escalate to the user with a detailed summary: what was attempted, what failed each time, and your root cause analysis. Never enter an infinite retry loop.
 - **Subagent Watchdog:** After spawning a subagent, actively monitor its progress. If ~5 minutes pass with no progress update, check its latest activity. If it appears stuck (repeating the same step, cycling through the same error, or making no progress), cancel it and either decompose the task into smaller pieces or escalate to the user. Do NOT wait indefinitely for a subagent to finish.
-- **Session Checkpoint:** If you have been working on a single MDU for more than 30 minutes without reaching the "Commit and Push" step, force a checkpoint: summarize current progress, note what's blocked, and either break remaining work into smaller MDUs or escalate to the user. Long-running sessions (hours/days) are fine — but each individual MDU should make steady progress.
+- **Session Checkpoint:** If you have been working on a single MDU for more than 30 minutes without reaching the "Commit and Push" step, force a checkpoint: summarize current progress, note what's blocked, and either break remaining work into smaller MDUs or escalate to the user. A session may run for hours on a single MDU. It must not start the next MDU, and it must compact at 140000 once durable artifacts exist.
+- **SESSION BOUNDARY — ONE MDU PER SESSION:**
+
+  **STOP AT THE END OF THIS MDU. DO NOT START THE NEXT MDU IN THIS SESSION.**
+
+  When the current MDU is committed, or parked with durable artifacts, end your turn. In that reply, tell the user to start a new session and paste the resume block you just wrote.
+
+  How they start a new session:
+  - OpenCode: press **Ctrl+X**, then **N**. Same project directory.
+  - Grok: start a new session in the same directory. Do not pass `--continue`.
+
+  The resume block must include: MDU id, branch, commit SHA, what is done, what is next, and the design or backlog path. Point at files. Do not paste file bodies.
+
+  The only override is the user typing this exact phrase: `continue this session across MDUs`. "keep going", "next", "looks good", and "start now" are not that phrase. If they send the exact phrase, acknowledge it once and proceed. Do not ask again this session.
+
+- **COMPACT AT 140000, ONLY AFTER ARTIFACTS:**
+
+  Prompt size is `input + cache.read` of the latest assistant turn. Not `input` alone.
+
+  Compact only when both are true:
+  1. Prompt size is >= 140000.
+  2. Durable artifacts exist: a commit on the feature branch (unmerged is fine), and any backlog, spec, steering, or resume doc this MDU changed is saved. Uncommitted reasoning is not an artifact.
+
+  If (1) is true and (2) is not, do not compact. Write the artifacts first. If you cannot (tests red, conflict), stop and tell the user. Do not compact away the only copy of the plan.
+
+  If both are true, request compaction, then stop expensive work for this turn:
+  - OpenCode, when `OPENCODE_SESSION_ID` is set: `timeout 60 opencode api post /api/session/$OPENCODE_SESSION_ID/compact --data '{}'`
+  - OpenCode, user alternative: **Ctrl+X**, then **C**.
+  - Grok: tell the user to type `/compact`. Do not invent a grok shell command. `/compact-mode` is display density, not compaction.
+
+  Compaction is lossy and uses this session's model once. That is cheaper than staying over the 200000 price cliff. Tell the user it was requested and applies before the next prompt.
+
+- **CACHE MISS GATE:**
+
+  A cache miss is the latest assistant turn with `cache.read` <= 1152 and `input` >= 80000. That pattern rebills the whole transcript. On the first turn of a session, skip this check.
+
+  OpenCode: before any delegate, grep, commit, or read of source, if `OPENCODE_SESSION_ID` is set, check the latest assistant row (timeout 30). Use the session id from the environment. Do not print message content.
+
+  On a cache miss, STOP. Do not delegate, grep, commit, or read more files this turn. Do not revert, delete, or abandon the branch. The stop is not a project failure. Work on disk is the source of truth.
+
+  Then give the user these next steps, plus a filled resume block:
+  1. Preferred: start a new session (OpenCode **Ctrl+X** then **N**. Grok: new session, no `--continue`). Paste the resume block. Say `continue <mdu-id> from the resume block`.
+  2. To stay in this session: compact first (OpenCode **Ctrl+X** then **C**, or the API call above; Grok: type `/compact`), then reply with the exact phrase `compact and continue`.
+  3. "keep going" is not an override. If they send `compact and continue` and the next check is still a cache miss, stop again and tell them compaction did not take — use step 1.
+
+- **CODER HANDOFF:**
+
+  Do not continue a coder child for a review reject or a follow-up fix. Spawn a new child. The brief is the verdict, file paths with line ranges, and the acceptance command. Do not paste file bodies. Do not pass the old session id.
+
+  If a coder reports prompt size >= 140000, or step 40, do not send it more work. Spawn a fresh child with its handoff.
+
+  Do not re-read implementation files to check a child. Read the child's summary. If you must look, one read of one path and line range, once per file per MDU. Never edit production code yourself.
+
 - **Human Approval Gates:**
   - Require human approval before pushing to protected branches.
   - Require human approval before deploying non-green MDUs to production.
