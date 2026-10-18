@@ -52,6 +52,28 @@ REPEATED_ERROR_THRESHOLD = 3
 PERMISSION_THRESHOLD = 5
 CONTEXT_REREAD_THRESHOLD = 4
 QA_FAIL_THRESHOLD = 2
+CACHE_MISS_READ_MAX = 1152
+CACHE_MISS_INPUT_MIN = 80_000
+LONG_CONTEXT_TOKENS = 140_000
+LONG_CONTEXT_HIGH_TOKENS = 200_000
+FLAGSHIP_MODELS = ("grok-4.7", "glm-5.2", "kimi-k3")
+BULK_AGENTS = {
+    "just-code",
+    "test-agent",
+    "code-reviewer",
+    "qa",
+    "devops",
+    "research",
+    "ui-ux-designer",
+    "grok-just-code",
+    "grok-test-agent",
+    "grok-code-reviewer",
+    "grok-qa",
+    "grok-devops",
+    "grok-research",
+    "grok-ui-ux-designer",
+    "grok-mdu-code",
+}
 
 
 # ---------------------------------------------------------------------------
@@ -439,7 +461,81 @@ def collect_signals(events: list[dict]) -> list[dict]:
             )
         prev_t = t
 
+    signals.extend(_cost_signals(sorted_events))
     return signals
+
+
+def _is_bulk_agent(agent: str) -> bool:
+    name = agent.lower()
+    if name.endswith(("-mid", "-pro", "-premium")):
+        return False
+    return name in BULK_AGENTS
+
+
+def _cost_signals(events: list[dict]) -> list[dict]:
+    """Cache misses, fat prompts, and flagship models on bulk roles."""
+    found: list[dict] = []
+    misses: dict[str, int] = {}
+    long_counts: dict[str, int] = {}
+    long_high: dict[str, int] = {}
+    expensive: dict[str, str] = {}
+    for evt in events:
+        agent = str(evt.get("agent") or "") or "session"
+        tokens_in = _coerce_int(evt.get("tokens_in"))
+        cache_read = _coerce_int(evt.get("cache_read"))
+        prompt = tokens_in + cache_read
+        model = str(evt.get("model") or "")
+        if cache_read <= CACHE_MISS_READ_MAX and tokens_in >= CACHE_MISS_INPUT_MIN:
+            misses[agent] = misses.get(agent, 0) + 1
+        if prompt >= LONG_CONTEXT_TOKENS:
+            long_counts[agent] = long_counts.get(agent, 0) + 1
+        if prompt >= LONG_CONTEXT_HIGH_TOKENS:
+            long_high[agent] = long_high.get(agent, 0) + 1
+        if _is_bulk_agent(agent) and any(flag in model for flag in FLAGSHIP_MODELS):
+            expensive[agent] = model
+    for agent, count in misses.items():
+        found.append(
+            _signal(
+                kind="cache_miss",
+                severity="high" if count >= 3 else "warn",
+                agent=agent,
+                evidence=f"{agent} had {count} cache miss(es): cache.read <= {CACHE_MISS_READ_MAX} "
+                f"and input >= {CACHE_MISS_INPUT_MIN}",
+                suggestion="A cache miss rebills the transcript. Compact or start a new session "
+                "before the next delegate.",
+                apply_now=f"Do not delegate from {agent} after a cache miss. Compact, or start a "
+                "new session from the resume block.",
+            )
+        )
+    for agent, count in long_counts.items():
+        high = long_high.get(agent, 0)
+        found.append(
+            _signal(
+                kind="long_context",
+                severity="high" if high else "warn",
+                agent=agent,
+                evidence=f"{agent} had {count} turn(s) with prompt >= {LONG_CONTEXT_TOKENS}"
+                + (f", {high} of them >= {LONG_CONTEXT_HIGH_TOKENS}" if high else ""),
+                suggestion="Compact at 140000 after durable artifacts exist. Prompts >= 200000 "
+                "on grok-4.7 are billed at 2x.",
+                apply_now=f"Cap {agent} before 140000 prompt tokens. Do not continue a child "
+                "that is already over the cliff.",
+            )
+        )
+    for agent, model in expensive.items():
+        found.append(
+            _signal(
+                kind="expensive_model",
+                severity="warn",
+                agent=agent,
+                evidence=f"{agent} ran on {model}, a flagship model, for a bulk role",
+                suggestion="Use grok-build-0.1 or the Go default for bulk coding, test, review, "
+                "QA, devops, research, and UI. Keep grok-4.7 for the orchestrator, architecture, "
+                "and mid/pro roles.",
+                apply_now=f"Next brief for this work names the cheaper agent, not {agent} on {model}.",
+            )
+        )
+    return found
 
 
 def signals_from_manifest(manifest: dict) -> list[dict]:
@@ -513,6 +609,8 @@ def _normalize_event(
     tool_path: str | None = None,
     tool_error: bool = False,
     permission_requested: bool = False,
+    cache_read: int = 0,
+    model: str = "",
 ) -> dict:
     return {
         "agent": agent,
@@ -520,6 +618,8 @@ def _normalize_event(
         "text": text,
         "tokens_in": tokens_in,
         "tokens_out": tokens_out,
+        "cache_read": cache_read,
+        "model": model,
         "t": t,
         "tool": tool,
         "tool_path": tool_path,
@@ -556,7 +656,14 @@ def _collect_opencode(cwd: str, session_id: str | None = None) -> tuple[list[dic
             )
         row = cur.fetchone()
         if not row:
+            v2_events, v2_info, v2_notes = _collect_opencode_v2(conn, cwd, session_id)
+            notes.extend(v2_notes)
+            if v2_events:
+                info.update(v2_info)
+                conn.close()
+                return v2_events, info, notes
             notes.append("No matching OpenCode session for cwd")
+            conn.close()
             return events, info, notes
         root_id = row["id"]
         # If this session has parent_id, use parent.
@@ -588,6 +695,14 @@ def _collect_opencode(cwd: str, session_id: str | None = None) -> tuple[list[dic
             tokens = msg.get("tokens") or {}
             tokens_in = _coerce_int(tokens.get("input"))
             tokens_out = _coerce_int(tokens.get("output"))
+            cache = tokens.get("cache") or {}
+            cache_read = _coerce_int(cache.get("read") if isinstance(cache, dict) else 0)
+            model_field = msg.get("model") or {}
+            model = ""
+            if isinstance(model_field, dict):
+                model = str(model_field.get("id") or "")
+            elif model_field:
+                model = str(model_field)
             created_ms = msg.get("time", {}).get("created") if isinstance(
                 msg.get("time"), dict
             ) else None
@@ -632,16 +747,99 @@ def _collect_opencode(cwd: str, session_id: str | None = None) -> tuple[list[dic
                     t=t,
                     tokens_in=tokens_in,
                     tokens_out=tokens_out,
+                    cache_read=cache_read,
+                    model=model,
                     tool=tool,
                     tool_path=tool_path,
                     tool_error=tool_error,
                     permission_requested=permission_requested,
                 )
             )
+        if not any(
+            _coerce_int(evt.get("tokens_in")) or _coerce_int(evt.get("cache_read"))
+            for evt in events
+        ):
+            v2_events, v2_info, v2_notes = _collect_opencode_v2(conn, cwd, session_id)
+            notes.extend(v2_notes)
+            if v2_events:
+                events = v2_events
+                info.update(v2_info)
         conn.close()
     except Exception as exc:
         notes.append(f"OpenCode collector error: {exc}")
 
+    return events, info, notes
+
+
+def _collect_opencode_v2(
+    conn: sqlite3.Connection, cwd: str, session_id: str | None
+) -> tuple[list[dict], dict, list[str]]:
+    """Read assistant turns from session_v2 / session_message when present."""
+    events: list[dict] = []
+    notes: list[str] = []
+    info: dict = {"harness": "opencode", "session_id": session_id or "", "cwd": cwd}
+    try:
+        cur = conn.cursor()
+        if session_id:
+            cur.execute(
+                "SELECT id FROM session_v2 WHERE id = ? AND directory = ? LIMIT 1",
+                (session_id, cwd),
+            )
+        else:
+            cur.execute(
+                "SELECT id FROM session_v2 WHERE directory = ? OR ? LIKE directory || '%' "
+                "ORDER BY time_updated DESC LIMIT 1",
+                (cwd, cwd),
+            )
+        row = cur.fetchone()
+        if not row:
+            return events, info, notes
+        root_id = row["id"]
+        cur.execute("SELECT parent_id FROM session_v2 WHERE id = ?", (root_id,))
+        prow = cur.fetchone()
+        if prow and prow["parent_id"]:
+            root_id = prow["parent_id"]
+        info["session_id"] = root_id
+        cur.execute(
+            "SELECT id, agent FROM session_v2 WHERE id = ? OR parent_id = ?",
+            (root_id, root_id),
+        )
+        session_agents = {r["id"]: (r["agent"] or "") for r in cur.fetchall()}
+        cur.execute(
+            "SELECT session_id, data, time_created FROM session_message "
+            "WHERE session_id IN "
+            f"({','.join('?' * len(session_agents))}) AND type = 'assistant' "
+            "ORDER BY time_created",
+            tuple(session_agents.keys()),
+        )
+        for srow in cur.fetchall():
+            try:
+                msg = json.loads(srow["data"] or "{}")
+            except json.JSONDecodeError:
+                continue
+            tokens = msg.get("tokens") or {}
+            cache = tokens.get("cache") or {}
+            model_field = msg.get("model") or {}
+            model = ""
+            if isinstance(model_field, dict):
+                model = str(model_field.get("id") or "")
+            elif model_field:
+                model = str(model_field)
+            created = srow["time_created"]
+            events.append(
+                _normalize_event(
+                    agent=str(msg.get("agent") or session_agents.get(srow["session_id"], "")),
+                    role="assistant",
+                    text="",
+                    t=_coerce_float(created) / 1000.0 if created else 0.0,
+                    tokens_in=_coerce_int(tokens.get("input")),
+                    tokens_out=_coerce_int(tokens.get("output")),
+                    cache_read=_coerce_int(cache.get("read") if isinstance(cache, dict) else 0),
+                    model=model,
+                )
+            )
+    except sqlite3.Error as exc:
+        notes.append(f"OpenCode v2 messages unavailable: {exc}")
     return events, info, notes
 
 

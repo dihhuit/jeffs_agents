@@ -56,6 +56,9 @@ The script emits these signal types:
 - `review_reject_streak` — reviewer agents emitted 2+ consecutive rejections before an approval.
 - `long_cycle` — per-agent active time (sum of gaps < 10 min) exceeded 8 min (warn) or 15 min (high); wall clock is recorded but not acted on.
 - `token_hotspot` — an agent consumed >= 80k tokens, or >= 40% of session tokens and >= 20k.
+- `cache_miss` — a turn with `cache.read` <= 1152 and `input` >= 80000. The transcript was rebilled.
+- `long_context` — a turn with `input + cache.read` >= 140000. High if any turn is >= 200000.
+- `expensive_model` — a bulk role (default coding, test, standard review, QA, devops, research, UI) ran on grok-4.7, glm-5.2, or kimi-k3. Orchestrator, architecture, and mid/pro roles are not this signal.
 - `repeated_tool_error` — same agent+tool errored >= 3 times.
 - `permission_thrash` — >= 5 permission requests in the session.
 - `context_reread` — same agent read/grepped the same path >= 4 times.

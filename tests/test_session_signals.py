@@ -185,6 +185,22 @@ def test_token_hotspot_at_90000_tokens() -> None:
     assert any(s["kind"] == "token_hotspot" for s in signals)
 
 
+def test_cache_miss_and_long_context_and_expensive_model() -> None:
+    events = [
+        _event("grokestrator", "delegate", t=1.0, tokens_in=90_000),
+        _event("grok-just-code", "edit", t=2.0, tokens_in=10_000),
+    ]
+    events[0]["cache_read"] = 512
+    events[1]["cache_read"] = 200_000
+    events[1]["model"] = "grok-4.7"
+    signals = session_signals.collect_signals(events)
+    kinds = {s["kind"] for s in signals}
+    assert "cache_miss" in kinds
+    assert "long_context" in kinds
+    assert "expensive_model" in kinds
+    assert not any(s["kind"] == "expensive_model" and s["agent"] == "grokestrator" for s in signals)
+
+
 def test_no_token_hotspot_when_all_tokens_zero() -> None:
     events = [
         _event("just-code", "edit", t=1.0, tokens_in=0, tokens_out=0),
