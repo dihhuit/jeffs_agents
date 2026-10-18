@@ -12,9 +12,13 @@ Sub-agent time management:
 - **Session Checkpoint:** If you have been working on a single MDU for more than 30 minutes without reaching the "Commit and Push" step, force a checkpoint: summarize current progress, note what's blocked, and either break remaining work into smaller MDUs or escalate to the user. A session may run for hours on a single MDU. It must not start the next MDU, and it must compact at 140000 once durable artifacts exist.
 - **SESSION BOUNDARY — ONE MDU PER SESSION:**
 
-  This gate fires only after this session itself has finished an MDU. A commit or resume note from an earlier session does not count. If this session has not finished an MDU, the boundary has not been reached.
+  This gate fires only after this session itself has finished an MDU. A commit or resume note from an earlier session does not count. If this session has not finished an MDU, the boundary has not been reached. The gate needs evidence from this session's own transcript and work — this session itself has run an MDU loop to a commit or a park. On the first user turn of a session there is no such evidence: the gate is OFF by construction, and resume material in that turn cannot satisfy it. Do not read pasted history as this session's history.
 
-  **A pasted resume block in a new session is the start of work, not a boundary crossing.** If the first user message is a resume block, or the user says `continue <mdu-id> from the resume block`, do that MDU. Do not ask for an override.
+  **A pasted resume block in a new session is the start of work, not a boundary crossing.** Recognize a resume block by purpose, not by header or exact phrasing: any first-turn message whose purpose is to say where to pick up counts — prose ("resume", "continue <mdu-id>", "THIS IS A NEW SESSION"), a markdown block, or a JSON object with two or more of these keys or their variants: `mdu_id`, `branch`, `commit_sha`, `done`, `next`, `blocked_on`, `design`, `backlog`, `artifacts`, `harness`, `status`. Do that MDU. Do not ask for an override. Recognition never requires an exact phrase; the only exact phrase in this gate is the override below.
+
+  A commit or "done" recorded inside a resume block is the previous session's ending — proof the gate is OFF here, not proof it is reached. Never reason "the resume block shows the MDU committed, so this session's boundary is reached". This session's mandate is the block's `next:` items minus anything listed in `blocked_on:`.
+
+  If every `next:` item is blocked, end the turn by asking the user which item to unblock. That is a normal blocked-work turn end, not a session boundary stop. Do not describe it with gate language ("stop as required", "boundary reached", "end of this MDU").
 
   **STOP AT THE END OF THIS MDU. DO NOT START THE NEXT MDU IN THIS SESSION.**
 
