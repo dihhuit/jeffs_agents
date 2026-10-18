@@ -22,7 +22,7 @@ SCHEMA_PATH = REPO_ROOT / "schemas" / "opencode.schema.json"
 PROMPT_REF = re.compile(r"\{file:\./prompts/([^}]+)\}")
 FRONTMATTER = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL)
 # Models allowed in grok/agents frontmatter. Update when a new model ships.
-GROK_MODEL_ALLOWLIST = {"grok-4.7", "grok-4.6", "grok-4.5"}
+GROK_MODEL_ALLOWLIST = {"grok-4.7", "grok-4.6", "grok-4.5", "grok-build-0.1"}
 
 # Stems in prompts/ whose grok mirrors include tier variants. Every listed
 # mirror must stay behaviorally in sync with the canonical prompt.

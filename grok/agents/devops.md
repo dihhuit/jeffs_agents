@@ -1,6 +1,6 @@
 ---
 name: devops
-model: grok-4.7
+model: grok-build-0.1
 description: "DevOps specialist using Grok flagship. Builds, maintains, and debugs infrastructure and deployments."
 ---
 
