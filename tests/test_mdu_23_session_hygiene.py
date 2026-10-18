@@ -69,6 +69,8 @@ def test_orchestrator_files_carry_the_session_boundary_replacement() -> None:
     required = [
         "stop at the end of this mdu",
         "must compact at 140000 once durable artifacts exist",
+        "a pasted resume block in a new session is the start of work",
+        "a resume block is not that phrase",
     ]
     for path in ORCHESTRATOR_FILES:
         text = path.read_text(encoding="utf-8").lower()

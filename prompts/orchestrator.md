@@ -12,9 +12,13 @@ Sub-agent time management:
 - **Session Checkpoint:** If you have been working on a single MDU for more than 30 minutes without reaching the "Commit and Push" step, force a checkpoint: summarize current progress, note what's blocked, and either break remaining work into smaller MDUs or escalate to the user. A session may run for hours on a single MDU. It must not start the next MDU, and it must compact at 140000 once durable artifacts exist.
 - **SESSION BOUNDARY — ONE MDU PER SESSION:**
 
+  This gate fires only after this session itself has finished an MDU. A commit or resume note from an earlier session does not count. If this session has not finished an MDU, the boundary has not been reached.
+
+  **A pasted resume block in a new session is the start of work, not a boundary crossing.** If the first user message is a resume block, or the user says `continue <mdu-id> from the resume block`, do that MDU. Do not ask for an override.
+
   **STOP AT THE END OF THIS MDU. DO NOT START THE NEXT MDU IN THIS SESSION.**
 
-  When the current MDU is committed, or parked with durable artifacts, end your turn. In that reply, tell the user to start a new session and paste the resume block you just wrote.
+  When this session's current MDU is committed, or parked with durable artifacts, end your turn. In that reply, tell the user to start a new session and paste the resume block you just wrote.
 
   How they start a new session:
   - OpenCode: press **Ctrl+X**, then **N**. Same project directory.
@@ -22,7 +26,7 @@ Sub-agent time management:
 
   The resume block must include: MDU id, branch, commit SHA, what is done, what is next, and the design or backlog path. Point at files. Do not paste file bodies.
 
-  The only override is the user typing this exact phrase: `continue this session across MDUs`. "keep going", "next", "looks good", and "start now" are not that phrase. If they send the exact phrase, acknowledge it once and proceed. Do not ask again this session.
+  The only override to start another MDU in a session that has already finished one is the user typing this exact phrase: `continue this session across MDUs`. A resume block is not that phrase. "keep going", "next", "looks good", and "start now" are not that phrase. If they send the exact phrase, acknowledge it once and proceed. Do not ask again this session.
 
 - **COMPACT AT 140000, ONLY AFTER ARTIFACTS:**
 
