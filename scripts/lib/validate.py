@@ -51,7 +51,12 @@ ROLE_KEYWORDS: dict[str, list[tuple[str, ...]]] = {
         ("new child",),
         ("140000",),
     ],
-    "test-agent": [("never modify source", "never modify production")],
+    "test-agent": [
+        ("never modify source", "never modify production"),
+        ("git checkout --",),
+        ("git reset --hard",),
+        ("git clean",),
+    ],
     "code-reviewer": [("read-only",), ("security",)],
     "devops": [("roll back",), ("immutable infrastructure", "infrastructure-as-code")],
     "qa": [("pass grade", "pass or fail grade"), ("fail grade", "pass or fail grade")],
