@@ -1,6 +1,6 @@
 ---
 name: grok-review
-model: grok-4.7
+model: grok-build-0.1
 description: "Code review agent using Grok. Reviews code for best practices, edge cases, security, and potential issues. Does not edit code."
 ---
 

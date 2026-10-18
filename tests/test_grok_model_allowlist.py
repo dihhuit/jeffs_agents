@@ -1,11 +1,12 @@
-"""Focused tests for MDU-16: Grok model allowlist + production grok-4.7 bump.
+"""Focused tests for the Grok model allowlist and the MDU-25 build rung.
 
 Guards three things:
   * the single-source allowlist in ``scripts/lib/validate.py``,
   * every production ``grok/agents/*.md`` profile staying inside that
     allowlist, and
-  * the MDU-16 regression: all production profiles specifically on
-    ``grok-4.7`` (so a future edit cannot silently leave one on 4.6).
+  * the MDU-25 split: bulk profiles on ``grok-build-0.1``, flagship
+    profiles on ``grok-4.7``, and none on retired ``grok-4.6`` /
+    ``grok-4.5``.
 
 The last two tests exercise ``validate.validate_grok_agents`` against a
 synthetic build dir in ``tmp_path`` so the real tree is never mutated.
@@ -20,7 +21,24 @@ import validate
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PRODUCTION_GROK_DIR = REPO_ROOT / "grok" / "agents"
 
-EXPECTED_ALLOWLIST = {"grok-4.7", "grok-4.6", "grok-4.5"}
+EXPECTED_ALLOWLIST = {"grok-4.7", "grok-4.6", "grok-4.5", "grok-build-0.1"}
+
+# MDU-25: bulk (non-reasoning-critical) profiles move to the cheaper
+# grok-build-0.1 rung. Every other production profile stays on the
+# flagship grok-4.7. Anything on grok-4.6 or grok-4.5 is a failure.
+BULK_GROK_BUILD_PROFILES = {
+    "just-code",
+    "test-agent",
+    "code-reviewer",
+    "qa",
+    "devops",
+    "research",
+    "ui-ux-designer",
+    "grok-review",
+}
+FLAGSHIP_MODEL = "grok-4.7"
+BULK_MODEL = "grok-build-0.1"
+RETIRED_MODELS = {"grok-4.6", "grok-4.5"}
 
 
 def _production_profiles() -> list[Path]:
@@ -64,18 +82,34 @@ def test_production_grok_profiles_models_allowlisted() -> None:
 
 
 # ---------------------------------------------------------------------------
-# 3. MDU-16 regression: production profiles use grok-4.7
+# 3. MDU-25: explicit per-profile model map
+#    bulk profiles -> grok-build-0.1, everything else -> grok-4.7,
+#    and nothing on the retired grok-4.6 / grok-4.5.
 # ---------------------------------------------------------------------------
 
-def test_production_grok_profiles_use_grok_4_7() -> None:
-    outdated = []
+def test_production_grok_profiles_use_expected_model() -> None:
+    wrong = []
+    for profile in _production_profiles():
+        stem = profile.stem
+        meta = validate.parse_frontmatter(profile.read_text(encoding="utf-8"))
+        expected = BULK_MODEL if stem in BULK_GROK_BUILD_PROFILES else FLAGSHIP_MODEL
+        actual = meta.get("model")
+        if actual != expected:
+            wrong.append(f"{profile.name}={actual!r} (expected {expected!r})")
+    assert not wrong, (
+        "production grok profiles on the wrong MDU-25 rung: " + ", ".join(wrong)
+    )
+
+
+def test_no_production_grok_profile_on_retired_models() -> None:
+    retired = []
     for profile in _production_profiles():
         meta = validate.parse_frontmatter(profile.read_text(encoding="utf-8"))
-        if meta.get("model") != "grok-4.7":
-            outdated.append(f"{profile.name}={meta.get('model')!r}")
-    assert not outdated, (
-        "production grok profiles not on grok-4.7 (MDU-16 regression): "
-        + ", ".join(outdated)
+        if meta.get("model") in RETIRED_MODELS:
+            retired.append(f"{profile.name}={meta.get('model')!r}")
+    assert not retired, (
+        "production grok profiles on retired grok-4.6/grok-4.5: "
+        + ", ".join(retired)
     )
 
 

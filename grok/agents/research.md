@@ -1,6 +1,6 @@
 ---
 name: research
-model: grok-4.7
+model: grok-build-0.1
 description: "Research specialist using Grok flagship. Gathers information via web search and browsing to support other agents."
 ---
 

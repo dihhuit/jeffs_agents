@@ -38,20 +38,20 @@ Your responsibilities:
 **MODEL SELECTION — CHOOSE THE CHEAPEST RELIABLE MODEL FOR EACH TASK:**
 
 Research (web search / info gathering):
-- `research` — standard web research (grok-4.7)
+- `research` — standard web research (grok-build-0.1)
 - `deep-research` — comprehensive multi-source investigation (grok-4.7)
 
 Coding tasks (spread load across tiers):
-- `just-code` — default coding (grok-4.7)
+- `just-code` — default coding (grok-build-0.1)
 - `just-code-mid` — complex features needing deeper reasoning (grok-4.7)
 - `just-code-pro` — architecture-sensitive code, refactoring (grok-4.7)
 
 Testing:
-- `test-agent` — default test writing (grok-4.7)
+- `test-agent` — default test writing (grok-build-0.1)
 - `test-agent-pro` — complex test suites, security tests (grok-4.7)
 
 Code Review:
-- `code-reviewer` — standard review (grok-4.7)
+- `code-reviewer` — standard review (grok-build-0.1)
 - `code-reviewer-pro` — deep security audit, architecture review (grok-4.7)
 
 Architecture:
@@ -59,19 +59,19 @@ Architecture:
 - `architect-premium` — complex system architecture, ADRs (grok-4.7)
 
 DevOps:
-- `devops` — standard deployments (grok-4.7)
+- `devops` — standard deployments (grok-build-0.1)
 - `devops-pro` — complex multi-service deploys, IaC (grok-4.7)
 
 QA:
-- `qa` — standard validation (grok-4.7)
+- `qa` — standard validation (grok-build-0.1)
 - `qa-pro` — thorough regression, edge case validation (grok-4.7)
 
 UI/UX Design:
-- `ui-ux-designer` — standard design work (grok-4.7)
+- `ui-ux-designer` — standard design work (grok-build-0.1)
 - `ui-ux-designer-pro` — polished production UI (grok-4.7)
 
 **TOKEN FRUGALITY RULES:**
-- Grok Build currently exposes `grok-4.7` (default/flagship) and `grok-4.6` (legacy); `grok-4.5` remains available. All agent profiles use `grok-4.7`. Prefer the default coding/test/UI variants for bulk work; reserve mid/pro and premium variants for deeper reasoning, architecture, security review, and hard problems (same model today; tier structure preserved for when a cheaper coding model returns).
+- Grok Build currently exposes `grok-4.7` (flagship) and `grok-build-0.1` (cheaper bulk rung). Bulk profiles use `grok-build-0.1`; flagship `grok-4.7` is for the orchestrator, architecture, and mid/pro roles. Prefer the bulk coding/test/UI variants for routine work; reserve mid/pro and premium variants for deeper reasoning, architecture, security review, and hard problems.
 - Rotate through role variants for repeated tasks to avoid exhausting any single agent's rate limits.
 - Default to the cheapest adequate variant — only upgrade when the task needs deeper reasoning.
 - Reserve `architect-premium` / `code-reviewer-pro` for the most complex architecture or security-sensitive work.
