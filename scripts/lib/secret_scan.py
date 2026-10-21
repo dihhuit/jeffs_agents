@@ -210,6 +210,13 @@ _UUID_RE = re.compile(
 _ENV_FILE_RE = re.compile(r"^\.env(\..+)?$")
 _X_RUN_RE = re.compile(r"^[xX]{4,}$")
 _TRIM_CHARS = "'\",;)("
+# A quoted template (``token = '<insert-token>'``) must reach the placeholder
+# tests unquoted. The assignment rules consume an optional opening quote, so the
+# captured value can carry a trailing quote only; both ends are normalised.
+_QUOTE_CHARS = "'\"`"
+
+# Chars of a matched value the masked preview may reveal. See ``_mask``.
+_MASK_PREFIX_LEN = 4
 
 
 @dataclass(frozen=True)
@@ -227,8 +234,14 @@ class Finding:
 
 
 def _mask(value: str) -> str:
-    """The single masking function: first 4 chars plus an ellipsis."""
-    return value[:4] + "\u2026"
+    """The single masking function: first 4 chars plus an ellipsis.
+
+    A value shorter than twice the prefix yields no characters at all: its
+    "prefix" would be most or all of the secret, so only the ellipsis is shown.
+    """
+    if len(value) < 2 * _MASK_PREFIX_LEN:
+        return "\u2026"
+    return value[:_MASK_PREFIX_LEN] + "\u2026"
 
 
 def _shannon_entropy(value: str) -> float:
@@ -264,9 +277,26 @@ def _clean_value(value: str) -> str:
     return value.strip().strip(_TRIM_CHARS)
 
 
+def _strip_quotes(value: str) -> str:
+    """Drop surrounding quote characters (single, double, backtick).
+
+    Applied before the placeholder-shape tests so a quoted template
+    (``token = '<insert-token>'``, ``token = "<your-token>"``, a backticked
+    Markdown value) is recognised as a placeholder. This normalises the
+    candidate only; a real credential inside quotes matches none of the
+    placeholder shapes and still fires.
+    """
+    stripped = value
+    while stripped and stripped[0] in _QUOTE_CHARS:
+        stripped = stripped[1:]
+    while stripped and stripped[-1] in _QUOTE_CHARS:
+        stripped = stripped[:-1]
+    return stripped
+
+
 def _is_placeholder(value: str) -> bool:
     """True when a matched value is a documented placeholder or reference."""
-    cleaned = _clean_value(value)
+    cleaned = _strip_quotes(_clean_value(value))
     if not cleaned:
         return True
     lowered = cleaned.lower()
@@ -454,8 +484,10 @@ def staged_added_lines() -> tuple[list[tuple[str, int, str]], list[str]]:
 def scan_staged(use_filters: bool = True) -> tuple[list[Finding], int, int]:
     """Scan added/modified lines of the staged diff.
 
-    Returns ``(findings, files_scanned, lines_scanned)``. ``files_scanned``
-    counts files with added lines, not every touched path.
+    Returns ``(findings, files_scanned, lines_scanned)``. ``files_scanned`` is
+    the number of files actually scanned, i.e. files with at least one added
+    line; a path that appears in the staged diff with deletions only is not
+    scanned and is not counted.
     """
     added, touched = staged_added_lines()
     findings: list[Finding] = []
@@ -468,8 +500,9 @@ def scan_staged(use_filters: bool = True) -> tuple[list[Finding], int, int]:
         finding = Finding(file=path, line=1, rule="env-file-committed", value="")
         if not _suppress(finding, path, use_filters):
             findings.append(finding)
+    files_scanned = len({path for path, _line_no, _text in added})
     findings.sort(key=lambda f: (f.file, f.line, RULE_IDS.index(f.rule)))
-    return findings, len(touched), len(added)
+    return findings, files_scanned, len(added)
 
 
 def scan_paths(paths: list[str], use_filters: bool = True) -> tuple[list[Finding], int, int]:

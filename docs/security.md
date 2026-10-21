@@ -14,7 +14,7 @@ credentials or causes damage:
 
 | Threat | Example | Primary control |
 | --- | --- | --- |
-| Secret committed in a diff | A key pasted into source, config, or docs | Workflow transcript detection (MDU-11) |
+| Secret committed in a diff | A key pasted into source, config, or docs | Pre-commit scanner gate (MDU-11): orchestrator prompt clause plus installed git hook |
 | Secret exposed in output | A full key echoed into logs or a report | Masking rule in the skill, scanner, and prompts |
 | Unintended shell side effects | Redirect clobbering a file outside the repo | Shell deny wall (MDU-30) |
 | Destructive operation | History rewrite, delete, DB migration | Human approval gates (MDU-12) |
@@ -39,7 +39,7 @@ order is behavior because the harness uses last-match-wins (see
 | Agent group | Shell reality |
 | --- | --- |
 | orchestrator, just-code variants, test-agent variants, devops variants | Full shell `allow` — they implement, test, build, and deploy |
-| code-reviewer variants, qa variants | `shell * deny` wall, then read-only allows (`git status`, `ls`, `head`, `tail`, `wc`, `sort`, `timeout`); qa adds `python3 -m pytest`, `pytest`, and `./build.sh` |
+| code-reviewer variants, qa variants | `shell * deny` wall, then read-only allows (`git diff`, `git log`, `git show`, `git status`, `grep`, `rg`, `ls`, `head`, `tail`, `wc`, `sort`, `timeout`); qa adds `python3 -m pytest`, `pytest`, and `./build.sh` |
 | introspector | Read-only allows plus `python3 *` / `python *`; it never gates |
 
 The deny wall blocks command substitution, spaced and unspaced redirects,
@@ -87,9 +87,19 @@ Exit 2 fails closed on purpose: an unrunnable check is not a passing check.
 
 Output is masked in one function before any emit. Human mode prints one line
 per finding, `<file>:<line> <rule-id> <first-4-chars>…`; JSON mode adds a
-`{"status","scanned","findings"}` envelope with a masked `preview`. **Never
-print full secrets** — not in a report, a diff, a chat message, or a commit
-message. Four characters are enough to identify the finding.
+`{"status","scanned","findings"}` envelope with a masked `preview`. A value
+shorter than twice the prefix prints as a bare `…`, so no part of a short
+secret is echoed. **Never print full secrets** — not in a report, a diff, a
+chat message, or a commit message. Four characters are enough to identify the
+finding.
+
+The gate is two layers. The installed `.git/hooks/pre-commit` hook resolves the
+scanner from the repo's own `scripts/lib/secret_scan.py`, else from
+`$GENERIC_DIR` or the sibling base checkout, else it fails open with a notice.
+The orchestrator prompt clause is the primary layer, and it also covers repos
+that hold no copy of the scanner (for instance the personal overlay repo):
+there it applies the manual `secret-scrub` checklist to the staged diff instead
+of escalating. Neither layer may be skipped silently.
 
 Rule ids: `aws-access-key-id`, `openai-style-key`, `private-key-block`,
 `github-pat`, `env-file-committed`, `env-assignment`, `high-entropy-string`,
@@ -104,10 +114,13 @@ suppressed when any of the following holds:
 
 - The path ends `.example`, `.sample`, or `.template` (for instance, the
   repository's `.env.example` and MCP config templates).
-- The matched value is a placeholder: a `your-`/`YOUR_`/`EXAMPLE_` prefix,
-  `changeme`, an angle-bracket value, an all-`x` run, a trailing ellipsis, or
-  an environment reference (`$VAR`, `${VAR}`, `{env:VAR}`,
-  `os.environ[...]`, `process.env...`).
+- The matched value is a placeholder or reference (prefix tests are
+  case-insensitive): a `your-`, `your_`, or `example_` prefix; `changeme`,
+  `replace_me`, or `replaceme`; an angle-bracket value (`<token>`); an
+  all-`x`/`X` run of four or more characters; a trailing `…` or `...`; an
+  env/secret-manager reference containing `os.environ[`, `os.getenv(`,
+  `environ.get(`, `process.env`, or `{env:`; or a shell reference starting
+  with `$` (`$VAR`, `${VAR}`).
 - The value is UUID-shaped (run ledgers and session ids).
 - The file is an exact lockfile name (`package-lock.json`, `yarn.lock`,
   `go.sum`, and peers) **and** the rule is the entropy rule (integrity hashes

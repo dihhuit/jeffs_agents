@@ -1,0 +1,143 @@
+{
+  "mdu_id": "mdu-11-secret-gate",
+  "title": "Secret scanning and leak prevention in the loop",
+  "status": "completed",
+  "harness": "opencode",
+  "started_at": "2026-10-21T20:54:10Z",
+  "completed_at": "2026-10-21T21:58:00Z",
+  "phases": [
+    {
+      "phase": "design",
+      "agent": "architect",
+      "model_tier": "premium",
+      "outcome": "pass",
+      "notes": "Design doc: open-agent-definitions/docs/design/mdu-11-secret-gate.md (194 lines, 17 numbered decisions D1-D17). Decisions: D1 scanner is stdlib-only scripts/lib/secret_scan.py in the base repo, the overlay never forks it; D2 CLI --staged/--paths/--json/--no-placeholder-filter with exit 0/1/2 (2 = fail closed) and a single masked emit path; D3 eight rule ids mapped 1:1 onto the secret-scrub skill's pattern list plus two documented additions (github-pat, env-file-committed); D4 placeholder policy as an in-code constant (a silencing edit is a visible diff) with path-suffix, placeholder-shape, UUID and name-exact lockfile classes; D5 staged-diff-only content selection; D6 the five mandatory commit-gate prompt elements; D7 idempotent .git/hooks/pre-commit installer (hooks are not committable) with repo-local -> GENERIC_DIR/sibling resolution and deliberate fail-open; D8 the just-code hard constraint; D9 the overlay grokestrator equivalent; D10 four new ROLE_KEYWORDS tuples so a mirror losing a clause fails ./build.sh; D11 the six-section docs/security.md outline mapped to the four backlog topics; D12 one SKILL.md line keeping skill and scanner visibly 1:1; D13 the ten-test plan; D14 the who-executes/who-grades routing table verified against opencode.json (qa/reviewers/introspector are read-only, devops and the orchestrator run scripts); D15 cross-repo order (base first) with green definitions per step; D16 the acceptance-criteria to test mapping; D17 the risk table (Hole 8 cd-redirect bypass, scanner self-modification, entropy FNs/FPs, staged-diff-only, fail-open hook, adversarial evasion)."
+    },
+    {
+      "phase": "implement",
+      "agent": "just-code",
+      "model_tier": "budget",
+      "outcome": "pass",
+      "notes": "BASE half, D1-D13. Created scripts/lib/secret_scan.py (552 lines: 8 ordered rules, staged-diff and --paths scanning, JSON output, one masking path, D4 in-code allowlist with a comment per entry, exit 0/1/2) and scripts/install_secret_gate.sh (91 lines: idempotent marked-hook installer, refuses a foreign hook, --uninstall removes only marked hooks, fail-open notice). Edited prompts/orchestrator.md (step-8 secret gate, 5 elements), grok/agents/orchestrator.md (condensed mirror), prompts/just-code.md plus grok/agents/just-code{,-mid,-pro}.md (D8 constraint), scripts/lib/validate.py (+4 ROLE_KEYWORDS tuples, none pre-existing touched), skills/secret-scrub/SKILL.md (one Workflow line), FEATURE_BACKLOG.md (MDU-11 marked Done), and the design doc (D13 fixture text split so it does not self-match the gate). Self-checks: pytest 314 passed, build exit 0, gate --staged exit 0, gate --paths on its own sources exit 0. Deviation: the design's contiguous PEM header tripped the gate on the staged diff, so it was split into fragments (D13's own fragment discipline)."
+    },
+    {
+      "phase": "implement",
+      "agent": "just-code",
+      "model_tier": "budget",
+      "outcome": "pass",
+      "notes": "OVERLAY half, D9. One file edited: grok/agents/grokestrator.md (+2 lines) - the commit-gate clause in the commit step and the never-commit-secrets hard constraint. No scanner copy in the overlay, no overlays/manifest.json change, no dead same-name root copies touched, no build run (the base build was mid-flight in parallel)."
+    },
+    {
+      "phase": "review",
+      "agent": "code-reviewer-pro",
+      "model_tier": "premium",
+      "outcome": "pass",
+      "notes": "VERDICT: APPROVE - no BLOCKER, no MAJOR. All 10 mandated checks PASS: masking has a single emit path and no code path prints a full secret; the 8 rule ids map 1:1 onto the skill plus the 2 documented additions with no blanket path skips or bare-substring exemptions; the exit-code contract is exact (0 clean incl. empty stage, 1 findings, 2 operational, fail closed); a mandated grep over all 12 changed/new files found ZERO live-format secret literals; all 5 D6 elements are in both orchestrator mirrors and the overlay's condensed line carries all five behaviours, not just the command; exactly 4 new validator tuples on the right stems with the build propagating the parity failure; the installer is idempotent, refuses a foreign hook, unlinks only marked hooks and never touches anything outside .git/hooks/pre-commit; docs/security.md covers the four topics, cross-references autonomy.md and opencode-v2.md, discloses Hole 8 and contains a rotation runbook; the implementation is deterministic, offline and testable; scope discipline holds (no run_ledger.py / model_registry.py / gen_claude_agents.py / examples/ / evals/ / build / deploy / opencode.json edits, Github_readme_bug.png still untracked). Findings: 4 MINOR + 5 NIT."
+    },
+    {
+      "phase": "implement",
+      "agent": "just-code",
+      "model_tier": "budget",
+      "outcome": "pass",
+      "notes": "FIX CYCLE 1 (review-driven, F1-F7). F1 docs/security.md threat-table sentence was self-contradictory about the two additions; F2 the replace_me/replaceme placeholder prefixes were widened without design backing, so D4.2 was updated with the value-shape rationale and the constant got a matching comment; F3 env-assignment in LOCKFILE_SUPPRESSED_RULES was unreachable, so it was dropped and D4.4 was aligned; F4 the staged-binary bypass was added to the known limits; F5 the scanner header comment described an order the code did not have; F6 the catch-all error path now prints the exception type with the message masked; F7 the installer warns when git config core.hooksPath redirects the hooks dir (the fix child corrected the wording after checking that git rev-parse --git-path already honours it). Self-checks: pytest 314 passed, build exit 0, gate --staged exit 0, gate --paths exit 0, scratch-repo secret detected as aws-access-key-id with a masked preview."
+    },
+    {
+      "phase": "test",
+      "agent": "test-agent",
+      "model_tier": "budget",
+      "outcome": "pass",
+      "notes": "BASE suite tests/test_mdu_11_secret_gate.py (12 functions, 12 cases) per design D13: rule matrix, placeholder suppression, --no-placeholder-filter proving the suppression is real, narrow lockfile skip, exit codes, output never contains the secret, the AC2 staged-diff rejection in a tmp git repo, the hook installer, the prompt contract, and the rule-id/skill mapping. Base 314 -> 326 passed, no regressions, stable over 3 runs; build exit 0. Two non-blocking observations reported, not fixed: the placeholder shape check missed a quoted template (f-string class) and the scan_staged docstring contradicted the returned files_scanned value. Fixtures are built from concatenated fragments so no contiguous live-format secret is committed."
+    },
+    {
+      "phase": "test",
+      "agent": "test-agent",
+      "model_tier": "budget",
+      "outcome": "pass",
+      "notes": "OVERLAY suite tests/test_mdu_11_overlay_secret_gate.py (12 functions, 13 cases): the gate clause in grok/agents/grokestrator.md, the five clause behaviours, the fork-detection negative tests, and the merged-build check. Overlay 70 -> 83 passed with 1 skip (the build-output check skips when build/ is absent). Mutation-checked in a /tmp copy: deleting the gate line failed 9 tests, swapping the exit semantics failed 2, and adding a forked scanner with a live-format pattern failed both negative tests. Reported that build/grok/agents/grokestrator.md was stale (mtime 13:17 vs source 14:02) because the overlay build had not been re-run since the gate landed."
+    },
+    {
+      "phase": "deploy",
+      "agent": "devops",
+      "model_tier": "mid",
+      "outcome": "pass",
+      "notes": "Base pytest 326 passed; base build exit 0; overlay pytest 82 passed + 1 skipped; overlay build exit 0 (50 agents / 41 grok / 50 claude) after the stale merged build was refreshed. Pre-commit hooks installed in BOTH repos (base via scripts/install_secret_gate.sh, overlay via the same installer with the overlay as cwd, resolving the base copy through GENERIC_DIR/sibling) and left installed; idempotency confirmed by running the installer twice. Overlay ./deploy.sh --force exit 0 - 20 prompts to ~/.config/opencode/prompts/, 41 grok profiles to ~/.grok/agents/, 50 claude subagents to ~/.claude/agents/; the base deploy.sh was deliberately NOT run because it would wipe the personal agents and MCP config. AC2 artifact in a scratch git repo: the scanner exited 1 with 'creds.ini:1 aws-access-key-id AKIA...' (masked 4-char prefix only), a real git commit was BLOCKED by the installed hook (exit 1), and after redacting to ${AWS_ACCESS_KEY_ID} both the scanner and the commit exited 0. Defect surfaced: the overlay clause ordered the exit-code semantics before the missing-scanner fallback, so an overlay agent would run the absent scanner, get exit 2, and escalate instead of applying the checklist."
+    },
+    {
+      "phase": "validate",
+      "agent": "qa",
+      "model_tier": "mid",
+      "outcome": "pass",
+      "notes": "GRADE: PASS. All six acceptance criteria PASS with evidence: AC1 the skill exists and the gate follows it (fallback first, 0/1/2 handling, masked relay, never skipped silently) in all three orchestrator files; AC2 the realistic-secret diff is rejected (suite test plus the orchestrator-attached end-to-end artifact) and the overlay suite is mutation-checked; AC3 docs/security.md covers least-privilege, hygiene, sandboxing (devcontainer/E2B/Firecracker documented as not wired) and the approval gates, cross-referencing autonomy.md and opencode-v2.md, disclosing Hole 8, with a rotation runbook; AC4 proven empirically by removing a clause from a built mirror and observing validate.py exit 1; AC5 a single masked emit path plus the never-contains-the-secret test; AC6 the installer is idempotent, refuses foreign hooks and unlinks only marked hooks. Scope discipline and deployed reality confirmed by direct greps. Findings: 3 MINOR + 4 NIT."
+    },
+    {
+      "phase": "implement",
+      "agent": "just-code",
+      "model_tier": "budget",
+      "outcome": "pass",
+      "notes": "FIX CYCLE 2 (devops/QA-driven, F-A..F-D). F-A the clause order defect: in prompts/orchestrator.md, grok/agents/orchestrator.md and the overlay grok/agents/grokestrator.md the missing-scanner fallback now precedes the command, with an explicit 'a missing script is a fallback, not an escalation - check for the file first'; F-B scan_staged now counts the files actually scanned (files with at least one added line) and the docstring matches; F-C the placeholder-shape tests now run on a value with its surrounding quotes stripped, so a quoted template is no longer a false positive while a real credential in quotes still fires; F-D docs/security.md gained the two-layer paragraph (hook resolution order and fail-open notice, prompt clause primary with the manual checklist fallback in repos without the scanner). Self-checks: pytest 326 passed, build exit 0, gate --staged exit 0, and a scratch check proving a quoted placeholder template is not flagged while a real key and a bare hardcoded password assignment still are."
+    },
+    {
+      "phase": "implement",
+      "agent": "just-code",
+      "model_tier": "budget",
+      "outcome": "pass",
+      "notes": "FIX CYCLE 3 (QA-driven, F1-F4). F1 the masking breach: _mask now returns a bare ellipsis for a value shorter than 8 characters, so a short credential can never be echoed in full, while the rule still fires and values of 8+ keep the 4-char prefix; F2 the threat table no longer names the non-existent 'Workflow transcript detection' control; F3 the documented placeholder list was aligned exactly with the code constants (prefixes, <...>, x-runs, ellipsis tails, all five env-reference markers, the short-value preview note); F4 the allow-list parenthetical now lists the granted commands. Self-checks: pytest 326 passed, build exit 0, gate --staged exit 0, and a scratch check showing a 2-character value flagged with no characters in the preview."
+    },
+    {
+      "phase": "test",
+      "agent": "test-agent",
+      "model_tier": "budget",
+      "outcome": "pass",
+      "notes": "Post-fix test work. BASE: test_short_values_are_masked_entirely (parametrized over values of 1, 2, 4, 5, 6, 7 chars - still flagged, preview is exactly the ellipsis, the value never appears in the output) and test_long_values_keep_the_four_char_prefix (8, 9, 12 chars - preview is exactly the first four characters plus the ellipsis), reusing the file's existing helpers. Base 326 -> 335 passed; a reverted _mask in a /tmp copy failed all six short-value cases while the long-value cases still passed, so the regression is locked. OVERLAY: test_build_output_carries_the_gate now skips only when the build output is absent and FAILS when it exists but is stale (a required substring missing, or the build older than the source), with a message naming the fix; proven in a /tmp copy (fresh -> pass, stale content -> fail, gate-less content -> fail naming all four substrings, absent -> skip). Overlay suite green at 83 passed, 0 skipped."
+    },
+    {
+      "phase": "validate",
+      "agent": "qa",
+      "model_tier": "mid",
+      "outcome": "pass",
+      "notes": "RE-VALIDATION: PASS on the post-QA-fix state. Finding 1 (short-secret masking breach) closed and mutation-proven; finding 2 (the phantom threat-table control) closed; finding 3 (placeholder list vs code) verified in both directions - nothing in the code undocumented and nothing documented that the code does not do; finding 4 (allow-list parenthetical) verified against opencode.json; finding 7 (the overlay freshness test can no longer green-wash) verified non-trivially satisfiable. Re-confirmed: base 335 passed, overlay 83 passed with 0 skips, base build exit 0, the gate clean on both repos' staged diffs, AC2 behaviour unchanged, and scope discipline intact (no forked scanner in the overlay, Github_readme_bug.png still untracked). No new findings."
+    },
+    {
+      "phase": "validate",
+      "agent": "introspector",
+      "model_tier": "budget",
+      "outcome": "pass",
+      "notes": "Loop mode, session ses_e9fc3e069ffe7v10ynhDqU0qyM, cwd /mnt/FastSSDXFS/projects/agents, manifest runs/mdu-11-secret-gate/manifest.json. Machine signals read with an explicit --session-id so the stale v1 store cannot be selected. agent-improvements.md extended and committed with this change."
+    },
+    {
+      "phase": "commit",
+      "agent": "orchestrator",
+      "model_tier": "budget",
+      "outcome": "pass",
+      "notes": "Branch mdu-11-secret-gate in both repos. The gate ran on the MDU's own commits (dogfood): scanner --staged exit 0 before each commit. Two commits per repo: the first carries the implementation, the suites, the design doc and docs/security.md; the second carries fix cycles 2-3 (clause order, scan_staged file counting, quote-stripped placeholder shape, short-value masking, docs corrections), the post-fix tests, the introspection record and this manifest. The overlay commits carry grok/agents/grokestrator.md, its test and the regenerated tracked build/ tree (same convention as MDU-15). Both repos pushed; main fast-forwarded to the branch tip."
+    }
+  ],
+  "fix_iterations": 3,
+  "autonomy_level": 3,
+  "verification": {
+    "build": true,
+    "tests_passed": 335,
+    "tests_total": 335,
+    "qa_grade": "PASS",
+    "ci_green": null
+  },
+  "artifacts": [
+    "docs/design/mdu-11-secret-gate.md",
+    "docs/security.md",
+    "scripts/lib/secret_scan.py",
+    "scripts/install_secret_gate.sh",
+    "scripts/lib/validate.py",
+    "prompts/orchestrator.md",
+    "grok/agents/orchestrator.md",
+    "prompts/just-code.md",
+    "grok/agents/just-code.md",
+    "grok/agents/just-code-mid.md",
+    "grok/agents/just-code-pro.md",
+    "skills/secret-scrub/SKILL.md",
+    "tests/test_mdu_11_secret_gate.py",
+    "examples/runs/mdu-11-secret-gate/manifest.json",
+    "opencode_agents/grok/agents/grokestrator.md",
+    "opencode_agents/tests/test_mdu_11_overlay_secret_gate.py"
+  ],
+  "summary": "MDU-11 shipped a deterministic, stdlib-only secret scanner (scripts/lib/secret_scan.py) whose 8 rules map 1:1 onto the secret-scrub skill, a commit gate wired into all three orchestrator variants and all four just-code mirrors, an idempotent pre-commit hook installer, the full docs/security.md posture, and 24 new tests (base 335, overlay 83) proving a realistic secret diff is rejected while the gate never echoes a secret - reviewed APPROVE, QA GRADE PASS, re-validated PASS after three fix cycles."
+}
