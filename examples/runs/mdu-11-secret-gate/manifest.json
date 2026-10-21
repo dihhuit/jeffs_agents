@@ -109,7 +109,7 @@
       "agent": "orchestrator",
       "model_tier": "budget",
       "outcome": "pass",
-      "notes": "Branch mdu-11-secret-gate in both repos. The gate ran on the MDU's own commits (dogfood): scanner --staged exit 0 before each commit. Two commits per repo: the first carries the implementation, the suites, the design doc and docs/security.md; the second carries fix cycles 2-3 (clause order, scan_staged file counting, quote-stripped placeholder shape, short-value masking, docs corrections), the post-fix tests, the introspection record and this manifest. The overlay commits carry grok/agents/grokestrator.md, its test and the regenerated tracked build/ tree (same convention as MDU-15). Both repos pushed; main fast-forwarded to the branch tip."
+      "notes": "Branch mdu-11-secret-gate in both repos. The gate ran on the MDU's own commits (dogfood): scanner --staged exit 0 before each commit. Two commits per repo: the first carries the implementation, the suites, the design doc and docs/security.md; the second carries fix cycles 2-3 (clause order, scan_staged file counting, quote-stripped placeholder shape, short-value masking, docs corrections), the post-fix tests, the introspection record and this manifest. The overlay commits carry grok/agents/grokestrator.md, its test and the regenerated tracked build/ tree (same convention as MDU-15). Both repos pushed; main fast-forwarded to the branch tip. Base CI run 39684296161 on main: success."
     }
   ],
   "fix_iterations": 3,
@@ -119,7 +119,7 @@
     "tests_passed": 335,
     "tests_total": 335,
     "qa_grade": "PASS",
-    "ci_green": null
+    "ci_green": true
   },
   "artifacts": [
     "docs/design/mdu-11-secret-gate.md",
