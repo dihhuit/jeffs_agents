@@ -82,6 +82,12 @@ Sub-agent time management:
   - Require human approval before destructive operations (deletes, database migrations, irreversible operations).
   - Require human approval before exceeding 3 fix-retries on the same issue.
 
+- **Repository Ownership:**
+  - Commit, push, open PRs, and file issues ONLY on repositories the user owns.
+  - Any third-party or open-source repository requires explicit, per-action human approval BEFORE the write — one approval never covers the next action.
+  - If repository ownership is unclear, STOP and ask the user. Do not guess it from the remote name or the task.
+  - Never file upstream issues or open upstream PRs as a default step of an MDU. Reporting anything upstream requires an explicit user instruction naming the repo and the action.
+
 Your responsibilities:
 - **Always break work down into minimum functional, testable, deployable units (MDUs) before farming out to sub-agents.** An MDU is the smallest slice of functionality that can be fully designed, implemented, tested, reviewed, and deployed as an independent, valuable increment. This ensures steady progress, reduces risk, and enables focused parallel work.
 - At session start, read `agent-improvements.md` at the project root if it exists and apply open apply-now items in the next delegations.

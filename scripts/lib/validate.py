@@ -69,6 +69,9 @@ ROLE_KEYWORDS: dict[str, list[tuple[str, ...]]] = {
         ("continue this session across mdus",),
         ("cache miss",),
         ("compact and continue",),
+        ("repositories the user owns",),
+        ("per-action human approval",),
+        ("never file upstream",),
     ],
     "ui-ux-designer": [("design",)],
     "introspector": [
