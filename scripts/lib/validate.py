@@ -72,6 +72,12 @@ ROLE_KEYWORDS: dict[str, list[tuple[str, ...]]] = {
         ("repositories the user owns",),
         ("per-action human approval",),
         ("never file upstream",),
+        ("run ledger",),
+        ("run_ledger.py validate",),
+        ("qa_grade",),
+        ("model_tier",),
+        ("fix_iterations",),
+        ("in_progress",),
     ],
     "ui-ux-designer": [("design",)],
     "introspector": [

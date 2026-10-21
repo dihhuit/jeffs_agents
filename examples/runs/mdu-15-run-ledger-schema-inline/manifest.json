@@ -1,0 +1,97 @@
+{
+  "mdu_id": "mdu-15-run-ledger-schema-inline",
+  "title": "Cross-CLI run-ledger conformance: inline the manifest schema into both orchestrator mirrors and re-validate on all three CLIs",
+  "harness": "opencode",
+  "cwd": "/mnt/FastSSDXFS/projects/agents",
+  "branch": "mdu-15-run-ledger-schema-inline",
+  "repo": "open-agent-definitions + opencode_agents",
+  "status": "completed",
+  "started_at": "2026-10-21",
+  "completed_at": "2026-10-21T20:29:10Z",
+  "summary": "All three CLIs (opencode, grok, claude) produced validator-accepted run manifests with the correct harness and status \"completed\" from the inlined schema alone, with no schema document in the workspace; base suite 314 passing, CI gates green, QA graded the four acceptance criteria PASS.",
+  "fix_iterations": 1,
+  "autonomy_level": 3,
+  "verification": {
+    "build": true,
+    "tests_passed": 314,
+    "tests_total": 314,
+    "qa_grade": "PASS",
+    "ci_green": true
+  },
+  "artifacts": [
+    "docs/design/mdu-15-run-ledger-schema-inline.md",
+    "prompts/orchestrator.md",
+    "grok/agents/orchestrator.md",
+    "scripts/lib/validate.py",
+    "docs/observability.md",
+    "examples/runs/mdu-15-run-ledger-schema-inline/manifest.json",
+    "evals/tasks/03-ledger-conformance/driver.sh",
+    "evals/tasks/03-ledger-conformance/task.md",
+    "tests/test_mdu_15_run_ledger_inline.py"
+  ],
+  "phases": [
+    {
+      "phase": "design",
+      "agent": "architect",
+      "model_tier": "premium",
+      "outcome": "pass",
+      "notes": "Design doc: open-agent-definitions/docs/design/mdu-15-run-ledger-schema-inline.md (458 lines). Decisions: D1 inline block in both base mirrors + overlay grokestrator; D2 prompt-side exact-value normalizations, validator stays strict (no aliases); D3 criterion 2 adjudicated as a BOUNDED conformance task (not a nested MDU loop) -- loop mechanics were already proven 2026-09-16, only schema conformance + finalization are unproven, and the bounded task makes the git commit the deliverable, which probes the grok finalization gap directly; D4 grok finalization probe built in (commit-as-deliverable, A/B fallback); D5 new eval task evals/tasks/03-ledger-conformance/ (manual trigger); D6 overlay grokurator adopts the byte-identical generic block, no snippet-channel changes. Zero change to run_ledger.py. Inline block ~2.6KB replacing ~960 chars of bullets (+16% prompt). Six new ROLE_KEYWORDS['orchestrator'] clauses. Orchestrator sanity-checked all four flagged decisions (bounded-task adjudication, grokurator adoption now, strict validator/no aliases, run_ledger.py untouched) and approved them; verified against the real code: REQUIRED_FIELDS + REQUIRED_VERIFICATION_FIELDS exist in run_ledger.py, the stray duplicate OTel heading at observability.md:82 is real, and overlay append_file() appends at EOF so the mid-file block survives the build."
+    },
+    {
+      "phase": "implement",
+      "agent": "just-code",
+      "model_tier": "budget",
+      "outcome": "pass",
+      "notes": "BASE half: prompts/orchestrator.md + grok/agents/orchestrator.md (seven ledger bullets replaced by the inline contract block, byte-identical, anchor count 1 each, observability.md pointer removed); scripts/lib/validate.py (+6 ROLE_KEYWORDS['orchestrator'] tuples, the 9 pre-existing untouched); docs/observability.md (canonical-location note, stray duplicate OTel heading deleted, new '## Cross-CLI headless notes' section with the three CLI invocations + the claude --dangerously-skip-permissions warning + the three 2026-09-16 dialect findings + a QA-pending placeholder); examples/runs/README.md (one line); new evals/tasks/03-ledger-conformance/{task.md,driver.sh}. Zero change to run_ledger.py. No test files touched. Base pytest 303->303 and build exit 0 at implement time."
+    },
+    {
+      "phase": "implement",
+      "agent": "just-code",
+      "model_tier": "budget",
+      "outcome": "pass",
+      "notes": "OVERLAY half: single source edit -- grok/agents/grokestrator.md gained the same generic block (anchor at line 98, +22 lines). Block extracted from the design doc's literal bytes rather than retyped. Anchor count 1, observability.md count 0, zero personal names in the block. Dead root prompts/orchestrator.md, overlays/manifest.json and overlays/*.txt deliberately NOT touched. Overlay build exit 0; block survives the overlay's EOF-only snippet merge; built prompts/, grok/agents/ and generated claude/ copies all carry the anchor."
+    },
+    {
+      "phase": "review",
+      "agent": "code-reviewer",
+      "model_tier": "mid",
+      "outcome": "pass",
+      "notes": "VERDICT: APPROVE. All 13 mandated checks verified: byte-identity across base prompt + base grok mirror + overlay grokestrator + 5 built outputs (anchor count 1 in each of 8 files); design section 2.1 fidelity confirmed byte-exact (em dash, en dash, 4-space nested bullets, nested json fence); example manifest walks every validate_manifest branch with all 12 required + 5 verification fields present; validator diff is exactly +6 tuples with the 9 pre-existing intact and all six new clauses bound in BOTH mirrors; zero personal names in the base; tests/ and run_ledger.py untouched; driver.sh is mode 755, sh -n clean, POSIX-only, grades against the BASE validator, SKIPs absent CLIs without failing the run; eval task matches 01-repo-health house style; exactly one '## Heavy upgrade path' heading remains; prompt +16% (~1.7 KB) as budgeted. Findings: 1 MINOR + 4 NITs, no BLOCKER/MAJOR. Orchestrator dispositions: MINOR (personal names in the design doc) ACCEPTED -- matches existing base convention (README.md badge, mdu-31 design doc) and these are repo docs, not deployed agent definitions; NIT qa_grade/null ACCEPTED -- the 'Allowed values:' line already lists null and the Field-rules line exists to ban free text; NIT driver exit code TAKEN as a fix cycle; NIT overlay runs/ ACCEPTED -- no .gitignore exists in the overlay and prior MDUs left it untracked too."
+    },
+    {
+      "phase": "test",
+      "agent": "test-agent",
+      "model_tier": "budget",
+      "outcome": "pass",
+      "notes": "New base tests/test_mdu_15_run_ledger_inline.py (11 tests) and overlay tests/test_mdu_15_overlay_run_ledger_inline.py (6 functions / 7 collected cases). Base pytest 303 -> 314 passed. Overlay pytest 63 -> 70 passed (baseline reverified at 63 with the new module ignored). Overlay build.sh exit 0 on both runs (validator green: 50 agents, 19 parity pairs, 10 skills). NO implementation bugs found -- every contract in design 6.1/6.2 was already satisfied by the code as written: block byte-identical across all three sources, all 12 phrases present, all six enum sets matching the run_ledger constants, the inline JSON example returning [] from validate_manifest, all 9 pre-existing + 6 new clauses bound in both mirrors, docs/observability.md naming prompts/orchestrator.md. Deviations (all strengthening, none weakening): overlay test 5 parametrized over two build paths; local helper _values_after_label() so the backticked '`verification`'/'`phases[]`' labels do not pollute the token sets; test 1 also pins the clause-list lengths (9 + 6); overlay test 4 checks phrases in the built artifact without re-asserting a single anchor occurrence there (snippets may legitimately repeat words) -- single-occurrence stays pinned on the source."
+    },
+    {
+      "phase": "deploy",
+      "agent": "devops",
+      "model_tier": "mid",
+      "outcome": "pass",
+      "notes": "base pytest 314 passed; base build exit 0; overlay build exit 0; deploy.sh --force exit 0 (20 prompts / 41 grok / 50 claude). Deployed inline block byte-identical across all 5 deployed files; ~/.config/opencode/opencode.json byte-identical to build/opencode.json; MCP playwright+blender connected, browser-os absent."
+    },
+    {
+      "phase": "validate",
+      "agent": "qa",
+      "model_tier": "mid",
+      "outcome": "pass",
+      "notes": "Three headless CLI legs (opencode/grok/claude) each PASS all six checks with driver exit 0; base validator accepts all three manifests (harness correct, status completed, commit phase present, >=1 git commit). Independent QA grading of the 4 acceptance criteria: GRADE PASS, 7 findings, no BLOCKER/MAJOR. Old dialect (complete / \"n/a\" / manual-smoke-pass) absent from all three."
+    },
+    {
+      "phase": "validate",
+      "agent": "introspector",
+      "model_tier": "budget",
+      "outcome": "pass",
+      "notes": "Loop mode, session ses_ea049984fffeJ40fe7IUhOoZw0. 14 signals; 3 new suggestions (20261021-8 qa shell-denial shape, 20261021-9 phase/permission mismatch, 20261021-10 dead model alias) all marked apply-now; 20261014-5 keeps open on the discipline gap, not the schema gap; 20261021-2 stays open and unfiled. agent-improvements.md extended and committed with this change."
+    },
+    {
+      "phase": "commit",
+      "agent": "orchestrator",
+      "model_tier": "budget",
+      "outcome": "pass",
+      "notes": "branch mdu-15-run-ledger-schema-inline in both repos; the manifest is committed with the code in the same commit (see git log for the SHA); base main and overlay main fast-forwarded to the branch tip."
+    }
+  ]
+}

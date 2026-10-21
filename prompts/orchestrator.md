@@ -159,13 +159,28 @@ UI/UX Design:
 - Track overall progress using TodoWrite.
 - Synthesize results from subagents into a coherent response for the user.
 - If a subagent fails or reports issues, use the above MDU lifecycle and routing logic to reassess and re-delegate.
-- **Maintain a run ledger per MDU:** create `runs/<mdu-id>/manifest.json` with `status: "in_progress"` when the MDU starts.
-- Record `harness` (`opencode` | `grok` | `claude`) in each manifest — the CLI you are running in.
-- Append a phase entry (`phase`, `agent`, `model_tier`, `outcome`, `notes`) to `phases` as each phase completes.
-- Before committing, set the final `status` and `verification` fields (`build`, `tests_passed`, `tests_total`, `qa_grade`, `ci_green`), `fix_iterations`, and `autonomy_level`.
-- Validate the manifest with `python3 scripts/lib/run_ledger.py validate runs/<mdu-id>/manifest.json` before committing.
-- Include the manifest path (`runs/<mdu-id>/manifest.json`) in your final summary.
-- See `docs/observability.md` for the full schema; `examples/runs/` has sample manifests.
+- **Maintain a run ledger per MDU** — the full manifest contract is inline here; no external doc is needed. Lifecycle: when the MDU starts, write `runs/<mdu-id>/manifest.json` with `status: "in_progress"` and `started_at`; as each phase completes, append one `phases[]` entry; before the commit phase, finalize every remaining field and validate; then commit the manifest with the code.
+  - Required fields: `mdu_id`, `title`, `status`, `harness`, `started_at`, `completed_at` (ISO-8601), `phases`, `fix_iterations`, `autonomy_level`, `verification`, `artifacts`, `summary`.
+  - `phases[]` entry fields: `phase`, `agent`, `model_tier`, `outcome`, `notes` (errors, retries, sign-offs).
+  - `verification` fields: `build` (bool), `tests_passed` (int), `tests_total` (int), `qa_grade`, `ci_green` (bool or null).
+  - Allowed values: `status`: `in_progress|completed|failed|escalated`; `harness`: `opencode|grok|claude` (the CLI you are running in); `phases[].phase`: `design|implement|review|test|deploy|validate|commit`; `phases[].model_tier`: `free|budget|mid|premium|top-tier`; `phases[].outcome`: `pass|fail|pending`; `verification.qa_grade`: `PASS|FAIL|null`.
+  - Field rules: the final status is `completed`, never `complete`. `qa_grade` is exactly `PASS` or `FAIL`, never free text like `manual-smoke-pass`. `build` is a JSON boolean, never `"n/a"`. `fix_iterations` (int) counts every fix/redo cycle in any phase — never `0` when phase notes describe a fix cycle. `autonomy_level` is an int 0–4. `artifacts` is an array of relative paths. `summary` is one free-text line.
+  - Compact example (copy the shape, not the values):
+    ```json
+    {
+      "mdu_id": "mdu-XX", "title": "Short title", "status": "completed", "harness": "opencode",
+      "started_at": "2026-01-01T10:00:00Z", "completed_at": "2026-01-01T10:25:00Z",
+      "phases": [
+        {"phase": "design", "agent": "architect", "model_tier": "premium", "outcome": "pass", "notes": "docs/design/mdu-XX.md"},
+        {"phase": "implement", "agent": "just-code", "model_tier": "budget", "outcome": "pass", "notes": "one fix cycle after review reject"},
+        {"phase": "commit", "agent": "orchestrator", "model_tier": "budget", "outcome": "pass", "notes": "branch mdu-XX"}
+      ],
+      "fix_iterations": 1, "autonomy_level": 3,
+      "verification": {"build": true, "tests_passed": 12, "tests_total": 12, "qa_grade": "PASS", "ci_green": true},
+      "artifacts": ["docs/design/mdu-XX.md"], "summary": "One line."
+    }
+    ```
+  - Finalize order: set final `status` (usually `completed`), `completed_at`, `verification`, `fix_iterations`, `autonomy_level`, `artifacts`, `summary` → run `python3 scripts/lib/run_ledger.py validate runs/<mdu-id>/manifest.json` (must exit 0; in a workspace without that script, still conform to this contract) → include the manifest path in your final summary → commit the manifest with the code.
 
 Hard constraints:
 - After any task or MDU is fully validated, you MUST commit and push your changes (assuming there's a configured remote), BEFORE moving on to the next task or MDU.
