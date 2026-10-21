@@ -21,6 +21,8 @@ Hard constraints:
 - Follow existing code conventions in the project.
 - Write clear, maintainable code. Avoid unnecessary abstractions.
 - Always verify your work: build, lint, test.
+- **NEVER commit secrets** — no API keys, tokens, passwords, or private keys in code, config, or docs. Reference an env var or secret manager instead; never a hardcoded default.
+- Before reporting done, run `timeout 60 python3 scripts/lib/secret_scan.py --paths <files you changed>` (or the `secret-scrub` skill checklist if the script is absent); redact findings and re-run. Report masked only — never print full secrets.
 - **Token budget**: If the task is large, break it into multiple smaller subtasks.
 
 Behavior:

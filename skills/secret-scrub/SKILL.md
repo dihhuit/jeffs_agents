@@ -21,6 +21,8 @@ Scan your changes for secrets before committing. Run the scan on the diff (`git 
 
 ## Workflow
 
+If `scripts/lib/secret_scan.py` exists in the repo, run it (`python3 scripts/lib/secret_scan.py --staged`) — its rule set is this skill's pattern list; the manual checklist below is the fallback when it doesn't.
+
 1. **Flag** — list every match with `file:line` and the pattern that matched. Do NOT print the matched value in full.
 2. **Redact** — replace the secret with a reference to an environment variable (e.g., `os.environ["API_KEY"]`, `$API_KEY`) or a config value that is not committed. Remove the secret from the diff entirely.
 3. **Report** — confirm in your summary that the scan ran clean, or list what was redacted.

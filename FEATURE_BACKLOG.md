@@ -168,6 +168,7 @@ This backlog is written so the repo's **current** agent definitions can build th
 
 ### MDU-11 · Secret scanning & leak prevention in the loop
 
+- **Status:** Done — 2026-10-21
 - **Why:** Permissive autonomous agents can commit secrets; no guardrail exists.
 - **Description:** Add `secret-scrub` skill (MDU-05) with rules: before any commit, scan the diff for high-entropy keys, `AKIA*`, `sk-*`, private keys, `.env` values; flag or auto-redact; never print full secrets in logs. Update the orchestrator's commit gate and `just-code`'s constraints ("NEVER commit secrets; if a secret is needed, reference an env var / secret store"). Add `docs/security.md` covering: least-privilege perms, secret hygiene, sandboxing options (devcontainer profile, E2B, Firecracker as external execution), and approval gates (below).
 - **Acceptance criteria:**

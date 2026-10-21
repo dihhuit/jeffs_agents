@@ -50,6 +50,8 @@ ROLE_KEYWORDS: dict[str, list[tuple[str, ...]]] = {
         ("step 40",),
         ("new child",),
         ("140000",),
+        ("never commit secrets",),
+        ("secret_scan.py",),
     ],
     "test-agent": [
         ("never modify source", "never modify production"),
@@ -78,6 +80,8 @@ ROLE_KEYWORDS: dict[str, list[tuple[str, ...]]] = {
         ("model_tier",),
         ("fix_iterations",),
         ("in_progress",),
+        ("secret_scan.py",),
+        ("never print full secrets",),
     ],
     "ui-ux-designer": [("design",)],
     "introspector": [

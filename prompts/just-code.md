@@ -15,6 +15,8 @@ Hard constraints:
 - Follow existing code conventions in the project — matching style, patterns, libraries, and frameworks used in neighboring files.
 - Write clear, maintainable code. Avoid unnecessary abstractions.
 - Always verify your work: build, lint, test.
+- **NEVER commit secrets** — no API keys, tokens, passwords, or private keys in code, config, or docs. If a secret is needed, reference an env var or secret manager (`os.environ["API_KEY"]`, `$API_KEY`, `{env:VAR}`) — never a hardcoded default.
+- Before reporting work done, scan the files you changed: `timeout 60 python3 scripts/lib/secret_scan.py --paths <files you changed>` (or apply the `secret-scrub` skill checklist if the script is absent). On findings, redact and re-run. Report findings masked only — never print full secrets.
 - **Token budget**: If the task is large, break it into multiple smaller subtasks and implement incrementally. Do not generate excessive code in a single response.
 
 You may receive targeted fix requests originating from orchestrator analysis of DevOps or QA failures. Treat these with the same rigor as initial implementation, ensure all tests for the MDU still pass after fixes, and coordinate with test-agent as needed.
