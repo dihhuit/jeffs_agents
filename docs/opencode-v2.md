@@ -62,6 +62,24 @@ Do **not** touch shell `deny` on deep-research or any other agent.
   nested map `{"research":"allow","*":"deny"}`. "Fixing" the order changes semantics.
 - Shell exception blocks keep `shell * deny` first, then specific allows in installed order
   (`git diff*`, `git log*`, `git show*`, `grep *`, `rg *`, `npm run dev`, `npx *`, `python3 *`, `python *`).
+- Seven agents moved past the original allowlist in MDU-30: **code-reviewer / -pro / -free**, **qa / qa-pro /
+  qa-free**, and **introspector**. Their installed order is now `shell * deny` → expanded read-only allows
+  (`git status*`, `ls*`, `head*`, `tail*`, `wc*`, `sort*`, `timeout *`; qa also `python3 -m pytest*`,
+  `pytest*`, `./build.sh*`; introspector keeps `python3 *` / `python *` and adds only the read-only set) →
+  the 40-entry deny wall (39 denies + one allow). The wall runs: substitution denies → **spaced and
+  unspaced** redirect denies (`*> /*`, `*>/*`, …) → the single in-wall exception `*2>/dev/null*` (allow) →
+  destructive and git-mutation classes, ending with `*sort -o*` / `*sort*-o*`. qa/reviewers also carry
+  `*python* -c*` immediately after the exception (the 41st shell rule from the wall head).
+  All other agents keep the installed order verbatim — do not retro-fit this shape onto them.
+  The null-sink exception is order-critical: after the redirect denies (else it is dead), before every
+  destructive class and the inline-python guard (else it launders them).
+  Known limit, disclosed in MDU-30 (design §5 Hole 8): a `cd … &&` prefix defeats the redirect denies for
+  any absolute target (`cd /repo && git log -1 >/tmp/x` is allowed, while the same command without the
+  prefix is denied) — harness-level, not fixable by rule order, so do not reorder the wall to chase it.
+- The wall sits after every allow on purpose: `timeout *` is a broad allow, so only rules *after* it can
+  constrain a segment. Any future broad `token *` allow must be inserted **above** the wall and the wall must stay the
+  last shell run in the block. Full rationale, exact snippets, and the red/green probe matrix:
+  `docs/design/mdu-30-shell-allowlist.md`.
 
 ## 6. Before / after — code-reviewer nested permission
 
@@ -103,6 +121,54 @@ After (installed, V2 — this exact order):
     { "action": "shell",     "resource": "git show*", "effect": "allow" },
     { "action": "shell",     "resource": "grep *",    "effect": "allow" },
     { "action": "shell",     "resource": "rg *",      "effect": "allow" },
+    { "action": "shell",     "resource": "git status*", "effect": "allow" },
+    { "action": "shell",     "resource": "ls*",       "effect": "allow" },
+    { "action": "shell",     "resource": "head*",     "effect": "allow" },
+    { "action": "shell",     "resource": "tail*",     "effect": "allow" },
+    { "action": "shell",     "resource": "wc*",       "effect": "allow" },
+    { "action": "shell",     "resource": "sort*",     "effect": "allow" },
+    { "action": "shell",     "resource": "timeout *", "effect": "allow" },
+    { "action": "shell",     "resource": "*$(*",      "effect": "deny"  },
+    { "action": "shell",     "resource": "*`*",       "effect": "deny"  },
+    { "action": "shell",     "resource": "*> /*",     "effect": "deny"  },
+    { "action": "shell",     "resource": "*> ~/*",    "effect": "deny"  },
+    { "action": "shell",     "resource": "*> ../*",   "effect": "deny"  },
+    { "action": "shell",     "resource": "*>/*",      "effect": "deny"  },
+    { "action": "shell",     "resource": "*>~/*",     "effect": "deny"  },
+    { "action": "shell",     "resource": "*>../*",    "effect": "deny"  },
+    { "action": "shell",     "resource": "*2>/dev/null*", "effect": "allow" },
+    { "action": "shell",     "resource": "*python* -c*", "effect": "deny" },
+    { "action": "shell",     "resource": "rm *",      "effect": "deny"  },
+    { "action": "shell",     "resource": "* rm *",    "effect": "deny"  },
+    { "action": "shell",     "resource": "*xargs*",   "effect": "deny"  },
+    { "action": "shell",     "resource": "*sudo*",    "effect": "deny"  },
+    { "action": "shell",     "resource": "cp *",      "effect": "deny"  },
+    { "action": "shell",     "resource": "* cp *",    "effect": "deny"  },
+    { "action": "shell",     "resource": "mv *",      "effect": "deny"  },
+    { "action": "shell",     "resource": "* mv *",    "effect": "deny"  },
+    { "action": "shell",     "resource": "*curl*",    "effect": "deny"  },
+    { "action": "shell",     "resource": "*wget*",    "effect": "deny"  },
+    { "action": "shell",     "resource": "*sh -c*",   "effect": "deny"  },
+    { "action": "shell",     "resource": "* git push*", "effect": "deny" },
+    { "action": "shell",     "resource": "* git pull*", "effect": "deny" },
+    { "action": "shell",     "resource": "* git reset*", "effect": "deny" },
+    { "action": "shell",     "resource": "* git checkout*", "effect": "deny" },
+    { "action": "shell",     "resource": "* git restore*", "effect": "deny" },
+    { "action": "shell",     "resource": "* git switch*", "effect": "deny" },
+    { "action": "shell",     "resource": "* git clean*", "effect": "deny" },
+    { "action": "shell",     "resource": "* git stash*", "effect": "deny" },
+    { "action": "shell",     "resource": "* git commit*", "effect": "deny" },
+    { "action": "shell",     "resource": "* git rebase*", "effect": "deny" },
+    { "action": "shell",     "resource": "* git merge*", "effect": "deny" },
+    { "action": "shell",     "resource": "* git cherry-pick*", "effect": "deny" },
+    { "action": "shell",     "resource": "* git apply*", "effect": "deny" },
+    { "action": "shell",     "resource": "* git add*", "effect": "deny" },
+    { "action": "shell",     "resource": "* git branch*", "effect": "deny" },
+    { "action": "shell",     "resource": "* git tag*", "effect": "deny" },
+    { "action": "shell",     "resource": "* git clone*", "effect": "deny" },
+    { "action": "shell",     "resource": "* git worktree*", "effect": "deny" },
+    { "action": "shell",     "resource": "*sort -o*",  "effect": "deny"  },
+    { "action": "shell",     "resource": "*sort*-o*",  "effect": "deny"  },
     { "action": "read",      "resource": "*",         "effect": "allow" },
     { "action": "glob",      "resource": "*",         "effect": "allow" },
     { "action": "grep",      "resource": "*",         "effect": "allow" },
@@ -118,7 +184,10 @@ After (installed, V2 — this exact order):
 
 Visible here: `write`+`edit` → one `edit`; `bash` → `shell` with deny-`*` first; `task` → `subagent` with
 `allow research` before `deny *`; `prompt` → `system`; `temperature` → `request.body.temperature`;
-model retarget `minimax-m3` → `mimo-v2.5`.
+model retarget `minimax-m3` → `mimo-v2.5`. The expanded read-only allows and the deny wall in this
+block are the MDU-30 shape (§5); the other six allowlist agents differ only in their allow set. The wall is
+40 entries (39 denies + the `*2>/dev/null*` allow); this block also carries `*python* -c*` right after the
+exception. A block missing `*>/*` (unspaced) or `*sort*-o*` has drifted from `opencode.json`.
 
 ## 7. Files to touch
 
