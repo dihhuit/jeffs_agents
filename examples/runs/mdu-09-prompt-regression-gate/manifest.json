@@ -74,7 +74,7 @@
       "agent": "orchestrator",
       "model_tier": "budget",
       "outcome": "pass",
-      "notes": "Branch mdu-09-prompt-regression-gate in both repos; secret_scan --staged clean; base committed and pushed, overlay committed and pushed, main fast-forwarded in both."
+      "notes": "Branch mdu-09-prompt-regression-gate in both repos; secret_scan --staged clean in the base and the secret-scrub checklist plus the base scanner run non-forked in the overlay; base committed and pushed, overlay committed and pushed, main fast-forwarded in both. The push to main triggered CI run 39701688115, which succeeded with gate 5 (prompt regression gate) executing on the real tree; ci_green recorded by a follow-up commit, as for MDU-11."
     }
   ],
   "fix_iterations": 3,
@@ -84,7 +84,7 @@
     "tests_passed": 380,
     "tests_total": 380,
     "qa_grade": "PASS",
-    "ci_green": null
+    "ci_green": true
   },
   "artifacts": [
     "docs/design/mdu-09-prompt-regression-gate.md",
