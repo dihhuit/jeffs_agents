@@ -82,6 +82,10 @@ ROLE_KEYWORDS: dict[str, list[tuple[str, ...]]] = {
         ("in_progress",),
         ("secret_scan.py",),
         ("never print full secrets",),
+        ("prompt regression gate",),
+        ("prompt_regression.py gate",),
+        ("prompt_regression.py baseline",),
+        ("never refresh",),
     ],
     "ui-ux-designer": [("design",)],
     "introspector": [

@@ -31,6 +31,16 @@
 #      continue-on-error: an eval failure must fail the job. Eval manifests
 #      land in evals/results/, which is gitignored.
 #
+#   5. prompt regression gate — golden ordered traces of the prompt files
+#      (evals/golden/cases.json) checked against the committed baseline
+#      (evals/golden/baseline.json), plus the offline promptfoo config check
+#      (evals/promptfoo.yaml). Pure Python, no npm, no network beyond one
+#      `git fetch` on pull requests. Gates 1–4 stay unconditional: this step
+#      self-filters on PRs (prints an explicit SKIP line when nothing under
+#      prompts/, grok/agents/, evals/, or scripts/lib/ changed) and always
+#      runs on push to main. Fails closed — a missing/malformed baseline exits
+#      2 and fails the job.
+#
 # No Docker, no npm. Only actions/checkout and actions/setup-python.
 
 name: ci
@@ -81,3 +91,25 @@ jobs:
         run: |
             python3 scripts/lib/run_evals.py run evals/tasks/01-repo-health && \
             python3 scripts/lib/run_evals.py run evals/tasks/02-registry-alignment
+
+      - name: gate 5 — prompt regression gate (golden ordered traces vs committed baseline + promptfoo offline check)
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            if git fetch --no-tags --depth=1 origin "${{ github.event.pull_request.base.ref }}"; then
+              if ! changed="$(git diff --name-only FETCH_HEAD HEAD -- prompts grok/agents evals scripts/lib)"; then
+                echo "FAIL prompt-regression-gate (git diff failed)"
+                exit 1
+              fi
+              if [ -z "$changed" ]; then
+                echo "SKIP prompt-regression-gate (no changes under prompts/, grok/agents/, evals/, scripts/lib/)"
+                exit 0
+              fi
+              echo "[info] changed paths under the gate filter:"
+              echo "$changed"
+            else
+              echo "[info] could not fetch the base ref; running the gate unconditionally"
+            fi
+          fi
+          python3 scripts/lib/prompt_regression.py gate
+          python3 scripts/lib/prompt_regression.py check-config

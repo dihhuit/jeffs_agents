@@ -1,0 +1,26 @@
+# promptfoo config for the deterministic golden evals (MDU-09).
+# Teams wanting the standard tool run, from the repo root:
+#   timeout 300 npx -y promptfoo@latest eval -c evals/promptfoo.yaml
+prompts:
+  - "{{task}}"
+providers:
+  - "exec: bash promptfoo_driver.sh"
+tests:
+  - description: "01-repo-health driver passes"
+    vars:
+      task: evals/tasks/01-repo-health
+    assert:
+      - type: contains
+        value: "PASS repo-health"
+  - description: "02-registry-alignment driver passes"
+    vars:
+      task: evals/tasks/02-registry-alignment
+    assert:
+      - type: contains
+        value: "PASS registry-alignment"
+  - description: "04-prompt-golden-cases gate passes"
+    vars:
+      task: evals/tasks/04-prompt-golden-cases
+    assert:
+      - type: contains
+        value: "PASS prompt-golden-cases"

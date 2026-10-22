@@ -1,0 +1,14 @@
+{
+  "case_results": {
+    "just-code-constraints-order": "pass",
+    "orchestrator-commit-step-secret-gate-order": "pass",
+    "orchestrator-mirror-prompt-regression-gate-clause": "pass",
+    "orchestrator-mirror-secret-gate-order": "pass",
+    "orchestrator-prompt-regression-gate-clause": "pass",
+    "orchestrator-responsibilities-loop-order": "pass",
+    "orchestrator-run-ledger-finalize-order": "pass"
+  },
+  "generated_at": "2026-10-21T23:14:02Z",
+  "source_commit": "b7bd32154f47",
+  "version": 1
+}

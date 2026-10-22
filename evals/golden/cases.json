@@ -1,0 +1,83 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "id": "orchestrator-commit-step-secret-gate-order",
+      "target": "prompts/orchestrator.md",
+      "description": "secret gate markers appear in commit-step order",
+      "trace": [
+        "Secret gate (before every commit)",
+        "timeout 60 python3 scripts/lib/secret_scan.py --staged",
+        "never print full secrets"
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "orchestrator-run-ledger-finalize-order",
+      "target": "prompts/orchestrator.md",
+      "description": "run ledger finalize marker follows the ledger mandate",
+      "trace": [
+        "Maintain a run ledger per MDU",
+        "run_ledger.py validate runs/<mdu-id>/manifest.json"
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "orchestrator-responsibilities-loop-order",
+      "target": "prompts/orchestrator.md",
+      "description": "responsibility loop markers appear in phase order",
+      "trace": [
+        "Design (via architect",
+        "Implement (via a just-code variant",
+        "Commit and push"
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "orchestrator-mirror-secret-gate-order",
+      "target": "grok/agents/orchestrator.md",
+      "description": "grok mirror secret gate markers appear in order",
+      "trace": [
+        "Before every commit run the secret gate",
+        "timeout 60 python3 scripts/lib/secret_scan.py --staged",
+        "Never print full secrets"
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "just-code-constraints-order",
+      "target": "prompts/just-code.md",
+      "description": "just-code hard constraints appear in order",
+      "trace": [
+        "NEVER edit test files",
+        "NEVER commit secrets",
+        "never print full secrets"
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "orchestrator-prompt-regression-gate-clause",
+      "target": "prompts/orchestrator.md",
+      "description": "prompt regression gate clause markers appear in order",
+      "trace": [
+        "Prompt regression gate (commits that touch prompt files):",
+        "prompt_regression.py gate",
+        "Never refresh the baseline to make a red gate green",
+        "prompt_regression.py baseline --update"
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "orchestrator-mirror-prompt-regression-gate-clause",
+      "target": "grok/agents/orchestrator.md",
+      "description": "grok mirror prompt regression gate clause markers appear in order",
+      "trace": [
+        "Prompt regression gate:",
+        "prompt_regression.py gate",
+        "Never refresh the baseline to make a red gate green",
+        "prompt_regression.py baseline --update"
+      ],
+      "forbidden": []
+    }
+  ]
+}

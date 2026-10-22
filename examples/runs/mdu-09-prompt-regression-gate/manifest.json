@@ -1,0 +1,108 @@
+{
+  "mdu_id": "mdu-09-prompt-regression-gate",
+  "title": "Prompt regression gate (eval-driven prompt dev)",
+  "status": "completed",
+  "harness": "opencode",
+  "started_at": "2026-10-21T22:40:00Z",
+  "completed_at": "2026-10-21T23:58:00Z",
+  "phases": [
+    {
+      "phase": "design",
+      "agent": "architect",
+      "model_tier": "premium",
+      "outcome": "pass",
+      "notes": "docs/design/mdu-09-prompt-regression-gate.md — D1-D12. Ordered-trace golden cases (order matters, presence does not), committed baseline, single gate script, promptfoo recipe, orchestrator clause in three prompt mirrors, routing table verified against opencode.json."
+    },
+    {
+      "phase": "implement",
+      "agent": "just-code",
+      "model_tier": "budget",
+      "outcome": "pass",
+      "notes": "Slice A: scripts/lib/prompt_regression.py (cases|snapshot|diff|gate|baseline|check-config), evals/golden/cases.json (7 cases), evals/golden/baseline.json, evals/tasks/04-prompt-golden-cases/. Slice B: evals/README.md protocol, evals/promptfoo.yaml + evals/promptfoo_driver.sh, .github/workflows/ci.yml gate 5, three prompt clauses, 4 validate.py ROLE_KEYWORDS tuples, overlay re-exec wrapper, regenerated overlay build/."
+    },
+    {
+      "phase": "review",
+      "agent": "code-reviewer-pro",
+      "model_tier": "premium",
+      "outcome": "fail",
+      "notes": "REJECT with an ordered 10-item fix list (F1 promptfoo config did not run, F4 secret_scan git-SHA blind spot, plus F2/F3/F5 and nit items). Evidence in /tmp/opencode/mdu-09/review-evidence.md."
+    },
+    {
+      "phase": "review",
+      "agent": "code-reviewer",
+      "model_tier": "mid",
+      "outcome": "fail",
+      "notes": "Re-review after fix cycle 1: F1-F5 all closed, but 3 new MAJOR defects (snapshot-write OSError handler passed an invalid reasons= kwarg to _fail; baseline anti-tamper vacuous for hand-edited non-pass values; diff did no snapshot-shape validation) plus 2 MINOR (absolute target path escaped the repo root; tab-indented YAML accepted) and 6 NIT."
+    },
+    {
+      "phase": "implement",
+      "agent": "just-code-mid",
+      "model_tier": "mid",
+      "outcome": "pass",
+      "notes": "Fix cycle 1 (10 items from the pro review) and fix cycle 2 (13 items: 3 MAJOR, 2 MINOR, 6 NIT, plus un-xfailing the two known-defect tests). Fix cycle 3 polish by just-code (budget): stale test comment, empty-cases list now an operational error, overlay wrapper docstring, explicit vars.task pattern."
+    },
+    {
+      "phase": "review",
+      "agent": "code-reviewer",
+      "model_tier": "mid",
+      "outcome": "pass",
+      "notes": "APPROVE after fix cycle 2 — all 13 fixes verified real, no new fail-open path, 4 cosmetic NITs raised. Narrow re-review after the polish cycle: APPROVE, all 4 NITs verified, no weakened assertions."
+    },
+    {
+      "phase": "test",
+      "agent": "test-agent",
+      "model_tier": "budget",
+      "outcome": "pass",
+      "notes": "tests/test_mdu_09_prompt_regression.py (base) and tests/test_mdu_09_overlay_prompt_regression.py (overlay). Order sensitivity, case deletion, gutted/tampered baseline, trace<2, path traversal, flow-YAML/unsupported shapes, --live SKIP, promptfoo binding, marker uniqueness, exit-code contract, overlay re-exec. Added a zero-case regression test after the review."
+    },
+    {
+      "phase": "deploy",
+      "agent": "devops",
+      "model_tier": "mid",
+      "outcome": "pass",
+      "notes": "Live phase. Overlay wrapper re-exec proven three ways (source, identical --help diff, snapshot root == base tree); gate/check-config/cases/snapshot/diff exit 0 in both repos; both ./build.sh green; secret_scan clean on the six MDU-09 files; CI gate 5 wiring verified (path filters, fail-safe diff, no npm)."
+    },
+    {
+      "phase": "validate",
+      "agent": "qa",
+      "model_tier": "mid",
+      "outcome": "pass",
+      "notes": "QA GRADE: PASS. AC-1 protocol doc cross-checked against the CLI with every documented command executed. AC-2 demonstrated on a scratch copy: reordered orchestrator loop steps -> gate exit 1 naming orchestrator-responsibilities-loop-order; tampered/gutted baseline -> exit 2; missing baselined case -> exit 1. AC-3 live promptfoo run: 3 passed (100%)."
+    },
+    {
+      "phase": "commit",
+      "agent": "orchestrator",
+      "model_tier": "budget",
+      "outcome": "pass",
+      "notes": "Branch mdu-09-prompt-regression-gate in both repos; secret_scan --staged clean; base committed and pushed, overlay committed and pushed, main fast-forwarded in both."
+    }
+  ],
+  "fix_iterations": 3,
+  "autonomy_level": 3,
+  "verification": {
+    "build": true,
+    "tests_passed": 380,
+    "tests_total": 380,
+    "qa_grade": "PASS",
+    "ci_green": null
+  },
+  "artifacts": [
+    "docs/design/mdu-09-prompt-regression-gate.md",
+    "scripts/lib/prompt_regression.py",
+    "evals/golden/cases.json",
+    "evals/golden/baseline.json",
+    "evals/promptfoo.yaml",
+    "evals/promptfoo_driver.sh",
+    "evals/tasks/04-prompt-golden-cases/task.md",
+    "evals/tasks/04-prompt-golden-cases/driver.sh",
+    "evals/README.md",
+    ".github/workflows/ci.yml",
+    "prompts/orchestrator.md",
+    "grok/agents/orchestrator.md",
+    "scripts/lib/validate.py",
+    "scripts/lib/secret_scan.py",
+    "tests/test_mdu_09_prompt_regression.py",
+    "examples/runs/mdu-09-prompt-regression-gate/manifest.json"
+  ],
+  "summary": "MDU-09 shipped: an eval-driven prompt regression gate (7 ordered golden traces, committed baseline, fail-closed exit contract) wired into CI and into three orchestrator prompt mirrors; reviewed to APPROVE across three review rounds, 380 base + 93 overlay tests green, QA PASS against AC-1/AC-2/AC-3 with a live 3-task promptfoo run."
+}
