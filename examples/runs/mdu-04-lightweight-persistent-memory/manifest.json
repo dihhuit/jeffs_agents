@@ -1,0 +1,19 @@
+{
+  "mdu_id": "mdu-04-lightweight-persistent-memory",
+  "title": "Lightweight persistent memory convention",
+  "status": "in_progress",
+  "harness": "opencode",
+  "started_at": "2026-10-21T00:00:00Z",
+  "completed_at": "2026-10-21T01:00:00Z",
+  "phases": [
+    {"phase": "design", "agent": "architect", "model_tier": "premium", "outcome": "pass", "notes": "docs/design/mdu-04-lightweight-persistent-memory.md"},
+    {"phase": "review", "agent": "code-reviewer", "model_tier": "mid", "outcome": "pass", "notes": "parity+placement ok, fixed issues"},
+    {"phase": "test", "agent": "test-agent", "model_tier": "budget", "outcome": "pass", "notes": "tests/test_mdu_04_persistent_memory.py 13 passed"},
+    {"phase": "validate", "agent": "qa", "model_tier": "mid", "outcome": "fail", "notes": "criteria 1-3 need live transcripts; 4 pass"}
+  ],
+  "fix_iterations": 0,
+  "autonomy_level": 3,
+  "verification": {"build": true, "tests_passed": 406, "tests_total": 406, "qa_grade": "FAIL", "ci_green": null},
+  "artifacts": ["docs/design/mdu-04-lightweight-persistent-memory.md", "prompts/orchestrator.md", "grok/agents/orchestrator.md", "../opencode_agents/grok/agents/grokestrator.md", "README.md", "tests/test_mdu_04_persistent_memory.py"],
+  "summary": "Lightweight persistent memory convention added across all 3 orchestrator variants with README/docs and tests"
+}

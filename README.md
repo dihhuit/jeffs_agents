@@ -220,6 +220,44 @@ only after the user says the exact phrase `apply the definition diffs`;
 - On DevOps failure or post-deploy issues: DevOps returns a diagnostic report. The orchestrator performs (or delegates) root cause analysis and re-delegates fixes — typically back to DevOps for infra retries, or to Just-Code/Architect if code or config changes are needed. The MDU is re-deployed and re-validated until it succeeds.
 - On QA FAIL: QA returns detailed, severity-ranked bug reports with reproduction steps. The orchestrator routes the fixes (usually to Just-Code + Test-Agent for functional issues, or DevOps for deployment-related problems), then re-executes the deploy + validate phases. The loop continues until the MDU receives a clean PASS from QA (and successful DevOps).
 
+### Persistent Memory
+
+Every orchestrator variant maintains a dependency-free memory in `.agents/memory/`
+**at the project being worked on** (not in this repo), so a fresh session starts
+with the project's stable facts and past decisions instead of from zero:
+
+| File | `type` | Purpose |
+| --- | --- | --- |
+| `.agents/memory/project.md` | `project` | Stable facts — stack, build/test commands, conventions, gotchas |
+| `.agents/memory/decisions.md` | `decisions` | ADR-lite entries (Context / Decision / Consequences, one line each) |
+| `.agents/memory/session-<id>.md` | `session` | Per-session log: `session-start`, `mdu-complete`, `checkpoint` entries |
+
+Each file carries YAML frontmatter (`type`, `created`, `updated` — ISO-8601) and an
+**append-only** body — entries are never edited or deleted; the only permitted
+mutation is bumping `updated` when appending. The orchestrator reads `project.md`
+and `decisions.md` at session start, appends an MDU summary (`mdu_id`, branch,
+commit SHA, key decisions, ledger path) after each MDU is committed and pushed,
+and appends a `checkpoint` entry (`completed` / `next` / `blockers` / `artifacts`)
+whenever a session is interrupted or parked — the durable on-disk twin of the
+resume block handed to the user. A resuming session starts from the newest
+checkpoint (the pasted resume block wins if they disagree) instead of re-deriving
+completed work.
+
+The convention is plain markdown — no MCP server, no database, no SDK — so it
+works identically on OpenCode, Grok Build, and Claude Code (Claude inherits it via
+the generated orchestrator). Commit `project.md` and `decisions.md` (durable
+knowledge that survives clones); commit session logs for the audit trail or
+gitignore them per project. Never store secrets in memory — the secret gate scans
+staged memory files like any other diff. Full format spec, edge cases, and test
+plan: [docs/design/mdu-04-lightweight-persistent-memory.md](docs/design/mdu-04-lightweight-persistent-memory.md).
+
+**Optional heavy upgrade path:** if a project outgrows file-based memory (semantic
+recall across thousands of entries, cross-repo knowledge graphs),
+[mem0](https://mem0.ai) or [Letta](https://letta.com) can layer on top as an
+optional MCP memory server without changing the orchestrator's read/append
+contract. Not recommended by default — it adds a runtime dependency for marginal
+benefit at typical project scale.
+
 ### Just-Code + Review + Test Iteration Loop
 
 The `just-code` agent is deliberately not allowed to declare victory alone:
