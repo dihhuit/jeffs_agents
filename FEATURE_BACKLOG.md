@@ -277,3 +277,21 @@ Each MDU above is sized for the repo's own orchestrator to complete in one close
   4. Run manifest created and validated.
 - **Suggested agents:** just-code (config/docs), test-agent (validation), qa (validation).
 - **Dependencies:** MDU-01 (model registry).
+
+### MDU-34 · Canonical resume-block format (emit-strict, read-permissive)
+
+- **Why:** Resume blocks are emitted in three different shapes today — a JSON object, a flat `key: value` list, and a prose paragraph. All three work because the session-boundary gate recognizes a resume block *by purpose, not by header or exact phrasing*, but the variance costs the next session time (hunting for the commit SHA, branch, and artifact paths), makes resume blocks unvalidatable, and is the same cross-CLI drift problem MDU-14 and MDU-15 fixed for prompts and run manifests.
+- **Description:** Define one canonical machine-readable block and a validator, without narrowing what the gate accepts as input:
+  - Canonical shape: a fenced `json` object carrying the gate's own key list — `mdu_id`, `branch`, `commit_sha`, `harness`, `status`, `done[]`, `next[]`, `blocked_on[]`, `design`, `backlog`, `artifacts[]`, plus optional `notes`.
+  - **Emit-strict:** all three orchestrator mirrors must produce exactly this shape — base `prompts/orchestrator.md`, base `grok/agents/orchestrator.md`, and overlay `grok/agents/grokestrator.md` (the three-file rule; the overlay orchestrator does not inherit the base Grok profile).
+  - **Read-permissive (non-negotiable):** the existing recognition language — "recognize a resume block by purpose, not by header or exact phrasing", and the rule that a first-turn prose or `key: value` block also counts — must survive verbatim in all three mirrors. Standardizing emission must never turn the gate into a strict parser that rejects a hand-written block.
+  - Ship `scripts/lib/resume_block.py` (validate a pasted block: report missing/extra keys, exit non-zero on a required-key miss) and document the shape plus one real prose fixture in `docs/resume-block.md`.
+  - Note in the docs which fields the next session actually consumes (branch, commit SHA, `next[]`, `blocked_on[]`) versus which are bookkeeping (harness, status, artifacts).
+- **Acceptance criteria:**
+  1. The canonical shape is documented in exactly one place (`docs/resume-block.md`) and reproduced verbatim in all three orchestrator mirrors.
+  2. A test asserts the "not by header or exact phrasing" recognition clause is still present in all three mirrors (read-permissive regression guard).
+  3. `python3 scripts/lib/resume_block.py validate <fixture>` exits 0 on the canonical example and non-zero on a block missing `commit_sha`.
+  4. A prose resume block captured from a real session is committed as a fixture and asserted to remain valid *input* to the gate, proving the mechanism still accepts non-canonical blocks.
+  5. `./build.sh` passes, parity tests still green, run manifest created and validated.
+- **Suggested agents:** architect (shape + docs design), just-code (three mirrors + template + validator), test-agent (validator, mirror-parity, prose-fixture tests), qa (validation).
+- **Dependencies:** MDU-14 (parity tests), MDU-26 and MDU-28 (current gate wording; do not contradict them).
