@@ -16,19 +16,47 @@ This repository provides a **base layer** of agent definitions designed to be br
 
 ## Prerequisites
 
-### OpenCode Go Subscription
+### Model Tiers — Zen (default) / Go (switch-up)
 
-The OpenCode agent definitions in this repo are configured to use **OpenCode Go** subscription models (`opencode-go/*`) as the primary workhorses for most coding, testing, review, and deployment tasks. These agents reference models like `opencode-go/deepseek-v4.1-flash`, `opencode-go/kimi-k2.7-code`, and `opencode-go/glm-5.2` which require an active [OpenCode Go subscription](https://opencode.ai/docs/go) ($10/month).
+The OpenCode agents ship as **two tiers generated from the same `opencode.json` source**:
 
-A few agents use **free Zen models** (`opencode/*`) for research and simple fallback tasks, but the default agents for the main MDU loop (just-code, test-agent, code-reviewer, devops, qa, architect) all require Go models.
+| Tier | Config file | Models | Use it |
+| --- | --- | --- | --- |
+| **Zen (default)** | `build/opencode.zen.json` (generated) | Free Zen (`opencode/*`) | Default. No subscription required. |
+| **Go (switch-up)** | `opencode.json` | OpenCode Go (`opencode-go/*`) | When the period's Zen usage is exhausted, or a premium slot needs a stronger model. |
 
-> **If you don't have an OpenCode Go subscription**, the agents will still deploy but will fail at runtime when they try to call Go models. You'll need to either:
-> - Subscribe to OpenCode Go ($10/month), or
-> - Manually edit `opencode.json` to swap all `opencode-go/*` model references to `opencode/*` (free Zen) models.
+`./build.sh` generates the Zen file from `opencode.json` with `scripts/lib/gen_zen_config.py` and the mapping table `config/zen-model-map.json`, then validates that no `opencode-go/*` reference survives. The mapping collapses Go budget/mid/premium slots onto the two proven free generalists (`opencode/big-pickle` and `opencode/nemotron-3-ultra-free`); premium slots are a **documented capability regression** and the primary reason to switch up. See [docs/model-registry.md](docs/model-registry.md#zen-variant-mapping-mdu-33) for the table, alternates, and per-agent overrides.
+
+**Install the default (Zen) tier:**
+
+```bash
+./deploy.sh --force                # same as --tier=zen
+```
+
+**Switch up to Go when Zen usage for the period is exhausted:**
+
+```bash
+./deploy.sh --force --tier=go      # then start a new session
+```
+
+Deploy always installs both tier files: the selected tier becomes `~/.config/opencode/opencode.json` (active), the other is parked beside it as `~/.config/opencode/opencode.zen.json` or `opencode.go.json` (inert — config discovery only reads `opencode.json`). Switch back at any time with `./deploy.sh --force --tier=zen`.
+
+**Switch without the repo (manual one-liner):**
+
+```bash
+cp ~/.config/opencode/opencode.zen.json ~/.config/opencode/opencode.json   # back to Zen
+cp ~/.config/opencode/opencode.go.json  ~/.config/opencode/opencode.json   # up to Go
+```
+
+Config is read at session start, so **start a new session** (or `opencode service restart`) after a swap. Prompt/skill deploys are tier-independent — both configs reference the same `./prompts/` tree.
+
+> **Go subscription:** Go models (`opencode-go/deepseek-v4.1-flash`, `opencode-go/kimi-k2.7-code`, `opencode-go/glm-5.2`, `opencode-go/mimo-v2.5`) require an active [OpenCode Go subscription](https://opencode.ai/docs/go) ($10/month). The Zen tier needs no subscription.
+
+> **Overlay users:** this two-tier setup is built by the base repo's `build.sh`. The private overlay constructs its own `opencode.json` and must add the equivalent `gen_zen_config.py` call to its own build — see the overlay repo.
 
 ### Grok Build / Claude Code
 
-The Grok Build profiles and Claude Code subagents use their own model backends and are not affected by the Go subscription requirement — they work as long as you have the respective CLI installed.
+The Grok Build profiles and Claude Code subagents use their own model backends and are not affected by the tier setup — they work as long as you have the respective CLI installed.
 
 ## Using These Agents As-Is
 
@@ -52,7 +80,7 @@ The Grok Build profiles and Claude Code subagents use their own model backends a
    ```
 
 This installs:
-- **OpenCode**: `opencode.json` and `prompts/` → `~/.config/opencode/`
+- **OpenCode**: the selected tier as `opencode.json` plus the other tier parked as `opencode.zen.json`/`opencode.go.json`, and `prompts/` → `~/.config/opencode/`
 - **Grok Build**: `grok/agents/*.md` → `~/.grok/agents/`
 - **Claude Code**: `claude/agents/*.md` → `~/.claude/agents/` (user-level subagents)
 

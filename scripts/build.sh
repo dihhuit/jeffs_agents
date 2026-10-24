@@ -21,6 +21,12 @@ main() {
   log_step "Generating Claude Code subagents (from opencode.json + prompts)"
   python3 "${SCRIPTS_DIR}/lib/gen_claude_agents.py" "$BUILD_DIR" "${BUILD_DIR}/claude/agents"
 
+  log_step "Generating Zen-tier config (free Zen models)"
+  python3 "${SCRIPTS_DIR}/lib/gen_zen_config.py" \
+    --input "${BUILD_DIR}/opencode.json" \
+    --map "${REPO_ROOT}/config/zen-model-map.json" \
+    --output "${BUILD_DIR}/opencode.zen.json"
+
   log_step "Validating build output"
   python3 "${SCRIPTS_DIR}/lib/validate.py" "$BUILD_DIR"
 

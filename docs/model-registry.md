@@ -152,3 +152,85 @@ exactly why concentrating all five premium agents on it is unattractive.
 - (a) The OpenCode Console shows premium escalation share above ~30% of spend.
 - (b) A bake-off shows `opencode-go/deepseek-v4-pro` or `opencode-go/mimo-v2.6-pro` matching glm-5.2 on the golden eval suite.
 - (c) `opencode-go/glm-5.3` shows a capability gain over `opencode-go/glm-5.2` on the golden eval suite at identical cost — a capability consideration for a future MDU, not a saving.
+
+## Zen variant mapping (MDU-33)
+
+The Zen tier (`build/opencode.zen.json`, generated at build time from
+`opencode.json` + `config/zen-model-map.json`) replaces every paid
+`opencode-go/*` model with a free Zen model. The map was verified against
+`opencode models` on **2026-10-24**: `opencode/big-pickle` and
+`opencode/nemotron-3-ultra-free` were both present, and both are free Zen
+(`opencode/big-pickle` despite carrying no `-free` suffix). The free allowlist
+is derived from the committed snapshot by provider prefix — every
+`opencode/*` entry in `config/model-registry.txt`.
+
+Re-verify before changing the map:
+
+```bash
+opencode models | grep '^opencode/'
+```
+
+### Model-keyed mapping
+
+The free catalog preserves none of the Go budget/mid/premium distinction, so
+the four Go source models collapse onto the two free models with in-repo usage
+evidence.
+
+| Source (`opencode-go/*`) | Agents (count) | Zen target | Rationale |
+| --- | --- | --- | --- |
+| `opencode-go/deepseek-v4.1-flash` | just-code, test-agent, inception (3) | `opencode/big-pickle` | Strongest proven free model; already carries these roles via the `-free` variants. |
+| `opencode-go/kimi-k2.7-code` | just-code-mid, test-agent-pro, qa-pro, ui-ux-designer-pro (4) | `opencode/nemotron-3-ultra-free` | Second proven free generalist; spreads the coding loop across two free models. |
+| `opencode-go/glm-5.2` | just-code-pro, code-reviewer-pro, architect, architect-premium, devops-pro (5) | `opencode/big-pickle` | **Documented capability regression** — nothing free matches glm-5.2's reasoning tier. These premium slots are the primary documented trigger to switch up to Go mid-period. |
+| `opencode-go/mimo-v2.5` | test-agent-mid, code-reviewer, devops, qa, deep-research, ui-ux-designer, introspector (7) | `opencode/nemotron-3-ultra-free` | Mid slots → the second free generalist, spreading load. |
+
+### Unchanged (already free, 9)
+
+| Agent | Model |
+| --- | --- |
+| orchestrator, just-code-free, test-agent-free, code-reviewer-free, devops-free, qa-free | `opencode/big-pickle` |
+| research | `opencode/mimo-v2.6-flash-free` |
+| deepseek-research | `opencode/nemotron-3-ultra-free` |
+| nemotron-research | `opencode/nemotron-3.5-lightning-free` |
+
+Resulting Zen distribution (28 agents): `opencode/big-pickle` 14 agents,
+`opencode/nemotron-3-ultra-free` 12, plus the two remaining research agents
+above (`opencode/mimo-v2.6-flash-free` 1, `opencode/nemotron-3.5-lightning-free`
+1); `deepseek-research`'s `opencode/nemotron-3-ultra-free` is counted in the 12.
+Concentration on `big-pickle` is a known limitation, mitigated by the Go
+switch-up, the per-agent `overrides` knob in `config/zen-model-map.json`, and
+premium slots being low-volume (see the MDU-32 cost audit).
+
+### Alternates and overrides
+
+Alternates are catalogued in the map but **not placed on hot paths** (no
+bake-off evidence): `opencode/exo-free`, `opencode/space-bunny-free`,
+`opencode/step-5-preview-free`, `opencode/longcat-2.5-preview-free`,
+`opencode/muse-spark-1.3-contributor-free`, `opencode/ling-3.1-flash-free`.
+
+`config/zen-model-map.json` also carries `overrides: { "<agent-name>": "<model>" }`,
+applied after the model-keyed rules. It is empty by default and is the tuning
+knob when live usage shows one slot rate-limiting; override targets must be in
+the free allowlist or the build fails.
+
+### Tier selection
+
+Zen is the **default deploy tier**; Go is the switch-up when Zen usage for the
+period is exhausted. `./deploy.sh --force` installs Zen;
+`./deploy.sh --force --tier=go` switches up. Both configs are always installed
+(active + parked). See the README "Model Tiers" section for the concrete
+commands and the manual `cp` one-liner.
+
+### Known limitations
+
+- **Premium capability regression:** `opencode-go/glm-5.2` slots (just-code-pro,
+  code-reviewer-pro, architect, architect-premium, devops-pro) run on
+  `opencode/big-pickle` in the Zen tier. This is by design and the documented
+  switch-up trigger.
+- **Variant names persist while models collapse:** e.g. just-code ≡
+  just-code-pro ≡ just-code-free (all `big-pickle`). Names, permissions, and
+  temperatures stay distinct, so the orchestrator's tier ledger remains
+  meaningful; only the model string collapses.
+- Zen per-model vs account-wide usage limits are not established; the primary
+  response to exhaustion is `--tier=go`.
+- The overlay repo builds its own `opencode.json` and does not consume this
+  generated file; adopting the Zen tier there is a follow-up in that repo.

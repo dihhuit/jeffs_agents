@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "catalog_verified": "2026-10-24",
+  "comment": "MDU-33 Zen-tier mapping. Applied by scripts/lib/gen_zen_config.py to opencode.json to produce opencode.zen.json. 'models' is keyed by source model (paid opencode-go/*); already-free opencode/* agents pass through. 'overrides' is the per-agent tuning knob, applied last. Targets must be in the free Zen allowlist derived from config/model-registry.txt.",
+  "models": {
+    "opencode-go/deepseek-v4.1-flash": "opencode/big-pickle",
+    "opencode-go/kimi-k2.7-code": "opencode/nemotron-3-ultra-free",
+    "opencode-go/glm-5.2": "opencode/big-pickle",
+    "opencode-go/mimo-v2.5": "opencode/nemotron-3-ultra-free"
+  },
+  "overrides": {},
+  "description_substitutions": [
+    ["Go budget model", "Zen free model"],
+    ["mid-tier coding-optimized model", "Zen free model"],
+    ["premium Go model", "Zen free model"],
+    ["premium model", "Zen free model"],
+    ["top-tier reasoning model", "Zen free model"],
+    ["mid-tier Go model", "Zen free model"]
+  ],
+  "alternates": [
+    "opencode/exo-free",
+    "opencode/space-bunny-free",
+    "opencode/step-5-preview-free",
+    "opencode/longcat-2.5-preview-free",
+    "opencode/muse-spark-1.3-contributor-free",
+    "opencode/ling-3.1-flash-free"
+  ]
+}

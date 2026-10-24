@@ -13,6 +13,7 @@ from model_registry import (
     check_live,
     check_models,
     find_model_refs,
+    free_zen_models,
     load_registry,
 )
 
@@ -407,18 +408,23 @@ def _check_clause(
 
 
 def validate_schema(
-    build_dir: Path, schema_path: Path = SCHEMA_PATH
+    build_dir: Path,
+    schema_path: Path = SCHEMA_PATH,
+    config_name: str = "opencode.json",
 ) -> tuple[list[str], bool]:
-    """Validate build_dir/opencode.json against schemas/opencode.schema.json.
+    """Validate a build config against schemas/opencode.schema.json.
+
+    ``config_name`` selects the file under ``build_dir`` (default
+    ``opencode.json``); the Zen variant passes ``opencode.zen.json``.
 
     Returns ``(errors, ran)``. When ``jsonschema`` is not installed the check
     is skipped with a warning (``ran=False``) so environments without the
     package still complete; CI installs jsonschema so the check always runs
     there. Schema violations are appended to ``errors`` like the other checks.
     """
-    config_path = build_dir / "opencode.json"
+    config_path = build_dir / config_name
     if not config_path.is_file():
-        return ["missing opencode.json for schema check"], True
+        return [f"missing {config_name} for schema check"], True
     if not schema_path.is_file():
         return [f"opencode schema not found: {schema_path}"], True
     try:
@@ -426,7 +432,7 @@ def validate_schema(
     except ImportError:
         print(
             "  [warn]  jsonschema not installed; "
-            "skipping opencode.json schema check"
+            f"skipping {config_name} schema check"
         )
         return [], False
     try:
@@ -437,7 +443,7 @@ def validate_schema(
     validator_cls = jsonschema.validators.validator_for(schema)
     for exc in validator_cls(schema).iter_errors(load_json(config_path)):
         where = f" at {list(exc.absolute_path)}" if exc.absolute_path else ""
-        errors.append(f"opencode.json schema violation: {exc.message}{where}")
+        errors.append(f"{config_name} schema violation: {exc.message}{where}")
     return errors, True
 
 
@@ -451,6 +457,104 @@ def validate_model_refs(build_dir: Path, snapshot_path: Path) -> list[str]:
     registry = load_registry(snapshot_path)
     refs = find_model_refs(config_path)
     return check_models(registry, refs)
+
+
+def validate_zen(build_dir: Path, snapshot_path: Path = DEFAULT_SNAPSHOT) -> list[str]:
+    """Validate build_dir/opencode.zen.json as a free-Zen-only config variant.
+
+    Checks (MDU-33 design D4.2):
+    (a) every agent model reference is in the free Zen allowlist and none is a
+        paid ``opencode-go/*`` model;
+    (b) the raw file text contains no ``opencode-go/`` substring anywhere
+        (models *and* descriptions);
+    (c) agent-set parity with ``opencode.json``, and per-agent parity apart
+        from ``model`` and ``description`` (permissions, system ref, mode,
+        color, temperature, and any other keys);
+    (d) every other top-level key (``$schema``, ``default_agent``,
+        ``permissions``, ...) is identical to ``opencode.json``, which the
+        generator guarantees because it deep-copies the source config.
+
+    Schema conformance is checked separately by :func:`validate_schema` with
+    ``config_name="opencode.zen.json"``. Returns ``[]`` when the Zen file is
+    absent so a pre-MDU-33 build tree stays valid; :func:`main` turns absence
+    into an error when ``--variant zen`` is requested explicitly.
+    """
+    errors: list[str] = []
+    zen_path = build_dir / "opencode.zen.json"
+    if not zen_path.is_file():
+        return errors
+
+    if not snapshot_path.is_file():
+        return [f"model registry snapshot not found: {snapshot_path}"]
+    free_models = free_zen_models(load_registry(snapshot_path))
+
+    for agent, model in find_model_refs(zen_path):
+        if model.startswith("opencode-go/"):
+            errors.append(
+                f"opencode.zen.json agent '{agent}' uses paid Go model '{model}'"
+            )
+        elif model not in free_models:
+            errors.append(
+                f"opencode.zen.json agent '{agent}' uses non-free model '{model}' "
+                f"(not in {snapshot_path})"
+            )
+
+    if "opencode-go/" in zen_path.read_text(encoding="utf-8"):
+        errors.append(
+            "opencode.zen.json still contains 'opencode-go/' "
+            "(a model or description was not transformed)"
+        )
+
+    base_path = build_dir / "opencode.json"
+    if not base_path.is_file():
+        errors.append("missing opencode.json for opencode.zen.json parity check")
+        return errors
+    try:
+        base = load_json(base_path)
+        zen = load_json(zen_path)
+    except json.JSONDecodeError as exc:
+        return [f"invalid JSON in Zen variant config: {exc}"]
+
+    base_agents = base.get("agents") or {}
+    zen_agents = zen.get("agents") or {}
+    for name in sorted(set(base_agents) - set(zen_agents)):
+        errors.append(
+            f"opencode.zen.json missing agent '{name}' present in opencode.json"
+        )
+    for name in sorted(set(zen_agents) - set(base_agents)):
+        errors.append(
+            f"opencode.zen.json has agent '{name}' absent from opencode.json"
+        )
+    for name in sorted(set(base_agents) & set(zen_agents)):
+        base_agent = base_agents[name]
+        zen_agent = zen_agents[name]
+        if not isinstance(base_agent, dict) or not isinstance(zen_agent, dict):
+            errors.append(f"agent '{name}' is not an object in both configs")
+            continue
+        base_cmp = {
+            key: value
+            for key, value in base_agent.items()
+            if key not in ("model", "description")
+        }
+        zen_cmp = {
+            key: value
+            for key, value in zen_agent.items()
+            if key not in ("model", "description")
+        }
+        if base_cmp != zen_cmp:
+            errors.append(
+                f"opencode.zen.json agent '{name}' differs from opencode.json "
+                "beyond model/description"
+            )
+    for key in sorted(set(base) | set(zen)):
+        if key == "agents":
+            continue
+        if base.get(key) != zen.get(key):
+            errors.append(
+                f"opencode.zen.json top-level key '{key}' differs from "
+                "opencode.json (the generator must copy it unchanged)"
+            )
+    return errors
 
 
 def print_live_drift(snapshot_path: Path) -> None:
@@ -490,20 +594,58 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="print live model drift vs the registry snapshot (informational)",
     )
+    parser.add_argument(
+        "--variant",
+        choices=("go", "zen", "both"),
+        default="both",
+        help=(
+            "which OpenCode config variant to validate: 'go' (opencode.json), "
+            "'zen' (opencode.zen.json), or 'both' (default)"
+        ),
+    )
     args = parser.parse_args(argv)
 
     build_dir = Path(args.build_dir).resolve()
     print(f"==> Validating build output: {build_dir}")
 
+    variant = args.variant
+    base_checks = variant in ("go", "both")
+    zen_checks = variant in ("zen", "both")
+    zen_path = build_dir / "opencode.zen.json"
+    zen_present = zen_path.is_file()
+
     errors: list[str] = []
-    errors.extend(validate_opencode(build_dir))
-    errors.extend(validate_grok_agents(build_dir))
-    errors.extend(validate_claude_agents(build_dir))
-    errors.extend(validate_skills(build_dir))
-    errors.extend(validate_parity(build_dir))
-    errors.extend(validate_model_refs(build_dir, DEFAULT_SNAPSHOT))
-    schema_errors, schema_ran = validate_schema(build_dir)
-    errors.extend(schema_errors)
+    schema_ran = False
+    zen_schema_ran = False
+
+    if base_checks:
+        errors.extend(validate_opencode(build_dir))
+        errors.extend(validate_grok_agents(build_dir))
+        errors.extend(validate_claude_agents(build_dir))
+        errors.extend(validate_skills(build_dir))
+        errors.extend(validate_parity(build_dir))
+        errors.extend(validate_model_refs(build_dir, DEFAULT_SNAPSHOT))
+        schema_errors, schema_ran = validate_schema(build_dir)
+        errors.extend(schema_errors)
+
+    if zen_checks:
+        if zen_present:
+            errors.extend(validate_zen(build_dir))
+            zen_schema_errors, zen_schema_ran = validate_schema(
+                build_dir, config_name="opencode.zen.json"
+            )
+            errors.extend(zen_schema_errors)
+        else:
+            if variant == "zen":
+                errors.append(
+                    "opencode.zen.json absent but --variant zen was requested "
+                    "(generate it with scripts/lib/gen_zen_config.py)"
+                )
+            else:
+                print(
+                    "  [info]  opencode.zen.json absent; "
+                    "skipping Zen variant checks"
+                )
 
     if errors:
         print("  [fail]  validation errors:")
@@ -511,27 +653,42 @@ def main(argv: list[str] | None = None) -> int:
             print(f"          - {err}")
         return 1
 
-    agent_count = len(load_json(build_dir / "opencode.json").get("agents", {}))
-    grok_count = len(list((build_dir / "grok" / "agents").glob("*.md")))
-    claude_count = len(list((build_dir / "claude" / "agents").glob("*.md")))
-    print(f"  [ok]    opencode.json: {agent_count} agents, all prompt refs resolved")
-    if schema_ran:
-        print("  [ok]    opencode.json: conforms to schemas/opencode.schema.json")
-    print(f"  [ok]    grok/agents: {grok_count} profiles with valid frontmatter")
-    print(f"  [ok]    claude/agents: {claude_count} subagents with valid frontmatter")
-    parity_pairs = sum(
-        len(GROK_MIRRORS[stem])
-        for stem in GROK_MIRRORS
-        if (build_dir / "prompts" / f"{stem}.md").is_file()
-    )
-    print(f"  [ok]    parity: {parity_pairs} prompt↔grok pairs consistent")
-    skills_dir = build_dir / "skills"
-    skill_count = len(list(skills_dir.glob("*/SKILL.md"))) if skills_dir.is_dir() else 0
-    print(f"  [ok]    skills: {skill_count} valid skill(s)")
-    print(
-        f"  [ok]    model refs: all agent models present in registry "
-        f"({DEFAULT_SNAPSHOT})"
-    )
+    if base_checks:
+        agent_count = len(load_json(build_dir / "opencode.json").get("agents", {}))
+        grok_count = len(list((build_dir / "grok" / "agents").glob("*.md")))
+        claude_count = len(list((build_dir / "claude" / "agents").glob("*.md")))
+        print(f"  [ok]    opencode.json: {agent_count} agents, all prompt refs resolved")
+        if schema_ran:
+            print("  [ok]    opencode.json: conforms to schemas/opencode.schema.json")
+        print(f"  [ok]    grok/agents: {grok_count} profiles with valid frontmatter")
+        print(f"  [ok]    claude/agents: {claude_count} subagents with valid frontmatter")
+        parity_pairs = sum(
+            len(GROK_MIRRORS[stem])
+            for stem in GROK_MIRRORS
+            if (build_dir / "prompts" / f"{stem}.md").is_file()
+        )
+        print(f"  [ok]    parity: {parity_pairs} prompt↔grok pairs consistent")
+        skills_dir = build_dir / "skills"
+        skill_count = (
+            len(list(skills_dir.glob("*/SKILL.md"))) if skills_dir.is_dir() else 0
+        )
+        print(f"  [ok]    skills: {skill_count} valid skill(s)")
+        print(
+            f"  [ok]    model refs: all agent models present in registry "
+            f"({DEFAULT_SNAPSHOT})"
+        )
+
+    if zen_checks and zen_present:
+        zen_agent_count = len(load_json(zen_path).get("agents", {}))
+        print(
+            f"  [ok]    opencode.zen.json: {zen_agent_count} agents, "
+            "free Zen allowlist, parity with opencode.json"
+        )
+        if zen_schema_ran:
+            print(
+                "  [ok]    opencode.zen.json: conforms to "
+                "schemas/opencode.schema.json"
+            )
 
     if args.live_models:
         print_live_drift(DEFAULT_SNAPSHOT)

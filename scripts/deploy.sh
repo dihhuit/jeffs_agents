@@ -2,9 +2,14 @@
 # Deploy generic agent definitions to OpenCode, Grok Build, and/or Claude Code user config dirs.
 #
 # Usage:
-#   ./deploy.sh              # dry run
-#   ./deploy.sh --force      # install
-#   ./deploy.sh --force --rebuild   # rebuild then install
+#   ./deploy.sh                          # dry run (zen tier)
+#   ./deploy.sh --force                  # install the default Zen tier
+#   ./deploy.sh --force --tier=go        # switch up to the Go tier
+#   ./deploy.sh --force --rebuild        # rebuild then install
+#
+# Both tiers are always installed: the selected tier becomes
+# ~/.config/opencode/opencode.json (active) and the other is parked as
+# opencode.zen.json / opencode.go.json (inert by config discovery).
 
 set -euo pipefail
 
@@ -16,12 +21,27 @@ source "${SCRIPT_DIR}/lib/common.sh"
 
 DO_COPY=false
 DO_REBUILD=false
-for arg in "$@"; do
-  case "$arg" in
+TIER="zen"
+ARGS=("$@")
+for ((i = 0; i < ${#ARGS[@]}; i++)); do
+  case "${ARGS[$i]}" in
     --force) DO_COPY=true ;;
     --rebuild) DO_REBUILD=true ;;
+    --tier=*) TIER="${ARGS[$i]#--tier=}" ;;
+    --tier)
+      i=$((i + 1))
+      TIER="${ARGS[$i]:-}"
+      ;;
+    *) log_warn "ignoring unknown argument: ${ARGS[$i]}" ;;
   esac
 done
+case "$TIER" in
+  zen | go) ;;
+  *)
+    log_error "--tier must be 'zen' or 'go' (got '${TIER}')"
+    exit 2
+    ;;
+esac
 
 OPENCODE_CONFIG_DIR="${HOME}/.config/opencode"
 OPENCODE_PROMPTS_DIR="${OPENCODE_CONFIG_DIR}/prompts"
@@ -51,15 +71,57 @@ resolve_sources() {
   fi
 }
 
+ensure_tier_sources() {
+  [[ "$HAS_OPENCODE" == true ]] || return 0
+  [[ -f "${DEPLOY_ROOT}/opencode.zen.json" ]] && return 0
+  if [[ "$DO_COPY" == true || "$DO_REBUILD" == true ]]; then
+    log_info "opencode.zen.json missing; building deploy sources"
+    bash "${SCRIPT_DIR}/build.sh"
+    DEPLOY_ROOT="$BUILD_DIR"
+  else
+    log_warn "opencode.zen.json missing; run ./build.sh to generate the Zen tier"
+  fi
+}
+
 deploy_opencode_json() {
   [[ "$HAS_OPENCODE" == true ]] || return 0
-  [[ -f "${DEPLOY_ROOT}/opencode.json" ]] || return 0
+  local base="${DEPLOY_ROOT}/opencode.json"
+  [[ -f "$base" ]] || return 0
+
+  local active parked parked_name
+  if [[ "$TIER" == "zen" ]]; then
+    active="${DEPLOY_ROOT}/opencode.zen.json"
+    parked="$base"
+    parked_name="opencode.go.json"
+  else
+    active="$base"
+    parked="${DEPLOY_ROOT}/opencode.zen.json"
+    parked_name="opencode.zen.json"
+  fi
+
+  if [[ ! -f "$active" ]]; then
+    if [[ "$DO_COPY" == true ]]; then
+      log_error "selected ${TIER} tier config not found: ${active}"
+      log_error "run ./build.sh first (or ./deploy.sh --force --rebuild)"
+      return 1
+    fi
+    log_warn "selected ${TIER} tier config not found: ${active} (run ./build.sh)"
+    return 0
+  fi
+
   if [[ "$DO_COPY" == true ]]; then
     mkdir -p "$OPENCODE_CONFIG_DIR"
-    cp "${DEPLOY_ROOT}/opencode.json" "${OPENCODE_CONFIG_DIR}/opencode.json"
-    log_ok "opencode.json → ${OPENCODE_CONFIG_DIR}/"
+    cp "$active" "${OPENCODE_CONFIG_DIR}/opencode.json"
+    log_ok "opencode.json (${TIER} tier) → ${OPENCODE_CONFIG_DIR}/opencode.json"
+    if [[ -f "$parked" ]]; then
+      cp "$parked" "${OPENCODE_CONFIG_DIR}/${parked_name}"
+      log_ok "${parked_name} (inactive tier) → ${OPENCODE_CONFIG_DIR}/"
+    fi
   else
-    log_info "[dry-run] opencode.json → ${OPENCODE_CONFIG_DIR}/opencode.json"
+    log_info "[dry-run] opencode.json (${TIER} tier) → ${OPENCODE_CONFIG_DIR}/opencode.json"
+    if [[ -f "$parked" ]]; then
+      log_info "[dry-run] ${parked_name} (inactive tier) → ${OPENCODE_CONFIG_DIR}/"
+    fi
   fi
 }
 
@@ -159,9 +221,11 @@ validate_deployed_clis() {
 main() {
   require_at_least_one_cli
   resolve_sources
+  ensure_tier_sources
 
   log_step "Generic Agent Definitions Deployer"
   log_info "Source: ${DEPLOY_ROOT}"
+  log_info "Tier: ${TIER}"
   [[ "$HAS_OPENCODE" == true ]] && log_info "OpenCode target: ${OPENCODE_CONFIG_DIR}"
   [[ "$HAS_GROK" == true ]] && log_info "Grok target: ${GROK_AGENTS_DIR}"
   [[ "$HAS_CLAUDE" == true ]] && log_info "Claude target: ${CLAUDE_AGENTS_DIR}"

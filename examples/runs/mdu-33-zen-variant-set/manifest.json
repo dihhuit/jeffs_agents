@@ -1,0 +1,34 @@
+{
+  "mdu_id": "mdu-33-zen-variant-set",
+  "title": "Zen-only variant set (two tiers: Zen default, Go switch-up)",
+  "status": "completed",
+  "harness": "opencode",
+  "started_at": "2026-10-24T21:40:00Z",
+  "completed_at": "2026-10-24T23:05:09Z",
+  "phases": [
+    {"phase": "design", "agent": "architect", "model_tier": "premium", "outcome": "pass", "notes": "docs/design/mdu-33-zen-variant.md — D1-D7; build-time transform chosen; no CLI --config flag (upstream #2066 closed unimplemented) so tier switching is deploy.sh --tier file-swap; mapping table + validator --variant"},
+    {"phase": "implement", "agent": "just-code", "model_tier": "budget", "outcome": "pass", "notes": "config/zen-model-map.json + gen_zen_config.py + validate_zen/--variant + build.sh + deploy.sh --tier{zen,go} + README + docs/model-registry.md + 34 new tests; pytest 438 exit 0, build.sh exit 0; OPENCODE_CONFIG omitted (unverifiable on V2); allowlist snapshot-derived (live catalog now lists paid opencode/* models)"},
+    {"phase": "review", "agent": "code-reviewer", "model_tier": "mid", "outcome": "pass", "notes": "APPROVE, 4 MINOR + 3 NIT; trace-style checks 1-6 executed; sandbox static-trace only (shell denied)"},
+    {"phase": "implement", "agent": "just-code", "model_tier": "budget", "outcome": "pass", "notes": "fix cycle 1 (fresh child): 6 review findings applied — absent-model fail-closed, passthrough allowlist check, top-level parity assert, explicit --variant zen absence now exit 1, doc count arithmetic, README 4th Go source; pytest 443 exit 0, build exit 0; secret_scan exit 0"},
+    {"phase": "test", "agent": "test-agent", "model_tier": "budget", "outcome": "pass", "notes": "+14 tests in test_mdu_33_zen_variant.py (53/53 file, suite 457/457 exit 0); no git incidents; flagged pre-existing deploy.sh find-on-missing-grok-dir abort (HEAD, not a regression — left to backlog)"},
+    {"phase": "deploy", "agent": "devops", "model_tier": "mid", "outcome": "pass", "notes": "build exit 0 (28 agents zen, 0 opencode-go refs); validate zen/go exit 0; corruption demo exit 1 with both guards firing; generator regen byte-identical to build artifact; both-tier dry-runs exit 0, HOME untouched; secret_scan --paths exit 0; no --force (base deploy would overwrite overlay daily config; tier switch = user decision)"},
+    {"phase": "validate", "agent": "qa", "model_tier": "mid", "outcome": "pass", "notes": "QA GRADE: PASS — AC-1..AC-4 all PASS with live re-verification (28 agents all opencode/* free, --variant live, README three sub-requirements graded, regen byte-identical, 457 tests); 2 non-blocking NITs (design-doc AC-2 evidence wording overstated; manifest finalize reminder)"},
+    {"phase": "commit", "agent": "orchestrator", "model_tier": "budget", "outcome": "pass", "notes": "secret gate clean, committed to main with manifest + introspection under examples/runs/; push pending user approval (51385d2 also still unpushed); introspection ran in loop mode but is not a schema phase — see agent-improvements.md"}
+  ],
+  "fix_iterations": 1,
+  "autonomy_level": 3,
+  "verification": {"build": true, "tests_passed": 457, "tests_total": 457, "qa_grade": "PASS", "ci_green": null},
+  "artifacts": [
+    "docs/design/mdu-33-zen-variant.md",
+    "config/zen-model-map.json",
+    "scripts/lib/gen_zen_config.py",
+    "scripts/lib/model_registry.py",
+    "scripts/lib/validate.py",
+    "scripts/build.sh",
+    "scripts/deploy.sh",
+    "README.md",
+    "docs/model-registry.md",
+    "tests/test_mdu_33_zen_variant.py"
+  ],
+  "summary": "Shipped a two-tier OpenCode setup: build-time Zen-only opencode.zen.json (28 agents, all free opencode/* models, fail-closed generator + validator --variant) with deploy.sh --tier{zen,go} and README two-tier switch-up docs; 457/457 tests, build green, QA PASS."
+}
