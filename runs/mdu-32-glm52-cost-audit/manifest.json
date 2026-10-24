@@ -1,0 +1,57 @@
+{
+  "mdu_id": "mdu-32-glm52-cost-audit",
+  "title": "glm-5.2 cost audit: comparison table + no-op-with-rationale for the 5 premium Go agents",
+  "status": "completed",
+  "harness": "opencode",
+  "started_at": "2026-10-24T00:00:00Z",
+  "completed_at": "2026-10-24T01:00:00Z",
+  "phases": [
+    {
+      "phase": "design",
+      "agent": "orchestrator",
+      "model_tier": "budget",
+      "outcome": "pass",
+      "notes": "Pricing from opencode models metadata; no-op with rationale per user decision."
+    },
+    {
+      "phase": "implement",
+      "agent": "just-code",
+      "model_tier": "budget",
+      "outcome": "pass",
+      "notes": "Docs-only: appended cost audit to docs/model-registry.md and marked MDU-32 Done in FEATURE_BACKLOG.md."
+    },
+    {
+      "phase": "review",
+      "agent": "code-reviewer",
+      "model_tier": "mid",
+      "outcome": "pass",
+      "notes": "Initial review REQUEST CHANGES (snapshot IDs, 'only cheaper' claim, arithmetic, attribution, headings). Fixed in round 2; final review APPROVE."
+    },
+    {
+      "phase": "test",
+      "agent": "test-agent",
+      "model_tier": "budget",
+      "outcome": "pass",
+      "notes": "pytest 404 passed; ./build.sh and validate.py passed (all gates ok)."
+    },
+    {
+      "phase": "validate",
+      "agent": "qa",
+      "model_tier": "mid",
+      "outcome": "pass",
+      "notes": "Docs-only no-op: confirmed no functional files changed, comparison table and rationale present, all review findings addressed."
+    },
+    {
+      "phase": "commit",
+      "agent": "orchestrator",
+      "model_tier": "budget",
+      "outcome": "pass",
+      "notes": "Preparing commit of docs-only changes on branch mdu-32-glm52-cost-audit."
+    }
+  ],
+  "fix_iterations": 2,
+  "autonomy_level": 3,
+  "verification": {"build": true, "tests_passed": 404, "tests_total": 404, "qa_grade": "PASS", "ci_green": true},
+  "artifacts": ["docs/model-registry.md", "FEATURE_BACKLOG.md", "runs/mdu-32-glm52-cost-audit/manifest.json"],
+  "summary": "No-op with rationale: glm-5.2 kept on 5 premium agents; full comparison table added with corrected pricing/savings/attribution."
+}

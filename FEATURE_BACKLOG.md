@@ -256,6 +256,7 @@ Each MDU above is sized for the repo's own orchestrator to complete in one close
 
 ### MDU-32 · Cheaper replacement for glm-5.2 on OpenCode Go
 
+- **Status:** Done — 2026-10-24 (no-op with rationale; comparison table in `docs/model-registry.md` § Cost audit — glm-5.2 premium agents)
 - **Why:** `opencode-go/glm-5.2` powers `just-code-pro`, `code-reviewer-pro`, `architect`, `architect-premium`, and `devops-pro` and is the single largest driver of credits spend beyond the $10/mo subscription.
 - **Description:** Audit the available models in the OpenCode Go catalog (OpenCode Console → Models for the Go workspace) for a model with equivalent or near-equivalent capability at lower cost. Compare against current usage patterns (design-heavy, security review, complex refactors, multi-service deploys). If a suitable replacement exists, update `opencode.json`, orchestrator prompts (both mirrors), `docs/model-registry.md`, `README.md`, and `config/model-registry.txt`. Keep `architect-premium` reasoning needs in mind (may need to stay on a top-tier model even if others drop). If none exists at meaningfully lower cost with acceptable capability, document findings in `docs/model-registry.md` and close as "no-op with rationale".
 - **Acceptance criteria:**
@@ -265,7 +266,6 @@ Each MDU above is sized for the repo's own orchestrator to complete in one close
   4. Run manifest created and validated.
 - **Suggested agents:** architect (capability/cost analysis), just-code (config/prompt updates if needed), test-agent (regression checks), qa (validation).
 - **Dependencies:** none.
-
 
 ### MDU-33 · Zen-only variant set (Go-free)
 

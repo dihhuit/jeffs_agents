@@ -91,3 +91,64 @@ User-invoked primary. Not part of the orchestrator's MDU loop.
 | Agent        | Model                              |
 |--------------|------------------------------------|
 | `inception`  | `opencode-go/deepseek-v4.1-flash`    |
+
+## Cost audit — glm-5.2 premium agents (MDU-32)
+
+Prices were read from live model metadata with `opencode models` (model id,
+cost per Mtok, release date) on **2026-10-24**, USD per 1M tokens (input /
+output / cache read). That read is newer than the committed
+`config/model-registry.txt` snapshot, which is the 2026-10-08 catalog and
+carries bare model ids only — it does not carry prices.
+`opencode-go/kimi-k3.1-pro` is absent from that snapshot and is not referenced
+by any agent. `glm-5.3`, `glm-5.3-flash` and `qwen3.8-max` are in the snapshot
+but are not referenced by any agent, so no rebase of the snapshot was needed
+for this pricing-only audit. Cache write is 0 on every row below except
+`kimi-k3` (3.00), `kimi-k3.1-pro` (2.00) and `qwen3.8-max` (2.50).
+Per-model usage and spend are
+Console-only and were not available, so this audit compares list prices, not
+actual spend.
+
+| Model                            | Tier in this repo                                          | Input $/Mtok | Output $/Mtok | Cache read $/Mtok | Price vs glm-5.2              | Fit (premium tier)                      |
+|----------------------------------|------------------------------------------------------------|--------------|---------------|-------------------|-------------------------------|-----------------------------------------|
+| `opencode-go/glm-5.2`            | current premium                                            | 1.40         | 4.40          | 0.26              | baseline (100%)               | Current model. Only Go model with evidence at ADR-grade design, security review, and multi-service deploy work. |
+| `opencode-go/glm-5.3`            | not used                                                   | 1.40         | 4.40          | 0.26              | 100% (identical pricing)      | Newer release in the same family. An in-family upgrade would be cost-neutral, not a saving — out of scope for a cost audit. |
+| `opencode-go/kimi-k3.1-pro`      | not used                                                   | 2.00         | 10.00         | 0.20              | 143% input, 227% output       | More expensive. Family upgrade of `kimi-k2.7-code`; no case for premium work. |
+| `opencode-go/kimi-k3`            | not used                                                   | 3.00         | 15.00         | 0.30              | 214% input, 341% output       | More expensive. Previous generation of `kimi-k3.1-pro`; no case for premium work. |
+| `opencode-go/qwen3.8-max`        | not used                                                   | 2.00         | 6.00          | 0.25              | 143% input, 136% output       | More expensive. No case for premium work. |
+| `opencode-go/kimi-k2.7-code`     | mid (`just-code-mid`, `test-agent-pro`, `qa-pro`, `ui-ux-designer-pro`) | 0.95 | 4.00 | 0.19         | 68% input / 91% output        | Cheapest model already carrying pro-slot work (test/QA/UI). Code-specialised mid tier; not established for architecture/security judgement. |
+| `opencode-go/deepseek-v4-pro`    | not used                                                   | 0.66         | 1.98          | 0.022             | 47% input / 45% output        | General-purpose pro-shaped candidate, but no capability evidence in this repo for ADR-grade design or security review. |
+| `opencode-go/mimo-v2.6-pro`      | not used                                                   | 0.435        | 0.87          | 0.003625          | 31% input / 20% output        | Cheapest general-purpose pro-shaped candidate; same capability-evidence gap, and cache-read pricing implies a different usage mix. |
+| `opencode-go/glm-5.3-flash`      | not used                                                   | 0.15         | 0.50          | 0.03              | ~11% input / 11% output       | Flash tier. Below the reasoning level these agents are selected for. |
+
+### Fit assessment
+
+The orchestrator prompt (`prompts/orchestrator.md`) labels four of these five
+pro-slot agents "Go premium" — `just-code-pro`, `code-reviewer-pro`,
+`architect` and `devops-pro` — with `architect-premium` labelled "Go
+top-tier"; the Grok mirror (`grok/agents/orchestrator.md`) is provider-neutral
+and carries no such labels. This document's agent tables list
+`opencode-go/kimi-k2.7-code` on the mid agent `just-code-mid` *and* on three
+`-pro` agents (`test-agent-pro`, `qa-pro`, `ui-ux-designer-pro`), which is
+exactly why concentrating all five premium agents on it is unattractive.
+
+| Agent               | Current model          | Cheaper candidate would be                                                        | Why it stays on `glm-5.2`                                                                                                       |
+|---------------------|------------------------|-----------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------|
+| `just-code-pro`     | `opencode-go/glm-5.2`  | `opencode-go/kimi-k2.7-code` (mid, 0.95 / 4.00), `opencode-go/deepseek-v4-pro`    | Complex cross-service refactors are the failure mode cheap tiers show first; savings on premium-only calls do not offset a regression. |
+| `code-reviewer-pro` | `opencode-go/glm-5.2`  | `opencode-go/deepseek-v4-pro` (0.66 / 1.98), `opencode-go/mimo-v2.6-pro`          | Security review depends on judgement, and none of the cheaper candidates has review-quality evidence here.                       |
+| `architect`         | `opencode-go/glm-5.2`  | `opencode-go/deepseek-v4-pro` (0.66 / 1.98), `opencode-go/mimo-v2.6-pro`          | ADR-grade design and trade-off reasoning is the core requirement; a cheaper model has no bake-off evidence at that tier.         |
+| `architect-premium` | `opencode-go/glm-5.2`  | `opencode-go/deepseek-v4-pro` (0.66 / 1.98), `opencode-go/mimo-v2.6-pro`          | This agent deliberately escalates for hard design problems, so it must not be the first place to economize.                     |
+| `devops-pro`        | `opencode-go/glm-5.2`  | `opencode-go/kimi-k2.7-code` (mid), `opencode-go/deepseek-v4-pro`, `opencode-go/mimo-v2.6-pro` | Multi-service deploy and rollback decisions carry the highest blast radius per token.                                |
+
+### Decision
+
+**No-op — no functional changes.** `opencode-go/glm-5.2` keeps all five premium agents.
+
+1. No cheaper candidate is established at premium reasoning tier. `opencode-go/kimi-k2.7-code` (0.95 / 4.00 / 0.19) is the cheapest model in the catalog that already carries pro-slot work in this repo and is cheaper than `opencode-go/glm-5.2` on both axes — 68% of its input price and 91% of its output price — but it is a code-specialised model already carrying the pro test/QA/UI slots (`test-agent-pro`, `qa-pro`, `ui-ux-designer-pro`), so it is not an available fallback for the reasoning- and security-heavy agents. Moving those five onto it would concentrate the whole pro tier on one model with no capability evidence at that tier, and its family upgrade `opencode-go/kimi-k3.1-pro` costs 143% input / 227% output of `opencode-go/glm-5.2`. `opencode-go/deepseek-v4-pro` (0.66 / 1.98) and `opencode-go/mimo-v2.6-pro` (0.435 / 0.87) are genuinely cheaper — 53–55% saved on `deepseek-v4-pro`, 69–80% on `mimo-v2.6-pro` — but have no capability evidence in this repo for ADR-grade design or security review. `docs/opencode-v2.md` records `opencode-go/deepseek-v4-pro` previously powering four of these five agents before the migration to `opencode-go/glm-5.2`, so the current assignment is a deliberate capability decision already made in this repo, not an unexamined default. The eval and prompt-regression suites grade prompt/contract conformance, not model quality, so a swap would trade unknown regressions for those savings on premium-tier calls only.
+2. `opencode-go/glm-5.3` is priced identically to `opencode-go/glm-5.2`; upgrading family is cost-neutral and out of scope for a cost audit. Record it as a candidate for a future capability MDU, not as a saving.
+3. Cheap-tier work is already off glm-5.2 (budget = `opencode-go/deepseek-v4.1-flash`, mid = `opencode-go/kimi-k2.7-code`, free = `opencode/big-pickle`), so glm-5.2 volume is bounded by the small number of premium escalations.
+
+### Re-open conditions
+
+- (a) The OpenCode Console shows premium escalation share above ~30% of spend.
+- (b) A bake-off shows `opencode-go/deepseek-v4-pro` or `opencode-go/mimo-v2.6-pro` matching glm-5.2 on the golden eval suite.
+- (c) `opencode-go/glm-5.3` shows a capability gain over `opencode-go/glm-5.2` on the golden eval suite at identical cost — a capability consideration for a future MDU, not a saving.
