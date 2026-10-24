@@ -498,7 +498,7 @@ This repo is actively being upgraded to the bleeding edge of autonomous agentic 
 - **[GAP_ANALYSIS.md](GAP_ANALYSIS.md)** — a full gap analysis against mid-2026 best practice (memory, skills, MCP, observability, evals, CI, security), including a live demonstration of model drift in the research agent configs.
 - **[FEATURE_BACKLOG.md](FEATURE_BACKLOG.md)** — a prioritized, MDU-sized implementation backlog consumable by this repo's own orchestrator. The agent team builds its own upgrade.
 
-(last verified 2026-10-23) **Progress:** **12/15** backlog items complete (MDU-01, 02, 03, 05, 06, 07, 08, 09, 11, 12, 14, 15) — see [examples/upgrade-story.md](examples/upgrade-story.md) and [examples/gallery/](examples/gallery/) for worked examples.
+(last verified 2026-10-23) **Progress:** **14/15** backlog items complete (MDU-01, 02, 03, 05, 06, 07, 08, 09, 11, 12, 13, 14, 15) — see [examples/upgrade-story.md](examples/upgrade-story.md) and [examples/gallery/](examples/gallery/) for worked examples.
 
 ## How This Repo Was Upgraded by Its Own Agents
 
