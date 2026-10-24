@@ -66,6 +66,8 @@ This backlog is written so the repo's **current** agent definitions can build th
 
 ### MDU-04 · Lightweight persistent memory convention
 
+- **Status:** Done — 2026-10-21
+
 - **Why:** Every session starts from zero; long projects lose context; no resume story.
 - **Description:** Define a dependency-free memory convention consumed by the orchestrator and subagents:
   - `.agents/memory/` directory: `project.md` (stable facts), `decisions.md` (ADR-lite entries), `session-<id>.md` (per-session log).
@@ -146,6 +148,8 @@ This backlog is written so the repo's **current** agent definitions can build th
 
 ### MDU-09 · Prompt regression gate (eval-driven prompt dev)
 
+- **Status:** Done — 2026-10-21
+
 - **Why:** Prompt edits are unmeasured; "improvements" can silently degrade behavior.
 - **Description:** Add a lightweight comparison flow: before changing a prompt, `just-code` (or the orchestrator) snapshot-diffs the golden-eval results (MDU-08) for the old vs new prompt on the affected eval tasks; a prompt change that regresses ≥1 golden case is rejected by the orchestrator (or CI on PR). Implement as a documented workflow + optional promptfoo config (`evals/promptfoo.yaml`) for teams that want the standard tool.
 - **Acceptance criteria:**
@@ -192,6 +196,8 @@ This backlog is written so the repo's **current** agent definitions can build th
 - **Dependencies:** MDU-03, MDU-07.
 
 ### MDU-13 · README modernization & artifact gallery
+
+- **Status:** Done — 2026-10-23
 
 - **Why:** Job-search artifact needs to sell itself: badges, gallery, quickstart, evidence.
 - **Description:** Rebuild README sections: add CI badges (MDU-02); add a "What's inside" table linking each agent to its prompt and docs; add an `examples/` gallery (2–3 worked examples including a summary, manifest, and ledger excerpt from the golden evals); move the current single-item TODO into the backlog (this file); add "Autonomy & Guardrails" and "Memory & Skills" sections; link GAP_ANALYSIS.md and FEATURE_BACKLOG.md from a "Roadmap" section; add a short "How this repo was upgraded by its own agents" story (meta-narrative is the best artifact).
@@ -267,14 +273,15 @@ Each MDU above is sized for the repo's own orchestrator to complete in one close
 - **Suggested agents:** architect (capability/cost analysis), just-code (config/prompt updates if needed), test-agent (regression checks), qa (validation).
 - **Dependencies:** none.
 
-### MDU-33 · Zen-only variant set (Go-free)
+### MDU-33 · Zen-only variant set (two tiers: Zen default, Go switch-up)
 
-- **Why:** The current `opencode.json` assumes an OpenCode Go subscription for most agents. Users without a Go subscription need a parallel set using only free Zen models (`opencode/*`).
-- **Description:** Create a parallel agent set for OpenCode that uses only free Zen models. Options: a separate `opencode.zen.json` file or a build-time flag. Update docs to document both paths. Ensure parity where possible, document limitations, and add validation.
+- **Status:** Open — 2026-10-24 (scope clarified same day)
+- **Why:** The current `opencode.json` assumes an OpenCode Go subscription for most agents. Users without a Go subscription need a parallel set using only free Zen models (`opencode/*`). **Scope clarification (2026-10-24, user):** the user has repeatedly hit Zen usage limits, so this is a **two-tier setup, not just a Go-free fallback** — run the Zen tier by default, and switch up to the Go tier when a session runs out of Zen usage for the period. Switching between tiers mid-period must be a first-class, documented workflow.
+- **Description:** Create two parallel agent sets for OpenCode: a Zen-only set (free `opencode/*` models) and the existing Go-subscription set, kept side by side. Options: a separate config file (e.g. `opencode.zen.json` alongside the Go default) or a build-time flag emitting both variants. Update docs to document both paths and the switch-up workflow. Ensure parity where possible, document limitations, and add validation.
 - **Acceptance criteria:**
   1. A Zen-only config exists (e.g. `opencode.zen.json`) with all referenced models in the free Zen allowlist.
   2. `./build.sh`/validation supports selecting the Zen variant (documented).
-  3. README documents Go subscription requirement and Zen alternative.
+  3. README documents the two-tier setup: Zen as the default tier, the Go subscription tier as the switch-up path when Zen usage for the period is exhausted, and how to switch between them (which command/file each tier uses).
   4. Run manifest created and validated.
 - **Suggested agents:** just-code (config/docs), test-agent (validation), qa (validation).
 - **Dependencies:** MDU-01 (model registry).
