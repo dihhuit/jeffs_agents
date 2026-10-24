@@ -157,6 +157,7 @@ This backlog is written so the repo's **current** agent definitions can build th
 
 ### MDU-10 · Checkpoint/resume protocol for long-running work
 
+- **Status:** Superseded by MDU-28 (session boundaries and resume block protocol) — 2026-10-24
 - **Why:** The current "Session Checkpoint" guardrail is a safety valve, not a resume primitive; interrupted autonomous runs lose everything.
 - **Description:** Define a checkpoint format (plain markdown checkpoint file per MDU: goal, completed steps, current step, artifacts, next actions, blockers) and add orchestrator rules: write a checkpoint after every completed phase and before any human-escalation; on session start, if a checkpoint exists for an incomplete MDU, resume from it. Coordinate with MDU-04 memory. Optional: document host-level resume (e.g., Claude Code `--resume`, opencode session persistence) in the README.
 - **Acceptance criteria:**
