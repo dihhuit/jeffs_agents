@@ -1,6 +1,10 @@
 # Open Agent Definitions
 
 [![CI](https://github.com/dihhuit/jeffs_agents/actions/workflows/ci.yml/badge.svg)](https://github.com/dihhuit/jeffs_agents/actions/workflows/ci.yml)
+[![License: Unlicense](https://img.shields.io/badge/license-Unlicense-blue.svg)](https://unlicense.org/)
+[![OpenCode](https://img.shields.io/badge/OpenCode-compatible-blue)](https://opencode.ai)
+[![Grok Build](https://img.shields.io/badge/Grok%20Build-compatible-black)](https://x.ai)
+[![Claude Code](https://img.shields.io/badge/Claude%20Code-compatible-orange)](https://claude.com/claude-code)
 
 > **Disclaimer**: All of the code and agent definitions in this repo were written by AI, not by the author directly, so use with caution. Just because this repo's author trusts them doesn't mean you should.
 
@@ -82,86 +86,65 @@ claude --agent just-code -p "Implement a small feature..."
 
 (Files can be copied manually to `~/.claude/agents/` or project `.claude/agents/` if preferred.)
 
-### Core Agents Included
+### What's Inside
 
-The agent definitions follow a **model tier variant** pattern — each role has multiple clones configured with different models so the orchestrator can spread token cost and choose the cheapest reliable model for each subtask.
+The agent definitions follow a **model tier variant** pattern — each role has multiple clones configured with different models so the orchestrator can spread token cost and choose the cheapest reliable model for each subtask. See [docs/model-registry.md](docs/model-registry.md) for the full model allowlist and verification dates.
 
-**OpenCode agents** (defined in `opencode.json` and `prompts/`):
+### OpenCode agents (defined in [`opencode.json`](opencode.json) and [`prompts/`](prompts/))
 
-**Orchestrator:**
-- [`orchestrator`](prompts/orchestrator.md) — Primary coordinator. Uses free Zen model (big-pickle).
+| Role group | Agent | Prompt | Notes |
+| --- | --- | --- | --- |
+| Orchestrator | [`orchestrator`](prompts/orchestrator.md) | [prompts/orchestrator.md](prompts/orchestrator.md) | Primary coordinator (free Zen: big-pickle). MDU lifecycle, gates, ledger. |
+| Research | [`research`](prompts/research.md) | [prompts/research.md](prompts/research.md) | Quick web lookups (free). |
+|  | [`deepseek-research`](prompts/research.md) | [prompts/research.md](prompts/research.md) | Coding patterns, library docs (free). |
+|  | [`nemotron-research`](prompts/research.md) | [prompts/research.md](prompts/research.md) | Thorough doc research (free). |
+|  | [`deep-research`](prompts/research.md) | [prompts/research.md](prompts/research.md) | Comprehensive multi-source research (Go budget). |
+| Coding | [`just-code`](prompts/just-code.md) | [prompts/just-code.md](prompts/just-code.md) | Default coder (Go budget). |
+|  | [`just-code-mid`](prompts/just-code.md) | [prompts/just-code.md](prompts/just-code.md) | Complex features needing deeper reasoning (Go mid). |
+|  | [`just-code-pro`](prompts/just-code.md) | [prompts/just-code.md](prompts/just-code.md) | Architecture-sensitive code, refactoring (Go premium). |
+|  | [`just-code-free`](prompts/just-code.md) | [prompts/just-code.md](prompts/just-code.md) | Boilerplate, simple changes (free). |
+| Testing | [`test-agent`](prompts/test-agent.md) | [prompts/test-agent.md](prompts/test-agent.md) | Default test writer (Go budget). |
+|  | [`test-agent-mid`](prompts/test-agent.md) | [prompts/test-agent.md](prompts/test-agent.md) | Complex test suites, property-based tests (Go mid). |
+|  | [`test-agent-pro`](prompts/test-agent.md) | [prompts/test-agent.md](prompts/test-agent.md) | Security tests, deep coverage (Go premium). |
+|  | [`test-agent-free`](prompts/test-agent.md) | [prompts/test-agent.md](prompts/test-agent.md) | Simple unit tests (free). |
+| Code Review | [`code-reviewer`](prompts/code-reviewer.md) | [prompts/code-reviewer.md](prompts/code-reviewer.md) | Standard review (Go mid). |
+|  | [`code-reviewer-pro`](prompts/code-reviewer.md) | [prompts/code-reviewer.md](prompts/code-reviewer.md) | Deep security audit, architecture review (Go premium). |
+|  | [`code-reviewer-free`](prompts/code-reviewer.md) | [prompts/code-reviewer.md](prompts/code-reviewer.md) | Quick lint/style check (free). |
+| Architecture | [`architect`](prompts/architect.md) | [prompts/architect.md](prompts/architect.md) | Design docs, API specs (Go premium). |
+|  | [`architect-premium`](prompts/architect.md) | [prompts/architect.md](prompts/architect.md) | Complex system design, ADRs (Go premium). |
+| DevOps | [`devops`](prompts/devops.md) | [prompts/devops.md](prompts/devops.md) | Standard deploys, Docker, CI/CD (Go mid). |
+|  | [`devops-pro`](prompts/devops.md) | [prompts/devops.md](prompts/devops.md) | Complex multi-service deploys, IaC (Go premium). |
+|  | [`devops-free`](prompts/devops.md) | [prompts/devops.md](prompts/devops.md) | Simple config changes (free). |
+| QA | [`qa`](prompts/qa.md) | [prompts/qa.md](prompts/qa.md) | Standard validation (Go mid). |
+|  | [`qa-pro`](prompts/qa.md) | [prompts/qa.md](prompts/qa.md) | Thorough regression, edge case validation (Go premium). |
+|  | [`qa-free`](prompts/qa.md) | [prompts/qa.md](prompts/qa.md) | Basic smoke tests (free). |
+| UI/UX Design | [`ui-ux-designer`](prompts/ui-ux-designer.md) | [prompts/ui-ux-designer.md](prompts/ui-ux-designer.md) | Standard design work (Go mid). |
+|  | [`ui-ux-designer-pro`](prompts/ui-ux-designer.md) | [prompts/ui-ux-designer.md](prompts/ui-ux-designer.md) | Polished production UI, design systems (Go premium). |
+| Introspection | [`introspector`](prompts/introspector.md) | [prompts/introspector.md](prompts/introspector.md) | Post-MDU session introspection (Go mid). |
+| Inception | [`inception`](prompts/inception.md) | [prompts/inception.md](prompts/inception.md) | Idea → spec interviewer (Go budget; user-invoked). |
 
-**Research** (free / budget models — cheapest tier):
-- [`research`](prompts/research.md) — Quick web lookups (free: mimo-v2.6-flash-free)
-- [`deepseek-research`](prompts/research.md) — Coding patterns, library docs (free: nemotron-3-ultra-free)
-- [`nemotron-research`](prompts/research.md) — Thorough doc research (free: nemotron-3.5-lightning-free)
-- [`deep-research`](prompts/research.md) — Comprehensive multi-source research (Go budget: mimo-v2.5)
+### Grok Build profiles (in [`grok/agents/`](grok/agents/))
 
-**Coding** (spread across tiers — most-used role):
-- [`just-code`](prompts/just-code.md) — Default coder (Go budget: deepseek-v4.1-flash)
-- [`just-code-mid`](prompts/just-code.md) — Complex features needing deeper reasoning (Go mid: kimi-k2.7-code)
-- [`just-code-pro`](prompts/just-code.md) — Architecture-sensitive code, refactoring (Go premium: glm-5.2)
-- [`just-code-free`](prompts/just-code.md) — Boilerplate, simple changes (free: big-pickle)
+All profiles currently use **grok-4.7** (grok-4.6 and grok-4.5 remain available). Invoke with `grok --agent <name>`.
 
-**Testing:**
-- [`test-agent`](prompts/test-agent.md) — Default test writer (Go budget: deepseek-v4.1-flash)
-- [`test-agent-mid`](prompts/test-agent.md) — Complex test suites, property-based tests (Go mid: mimo-v2.5)
-- [`test-agent-pro`](prompts/test-agent.md) — Security tests, deep coverage (Go premium: kimi-k2.7-code)
-- [`test-agent-free`](prompts/test-agent.md) — Simple unit tests (free: big-pickle)
+| Role group | Agent | Profile | Notes |
+| --- | --- | --- | --- |
+| Orchestrator | [`orchestrator`](grok/agents/orchestrator.md) | [grok/agents/orchestrator.md](grok/agents/orchestrator.md) | Grok orchestrator variant. |
+| Research | [`research`](grok/agents/research.md) | [grok/agents/research.md](grok/agents/research.md) | Research. |
+| Coding | [`just-code`](grok/agents/just-code.md) / [`just-code-mid`](grok/agents/just-code-mid.md) / [`just-code-pro`](grok/agents/just-code-pro.md) | [grok/agents/](grok/agents/) | Coding variants. |
+| Testing | [`test-agent`](grok/agents/test-agent.md) / [`test-agent-pro`](grok/agents/test-agent-pro.md) | [grok/agents/](grok/agents/) | Testing variants. |
+| Code Review | [`code-reviewer`](grok/agents/code-reviewer.md) / [`code-reviewer-pro`](grok/agents/code-reviewer-pro.md) / [`grok-review`](grok/agents/grok-review.md) | [grok/agents/](grok/agents/) | Review variants. |
+| Architecture | [`architect`](grok/agents/architect.md) / [`architect-premium`](grok/agents/architect-premium.md) | [grok/agents/](grok/agents/) | Design variants. |
+| DevOps | [`devops`](grok/agents/devops.md) / [`devops-pro`](grok/agents/devops-pro.md) | [grok/agents/](grok/agents/) | Deploy variants. |
+| QA | [`qa`](grok/agents/qa.md) / [`qa-pro`](grok/agents/qa-pro.md) | [grok/agents/](grok/agents/) | Validation variants. |
+| UI/UX Design | [`ui-ux-designer`](grok/agents/ui-ux-designer.md) / [`ui-ux-designer-pro`](grok/agents/ui-ux-designer-pro.md) | [grok/agents/](grok/agents/) | Design variants. |
+| Introspection | [`introspector`](grok/agents/introspector.md) | [grok/agents/introspector.md](grok/agents/introspector.md) | Post-MDU introspection. |
+| Inception | [`inception`](grok/agents/inception.md) | [grok/agents/inception.md](grok/agents/inception.md) | Idea → spec interviewer. |
 
-**Code Review:**
-- [`code-reviewer`](prompts/code-reviewer.md) — Standard review (Go mid: mimo-v2.5)
-- [`code-reviewer-pro`](prompts/code-reviewer.md) — Deep security audit, architecture review (Go premium: glm-5.2)
-- [`code-reviewer-free`](prompts/code-reviewer.md) — Quick lint/style check (free: big-pickle)
+### Claude Code subagents (generated into `claude/agents/` during the build)
 
-**Architecture:**
-- [`architect`](prompts/architect.md) — Design docs, API specs (Go premium: glm-5.2)
-- [`architect-premium`](prompts/architect.md) — Complex system design, ADRs (Go top-tier: glm-5.2)
+Every OpenCode agent is emitted as a Claude Code user-level subagent — generated from [`opencode.json`](opencode.json) + [`prompts/`](prompts/) at build time. The `model` is intentionally omitted so each subagent inherits your configured Claude Code model. Invoke them with `claude --agent <name>` or pick them in the interactive `/agents` view.
 
-**DevOps:**
-- [`devops`](prompts/devops.md) — Standard deploys, Docker, CI/CD (Go mid: mimo-v2.5)
-- [`devops-pro`](prompts/devops.md) — Complex multi-service deploys, IaC (Go premium: glm-5.2)
-- [`devops-free`](prompts/devops.md) — Simple config changes (free: big-pickle)
-
-**QA:**
-- [`qa`](prompts/qa.md) — Standard validation (Go mid: mimo-v2.5)
-- [`qa-pro`](prompts/qa.md) — Thorough regression, edge case validation (Go premium: kimi-k2.7-code)
-- [`qa-free`](prompts/qa.md) — Basic smoke tests (free: big-pickle)
-
-**UI/UX Design:**
-- [`ui-ux-designer`](prompts/ui-ux-designer.md) — Standard design work (Go mid: mimo-v2.5)
-- [`ui-ux-designer-pro`](prompts/ui-ux-designer.md) — Polished production UI, design systems (Go premium: kimi-k2.7-code)
-
-**Introspection:**
-- [`introspector`](prompts/introspector.md) — Reviews session logs after an MDU and writes durable agent-definition improvement suggestions for the orchestrator (Go mid: mimo-v2.5)
-
-**Inception** (user-invoked primary — not part of the orchestrator's MDU loop):
-- [`inception`](prompts/inception.md) — Interviews you on a new project idea and iteratively refines it into an actionable spec (Go budget: deepseek-v4.1-flash)
-
-**Grok Build profiles** (in `grok/agents/`):
-
-A matching set of the same agent roles, using Grok models (separate xAI subscription).
-Grok Build currently exposes **`grok-4.7`** (default / flagship), with
-**`grok-4.6`** (legacy) and **`grok-4.5`** still available. The fast coding model
-`grok-composer-2.5-fast` is no longer available on this CLI, so until a cheap code
-model returns, **all profiles below use `grok-4.7`**. Use `grok models` to confirm.
-
-- [`orchestrator`](grok/agents/orchestrator.md), [`research`](grok/agents/research.md), [`grok-review`](grok/agents/grok-review.md) (grok-4.7)
-- [`just-code`](grok/agents/just-code.md), [`just-code-mid`](grok/agents/just-code-mid.md), [`just-code-pro`](grok/agents/just-code-pro.md) (grok-4.7)
-- [`test-agent`](grok/agents/test-agent.md), [`test-agent-pro`](grok/agents/test-agent-pro.md) (grok-4.7)
-- [`code-reviewer`](grok/agents/code-reviewer.md), [`code-reviewer-pro`](grok/agents/code-reviewer-pro.md) (grok-4.7)
-- [`architect`](grok/agents/architect.md), [`architect-premium`](grok/agents/architect-premium.md) (grok-4.7)
-- [`devops`](grok/agents/devops.md), [`devops-pro`](grok/agents/devops-pro.md) (grok-4.7)
-- [`qa`](grok/agents/qa.md), [`qa-pro`](grok/agents/qa-pro.md) (grok-4.7)
-- [`ui-ux-designer`](grok/agents/ui-ux-designer.md), [`ui-ux-designer-pro`](grok/agents/ui-ux-designer-pro.md) (grok-4.7)
-- [`introspector`](grok/agents/introspector.md) (grok-4.7)
-- [`inception`](grok/agents/inception.md) (grok-4.7)
-
-Invoke with `grok --agent <name>` (e.g. `grok --agent just-code` or `grok --agent code-reviewer-pro`).
-
-**Claude Code subagents** (generated into `claude/agents/` during the build):
-
-Every OpenCode agent is emitted as a Claude Code user-level subagent — each `.md` file is generated from `opencode.json` + `prompts/` at build time. The `model` is intentionally omitted so each subagent inherits your configured Claude Code model. Invoke them with `claude --agent <name>` or pick them in the interactive `/agents` view.
 
 ## How the Agents Work Together
 
@@ -170,6 +153,11 @@ These definitions are designed as a **collaborative team** rather than standalon
 ### Autonomy & Guardrails
 
 The team currently operates at **L2 (session-autonomous)** on the industry-standard autonomy ladder and is targeting **L3 (goal-directed with approval gates)**. The orchestrator requires human approval before four classes of risky operations: pushing to protected branches, deploying non-green MDUs to production, destructive operations (deletes, DB migrations, irreversible ops), and exceeding 3 fix-retries on the same issue. Everything else flows autonomously. See [docs/autonomy.md](docs/autonomy.md) for the full ladder and gate definitions — per-MDU `autonomy_level` recorded in run manifests may exceed the team's declared position when approval gates were honored.
+
+## Memory & Skills
+
+- **Persistent memory:** Every orchestrator variant maintains dependency-free memory in `.agents/memory/` at the project being worked on (`project.md`, `decisions.md`, `session-<id>.md`) with append-only rules. See [Persistent Memory](#persistent-memory) below for details and [docs/design/mdu-04-lightweight-persistent-memory.md](docs/design/mdu-04-lightweight-persistent-memory.md).
+- **Agent Skills:** The repo ships a skills library in [`skills/`](skills/) (e.g. `mdu-lifecycle`, `code-review-checklist`, `webapp-verification`, `test-patterns`, `secret-scrub`, `git-autonomy`). Skills follow the open Agent Skills format and are referenced by prompts where relevant. See each skill's `SKILL.md` for details.
 
 ### Orchestrator Delegation Flow
 
@@ -443,39 +431,51 @@ Useful things to put in overlays include:
 
 ```
 base_agents/                   # this public repo
+├── .github/workflows/ci.yml   # CI: build, validate, lint, JSON/schema/frontmatter, smoke evals
 ├── build.sh                   # stage source → build/, generate Claude agents, validate
 ├── deploy.sh                  # install from build/ (or root fallback)
-├── scripts/                   # modular build/deploy implementation
-│   └── lib/gen_claude_agents.py  # generates claude/agents/ from opencode.json + prompts/
+├── scripts/                   # build/deploy + libs
+│   ├── build.sh
+│   ├── deploy.sh
+│   └── lib/                   # validate.py, run_ledger.py, run_evals.py, prompt_regression.py, secret_scan.py, model_registry.py, gen_claude_agents.py
+├── schemas/
+│   └── opencode.schema.json   # JSON Schema for opencode.json
+├── config/
+│   └── model-registry.txt     # Model allowlist (pinned)
 ├── opencode.json              # OpenCode agent registry (28 agents across model tiers)
-├── prompts/                   # OpenCode prompt bodies (canonical system prompts)
-│   ├── orchestrator.md        # includes model selection guide for variant-aware delegation
-│   ├── just-code.md           # token-frugal coding instructions
-│   ├── test-agent.md          # token-frugal test writing
-│   ├── code-reviewer.md       # token-frugal review
-│   ├── architect.md           # token-frugal design
-│   ├── devops.md              # token-frugal infrastructure
-│   ├── qa.md                  # token-frugal validation
-│   ├── research.md            # token-frugal information gathering
-│   ├── ui-ux-designer.md      # token-frugal design work
-│   ├── introspector.md        # post-MDU session introspection
-│   └── inception.md           # user-invoked idea → spec interviewer
-├── grok/agents/               # Grok Build agent profiles (20 profiles)
+├── prompts/                   # OpenCode prompt bodies (canonical system prompts) — 11 files
 │   ├── orchestrator.md
-│   ├── just-code.md / just-code-mid.md / just-code-pro.md
-│   ├── test-agent.md / test-agent-pro.md
-│   ├── code-reviewer.md / code-reviewer-pro.md
-│   ├── architect.md / architect-premium.md
-│   ├── devops.md / devops-pro.md
-│   ├── qa.md / qa-pro.md
+│   ├── just-code.md
+│   ├── test-agent.md
+│   ├── code-reviewer.md
+│   ├── architect.md
+│   ├── devops.md
+│   ├── qa.md
 │   ├── research.md
-│   ├── ui-ux-designer.md / ui-ux-designer-pro.md
+│   ├── ui-ux-designer.md
+│   ├── introspector.md
 │   └── inception.md
+├── grok/agents/               # Grok Build agent profiles (20 profiles)
+│   ├── orchestrator.md, research.md, inception.md, introspector.md, grok-review.md
+│   ├── just-code.md, just-code-mid.md, just-code-pro.md
+│   ├── test-agent.md, test-agent-pro.md
+│   ├── code-reviewer.md, code-reviewer-pro.md
+│   ├── architect.md, architect-premium.md
+│   ├── devops.md, devops-pro.md
+│   ├── qa.md, qa-pro.md
+│   └── ui-ux-designer.md, ui-ux-designer-pro.md
+├── skills/                    # Agent Skills (7 skills)
+│   ├── mdu-lifecycle/, code-review-checklist/, webapp-verification/, test-patterns/, secret-scrub/, git-autonomy/
+├── docs/                      # Design docs, autonomy, security, MCP, observability, model registry
+│   ├── autonomy.md, security.md, mcp.md, observability.md, model-registry.md
+│   └── design/
+├── evals/                     # Golden evaluation suite
+│   ├── README.md, promptfoo.yaml, golden/, tasks/
+├── examples/                  # Artifact gallery
+│   ├── README.md, gallery/, runs/, mcp/, upgrade-story.md
+├── tests/                     # Test suite
 └── build/                     # generated output (gitignored)
-    ├── opencode.json
-    ├── prompts/
-    ├── grok/agents/
-    └── claude/agents/         # generated Claude Code subagents (28 files)
+    ├── opencode.json, prompts/, grok/agents/, claude/agents/
 ```
 
 ## Getting Started with Your Own Setup
@@ -498,12 +498,7 @@ This repo is actively being upgraded to the bleeding edge of autonomous agentic 
 - **[GAP_ANALYSIS.md](GAP_ANALYSIS.md)** — a full gap analysis against mid-2026 best practice (memory, skills, MCP, observability, evals, CI, security), including a live demonstration of model drift in the research agent configs.
 - **[FEATURE_BACKLOG.md](FEATURE_BACKLOG.md)** — a prioritized, MDU-sized implementation backlog consumable by this repo's own orchestrator. The agent team builds its own upgrade.
 
-**Progress:** **9/14** backlog items are complete as of 2026-09-16 (MDU-01, 02, 03, 05, 06, 07, 08, 12, 14) — see [examples/upgrade-story.md](examples/upgrade-story.md) for how this repo's own agents executed them.
-
-### TODO
-
-- **Split agent definitions into Go-only and Zen-only variants**: The current `opencode.json` assumes an OpenCode Go subscription for most agents. Create a parallel set of agents that use only free Zen models (`opencode/*`) for users without a Go subscription. This could be a separate `opencode.zen.json` file or a build-time flag. (Tracked in `FEATURE_BACKLOG.md` as part of the broader model-drift/registry work.)
-- **Seed the empty `skills/` directory** with real Agent Skills used by the loop itself — see backlog item MDU-05.
+(last verified 2026-10-23) **Progress:** **12/15** backlog items complete (MDU-01, 02, 03, 05, 06, 07, 08, 09, 11, 12, 14, 15) — see [examples/upgrade-story.md](examples/upgrade-story.md) and [examples/gallery/](examples/gallery/) for worked examples.
 
 ## How This Repo Was Upgraded by Its Own Agents
 

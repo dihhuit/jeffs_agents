@@ -264,3 +264,16 @@ Each MDU above is sized for the repo's own orchestrator to complete in one close
   4. Run manifest created and validated.
 - **Suggested agents:** architect (capability/cost analysis), just-code (config/prompt updates if needed), test-agent (regression checks), qa (validation).
 - **Dependencies:** none.
+
+
+### MDU-33 · Zen-only variant set (Go-free)
+
+- **Why:** The current `opencode.json` assumes an OpenCode Go subscription for most agents. Users without a Go subscription need a parallel set using only free Zen models (`opencode/*`).
+- **Description:** Create a parallel agent set for OpenCode that uses only free Zen models. Options: a separate `opencode.zen.json` file or a build-time flag. Update docs to document both paths. Ensure parity where possible, document limitations, and add validation.
+- **Acceptance criteria:**
+  1. A Zen-only config exists (e.g. `opencode.zen.json`) with all referenced models in the free Zen allowlist.
+  2. `./build.sh`/validation supports selecting the Zen variant (documented).
+  3. README documents Go subscription requirement and Zen alternative.
+  4. Run manifest created and validated.
+- **Suggested agents:** just-code (config/docs), test-agent (validation), qa (validation).
+- **Dependencies:** MDU-01 (model registry).

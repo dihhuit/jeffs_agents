@@ -1,0 +1,21 @@
+{
+  "mdu_id": "mdu-13-readme-modernization",
+  "title": "README modernization & artifact gallery",
+  "status": "completed",
+  "harness": "opencode",
+  "started_at": "2026-10-23T00:00:00Z",
+  "completed_at": "2026-10-23T01:00:00Z",
+  "phases": [
+    {"phase": "design", "agent": "architect", "model_tier": "premium", "outcome": "pass", "notes": "docs/design/mdu-13-readme-modernization.md"},
+    {"phase": "implement", "agent": "just-code", "model_tier": "budget", "outcome": "pass", "notes": "README modernization, examples/gallery, MDU-33 added"},
+    {"phase": "test", "agent": "test-agent", "model_tier": "budget", "outcome": "pass", "notes": "tests/test_mdu_13_readme_gallery.py"},
+    {"phase": "review", "agent": "code-reviewer", "model_tier": "mid", "outcome": "pass", "notes": "APPROVE"},
+    {"phase": "validate", "agent": "qa", "model_tier": "mid", "outcome": "pass", "notes": "PASS"},
+    {"phase": "commit", "agent": "orchestrator", "model_tier": "budget", "outcome": "pass", "notes": "mdu-13-readme-modernization"}
+  ],
+  "fix_iterations": 0,
+  "autonomy_level": 3,
+  "verification": {"build": true, "tests_passed": 404, "tests_total": 404, "qa_grade": "PASS", "ci_green": true},
+  "artifacts": ["README.md", "examples/README.md", "examples/gallery/mdu-08-golden-evals.md", "examples/gallery/mdu-09-prompt-regression.md", "examples/gallery/mdu-15-cross-cli-ledger.md", "FEATURE_BACKLOG.md", "tests/test_mdu_13_readme_gallery.py", "docs/design/mdu-13-readme-modernization.md"],
+  "summary": "README modernized with What's Inside table, badges, Memory & Skills, gallery, MDU-33 added."
+}
