@@ -296,3 +296,20 @@ Each MDU above is sized for the repo's own orchestrator to complete in one close
   5. `./build.sh` passes, parity tests still green, run manifest created and validated.
 - **Suggested agents:** architect (shape + docs design), just-code (three mirrors + template + validator), test-agent (validator, mirror-parity, prose-fixture tests), qa (validation).
 - **Dependencies:** MDU-14 (parity tests), MDU-26 and MDU-28 (current gate wording; do not contradict them).
+
+### MDU-35 · Question-tool failure deep dive (sprite_generator sessions)
+
+- **Status:** Open — 2026-10-24
+- **Why:** In the user's `sprite_generator` project sessions, every `question` tool call renders as "Asked N questions" in red with no question prompt visible to the user; the user must manually prompt the agent to retry. This breaks the interactive-question loop that `prompts/inception.md` explicitly relies on ("Use the question tool for interactive follow-ups") and wastes turns. The repo already has a known family of harness-level subagent defects (shell permission denials, cf. `sprite_generator/agent-improvements.md` 20261017-1/-5), so this may be harness, config, model tool-call shape, or agent-definition — which is exactly what needs to be determined.
+- **Description:** Deep dive the failing sessions, then fix at whatever level the evidence supports:
+  1. **Evidence gathering.** Locate the failing question tool calls in OpenCode session storage (`~/.local/share/opencode/...`, project dir `/mnt/FastSSDXFS/projects/sprite_generator`). Extract: exact tool call payload (params, model, session id), the error/result event, timestamps, and whether the failure is deterministic (every call) or intermittent. Confirm which agent/model/CLI actually ran those sessions (user confirmation if storage is ambiguous).
+  2. **Root-cause classification.** Classify the failure as one of: (a) agent-definition (e.g. prompt or config disabling/misconfiguring the tool, `permission` block mismatch — note `opencode.json` globally allows `action: "question"` for `*`), (b) model tool-call shape (the model emitting params the tool rejects), (c) harness/TUI bug (rendering of the interactive prompt), or (d) data-dependent (payload size/format). Write the classification up with verbatim evidence in `docs/design/mdu-35-question-tool.md`.
+  3. **Fix or workaround.** If (a): fix the agent definition/config, run `./build.sh` + parity + pytest gates. If (b)/(c)/(d): implement the agent-definition-level mitigation — guidance in the affected prompt(s) (e.g. "if a question tool call fails, immediately restate the questions inline as plain text instead of asking the user to retry") — keeping the three-mirror rule in mind if an orchestrator prompt is touched. Draft (do not file) an upstream issue with masked evidence for the harness case.
+  4. If evidence is inconclusive at agent-definition level, close with a documented no-op + the minimal reproduction case for the harness owners.
+- **Acceptance criteria:**
+  1. `docs/design/mdu-35-question-tool.md` exists with: reproduction path, extracted tool-call payload(s), the exact error, a root-cause classification, and the evidence for it (or "inconclusive" with the minimal repro).
+  2. If agent-definition fix: `./build.sh`, pytest, and parity gates pass; affected prompt mirrors updated consistently.
+  3. If workaround-only: the retry-avoidance guidance is present in the affected agent prompt(s) and survives `./build.sh`.
+  4. Run manifest created and validated.
+- **Suggested agents:** explore (session-storage forensics, quick), deep-research or research (known OpenCode issues), architect (classification + fix design), just-code (prompt/config fix), test-agent (gates), qa (validation).
+- **Dependencies:** none in this repo; evidence lives in the user's sprite_generator session storage.
