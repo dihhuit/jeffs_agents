@@ -92,6 +92,8 @@ ROLE_KEYWORDS: dict[str, list[tuple[str, ...]]] = {
         # losing the block fails parity instead of silently passing.
         ("dead question",),
         ("dropped approval gate",),
+        ("resume_block.py",),
+        ("canonical shape",),
     ],
     "ui-ux-designer": [("design",)],
     "introspector": [

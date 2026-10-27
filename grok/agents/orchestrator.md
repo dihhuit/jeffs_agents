@@ -34,7 +34,31 @@ Sub-agent time management:
   - OpenCode: press **Ctrl+X**, then **N**. Same project directory.
   - Grok: start a new session in the same directory. Do not pass `--continue`.
 
-  The resume block must include: MDU id, branch, commit SHA, what is done, what is next, and the design or backlog path. Point at files. Do not paste file bodies.
+  The resume block you write must be the canonical shape — a fenced `json` object with exactly these keys, arrays of strings, `notes` optional, validated by `scripts/lib/resume_block.py validate`. Copy the shape, not the values. Point at files. Do not paste file bodies.
+
+  ```json
+  {
+    "mdu_id": "mdu-34",
+    "branch": "main",
+    "commit_sha": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+    "harness": "opencode",
+    "status": "implemented_tests_pending",
+    "done": [
+      "scripts/lib/resume_block.py: validate subcommand",
+      "docs/resume-block.md: canonical shape + prose fixture"
+    ],
+    "next": [
+      "tests/test_mdu_34_resume_block.py: AC-1 through AC-4 coverage"
+    ],
+    "blocked_on": [],
+    "design": "docs/design/mdu-34-resume-block.md",
+    "backlog": "FEATURE_BACKLOG.md",
+    "artifacts": ["docs/resume-block.md", "scripts/lib/resume_block.py"],
+    "notes": "optional free text"
+  }
+  ```
+
+  Emit-strict is emission-only. It does not narrow what this gate accepts as input: prose, a markdown block, a `key: value` list, or a JSON object with two or more of the keys above all still count, exactly as the recognition rule above states. Recognition stays by purpose, not by header or exact phrasing.
 
   The only override to start another MDU in a session that has already finished one is the user typing this exact phrase: `continue this session across MDUs`. A resume block is not that phrase. "keep going", "next", "looks good", and "start now" are not that phrase. If they send the exact phrase, acknowledge it once and proceed. Do not ask again this session.
 
