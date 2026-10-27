@@ -155,7 +155,40 @@ def test_ownership_block_byte_identical_across_mirrors() -> None:
         )
 
 
+QUESTION_TOOL_HEADING = (
+    "- **QUESTION TOOL — ASK EARLY, NEVER LEAVE ONE PENDING, "
+    "NEVER TRUST A DEAD ONE:**"
+)
+
+
+def _gate_to_ownership_gap(text: str) -> str | None:
+    """Return the raw text between the last gate bullet and the ownership block."""
+    last_gate = text.find(LAST_GATE_BULLET)
+    anchor = text.find(OWNERSHIP_ANCHOR)
+    if last_gate == -1 or anchor == -1:
+        return None
+    return text[last_gate + len(LAST_GATE_BULLET) : anchor]
+
+
 def test_ownership_block_sits_after_gates_before_responsibilities() -> None:
+    # Single source of truth: the canonical prompt defines the allowed gap.
+    # MDU-35 inserted exactly one sibling block at this insertion point
+    # (docs/design/mdu-35-question-tool.md); its full body is read from
+    # prompts/orchestrator.md so this test detects drift instead of pinning a
+    # copy that would rot.
+    canonical_gap = _gate_to_ownership_gap(ORCHESTRATOR_PROMPT.read_text(encoding="utf-8"))
+    assert canonical_gap is not None, "canonical prompt: gate bullet or ownership anchor missing"
+    question_tool_block = canonical_gap[: -len("\n\n")]
+    block_head = question_tool_block[len("\n\n"):] if question_tool_block.startswith("\n\n") else question_tool_block
+    assert canonical_gap == "\n\n" or (
+        block_head.startswith(QUESTION_TOOL_HEADING)
+        and canonical_gap.endswith("\n\n")
+        and block_head.strip()
+    ), (
+        "prompts/orchestrator.md: unexpected gap between the last gate bullet and "
+        f"the ownership block: {canonical_gap!r}"
+    )
+
     for path in BASE_ORCHESTRATOR_FILES:
         text = path.read_text(encoding="utf-8")
         last_gate = text.find(LAST_GATE_BULLET)
@@ -170,11 +203,14 @@ def test_ownership_block_sits_after_gates_before_responsibilities() -> None:
             f"found at {anchor}"
         )
         # Immediate adjacency: only a blank line may separate the last gate
-        # bullet from the block (design doc 3: sibling block, one blank line).
+        # bullet from the block (design doc 3: sibling block, one blank line),
+        # or that single blank line followed by the exact canonical QUESTION
+        # TOOL block - byte-identical, nothing else in between.
         between = text[last_gate + len(LAST_GATE_BULLET) : anchor]
-        assert between == "\n\n", (
-            f"{path.name}: expected exactly one blank line between the last gate "
-            f"bullet and the ownership block, got {between!r}"
+        assert between == "\n\n" or between == question_tool_block + "\n\n", (
+            f"{path.name}: expected exactly one blank line, or the verbatim "
+            f"canonical QUESTION TOOL block, between the last gate bullet and the "
+            f"ownership block, got {between!r}"
         )
 
 

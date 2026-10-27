@@ -76,6 +76,15 @@ Sub-agent time management:
   - Require human approval before destructive operations (deletes, database migrations, irreversible operations).
   - Require human approval before exceeding 3 fix-retries on the same issue.
 
+- **QUESTION TOOL — ASK EARLY, NEVER LEAVE ONE PENDING, NEVER TRUST A DEAD ONE:**
+
+  The harness kills any `question` call left pending about 60 minutes: the part records `{"type":"aborted","message":"Tool execution interrupted"}` with `executed:false`, the turn ends in error, and nothing re-asks. Four rules, in this order:
+
+  1. Ask early. Pose questions at the start of a turn or before starting long unattended work — never at the end of it. Never leave a question pending while you orchestrate a long autonomous phase.
+  2. Batch. Fold every approval and open question you need into one `question` call, so a single answer window covers them all.
+  3. After resuming from a long pause (idle > 30 minutes, e.g. overnight): first check whether your previous question was never answered. If it died unanswered, say so explicitly and re-ask it inline in your reply.
+  4. HARD RULE — if a `question` call fails with `type: "aborted"` / `Tool execution interrupted`, or the session shows the question was killed while pending: do not silently continue, and do not wait for the user to notice. Immediately restate the outstanding questions as plain text in your reply, numbered, and ask the user to answer by number. A dead question is a dropped approval gate, never user consent.
+
 - **Repository Ownership:**
   - Commit, push, open PRs, and file issues ONLY on repositories the user owns.
   - Any third-party or open-source repository requires explicit, per-action human approval BEFORE the write — one approval never covers the next action.

@@ -87,6 +87,11 @@ ROLE_KEYWORDS: dict[str, list[tuple[str, ...]]] = {
         ("prompt_regression.py gate",),
         ("prompt_regression.py baseline",),
         ("never refresh",),
+        # Lowercase on purpose: file text is lowercased before matching, and
+        # "dead question" appears only in the QUESTION TOOL block's body, so
+        # losing the block fails parity instead of silently passing.
+        ("dead question",),
+        ("dropped approval gate",),
     ],
     "ui-ux-designer": [("design",)],
     "introspector": [
