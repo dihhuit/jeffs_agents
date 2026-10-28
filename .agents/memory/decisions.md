@@ -1,7 +1,7 @@
 ---
 type: decisions
 created: 2026-10-27T13:24:20Z
-updated: 2026-10-27T13:24:20Z
+updated: 2026-10-27T22:20:00Z
 ---
 
 # Decision log
@@ -15,3 +15,8 @@ updated: 2026-10-27T13:24:20Z
 - Context: resume blocks were emitted in three shapes (JSON/key:value/prose); variance cost the next session lookup time and blocked validation. MDU-34 resume block + design doc D1-D7.
 - Decision: one canonical fenced-json block (11 required keys + optional notes) emitted byte-identically in base prompts/orchestrator.md, base grok/agents/orchestrator.md, overlay-root grok/agents/grokestrator.md; validator scripts/lib/resume_block.py (validate subcommand, exit 0/1/2) and docs/resume-block.md as the single documented source; emission-only — the read-permissive recognition clause ("by purpose, not by header or exact phrasing") survives verbatim and the validator's fail message itself states prose/key:value remain valid gate input. No build.sh wiring for the validator (nothing in-tree is a resume block).
 - Consequences: next sessions should emit the canonical shape; prose inputs stay accepted with no narrowing; test_mdu_34 (25 cases) + MDU-28 span test enforce three-way parity; seed capture resolved via D5's representative fallback (seed paste arrived canonical-shaped JSON).
+
+## 2026-10-27T22:20:00Z — Overlay adopts the two-tier deploy; zen default downgrades the two OpenCode xai agents (mdu-36)
+- Context: base MDU-33 shipped two-tier (zen default / go switch-up) but the overlay build and deploy never adopted it (documented debt), and the overlay deploy.sh had a grok-dir edge that aborted/mis-counted dry-runs.
+- Decision: overlay build synthesizes build/zen-model-map.json = base map + xai/*-only big-pickle fallback, fail-closed for any other unknown model, and deploy.sh ports the --tier contract with zen active by default. The two OpenCode xai agents (grok-architect, grok-code-reviewer) therefore run on opencode/big-pickle in the active default tier, visible via an aggregated warn line; switch up with --tier=go.
+- Consequences: live deploy runs twice, idempotent; QA PASS A-H landed via a free-tier rotation after mid/premium QA model outages (suggestion 20261027-2); manifest pre-finalized before QA (20261014-5 protocol first fully clean run). Live deploy of MDU-34/35 shipped clauses also completed in this session (dry-run + --force, all checks green).
