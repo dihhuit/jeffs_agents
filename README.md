@@ -25,7 +25,7 @@ The OpenCode agents ship as **two tiers generated from the same `opencode.json` 
 | **Zen (default)** | `build/opencode.zen.json` (generated) | Free Zen (`opencode/*`) | Default. No subscription required. |
 | **Go (switch-up)** | `opencode.json` | OpenCode Go (`opencode-go/*`) | When the period's Zen usage is exhausted, or a premium slot needs a stronger model. |
 
-`./build.sh` generates the Zen file from `opencode.json` with `scripts/lib/gen_zen_config.py` and the mapping table `config/zen-model-map.json`, then validates that no `opencode-go/*` reference survives. The mapping collapses Go budget/mid/premium slots onto the two proven free generalists (`opencode/big-pickle` and `opencode/nemotron-3-ultra-free`); premium slots are a **documented capability regression** and the primary reason to switch up. See [docs/model-registry.md](docs/model-registry.md#zen-variant-mapping-mdu-33) for the table, alternates, and per-agent overrides.
+`./build.sh` generates the Zen file from `opencode.json` with `scripts/lib/gen_zen_config.py` and the mapping table `config/zen-model-map.json`, then validates that no `opencode-go/*` reference survives. The mapping collapses Go budget/mid/premium slots onto the two proven free generalists (`opencode/big-pickle` and `opencode/nemotron-3.5-lightning-free`); premium slots are a **documented capability regression** and the primary reason to switch up. See [docs/model-registry.md](docs/model-registry.md#zen-variant-mapping-mdu-33) for the table, alternates, and per-agent overrides.
 
 **Install the default (Zen) tier:**
 

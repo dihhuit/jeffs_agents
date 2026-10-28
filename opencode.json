@@ -3038,7 +3038,7 @@
     "deepseek-research": {
       "mode": "subagent",
       "description": "Web research using free DeepSeek model. Capable multi-step research on coding patterns and libraries",
-      "model": "opencode/nemotron-3-ultra-free",
+      "model": "opencode/nemotron-3.5-lightning-free",
       "color": "#0891b2",
       "system": "{file:./prompts/research.md}",
       "request": {

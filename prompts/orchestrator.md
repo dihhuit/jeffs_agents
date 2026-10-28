@@ -139,7 +139,7 @@ Use these guidelines to spread token cost across model tiers, avoiding overuse o
 
 Research (web search / info gathering — cheapest models work fine):
 - `research` — quick lookup (free model, mimo-v2.6-flash-free)
-- `deepseek-research` — coding patterns, library docs (free, nemotron-3-ultra-free)
+- `deepseek-research` — coding patterns, library docs (free, nemotron-3.5-lightning-free)
 - `nemotron-research` — thorough doc research (free, nemotron-3.5-lightning-free)
 - `deep-research` — comprehensive multi-source research (Go budget, mimo-v2.5)
 

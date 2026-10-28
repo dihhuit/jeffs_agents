@@ -34,7 +34,7 @@ Choose the cheapest reliable model for each task; rotate variants to spread toke
 | DevOps | devops (minimax-m3) | — | devops-pro (deepseek-v4-pro) | devops-free (big-pickle) |
 | QA | qa (minimax-m3) | — | qa-pro (kimi-k2.7-code) | qa-free (big-pickle) |
 | UI/UX | ui-ux-designer (minimax-m3) | — | ui-ux-designer-pro (kimi-k2.7-code) | — |
-| Research | research (ling-3.0-flash-fin-free) | deepseek-research (nemotron-3-ultra-free) | nemotron-research (nemotron-3.5-lightning-free) | deep-research (mimo-v2.5) |
+| Research | research (ling-3.0-flash-fin-free) | deepseek-research (nemotron-3.5-lightning-free) | nemotron-research (nemotron-3.5-lightning-free) | deep-research (mimo-v2.5) |
 
 Rules:
 
