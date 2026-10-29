@@ -24,3 +24,8 @@ updated: 2026-10-27T22:20:00Z
 - Context: Upstream killed opencode/nemotron-3-ultra-free while the OpenCode registry still listed it "active"; the Zen map routed 12 agents to it.
 - Decision: kimi-k2.7-code row → opencode/big-pickle; mimo-v2.5 row + deepseek-research → opencode/nemotron-3.5-lightning-free; refresh alternates/registry with live-probed models only.
 - Consequences: Free-tier load spread over two models; registry "active" status is untrusted — live-probe before adding any model to the map; pre-spawn model-health probe is a backlog candidate.
+
+## 2026-10-29 — Live model-health gate is now pre-deploy (mdu-38)
+- Context: mdu-37 burned three subagent spawns on a registry-"active" dead model; nothing ran inference before trust.
+- Decision: scripts/lib/probe_models.py --refresh/--gate (exact-match OK probe, canonical map hash, dated report); base deploy warn-only, overlay deploy hard-gates with --skip-probe escape; CI stays CLI-free.
+- Consequences: no map edit lands without a green probe (--gate red on hash mismatch); report files gitignored both repos; refresh --gate is the routine pre-deploy command.

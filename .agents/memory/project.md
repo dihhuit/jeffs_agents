@@ -20,3 +20,8 @@ updated: 2026-10-27T22:20:00Z
 - Overlay deploy.sh grok-dir edge fixed: missing harness source dirs warn-skip (never abort, dry-run or --force); true find-based counts; the old live bug printed '1 grok agent profile(s)' with 41 profiles; regression test asserts the anchored count line.
 - runs/ is gitignored in the OVERLAY repo (mdu-29/mdu-36 manifests stay local-only, unlike the base).
 - Gotcha (2026-10-28): OpenCode's model registry can list dead models as "active" — verify with `timeout 90 opencode run -m <id> "Reply with exactly: OK"` before adding to zen-model-map.json or prompts (mdu-37).
+
+## 2026-10-29 (mdu-38)
+- scripts/lib/probe_models.py --refresh --gate: probes zen-map targets (hard, exit 1 if any not ok/stale/missing) + alternates (warn-only); success = exit 0 AND stdout stripped == "OK" exactly; success rule pins the F1 "NOT OK"/"OKChrome" substring finding; report exits 0 as data even when models fail — only --gate grades.
+- Base /runs/ is gitignored too (manifests local-only in BOTH repos now, contrary to the older mdu-36 note); runs/ ledger validate still required pre-commit.
+- qa child regression (new 20261029-1): a QA subagent can return an empty/corrupted first reply; the protocol is to re-request in the same session before accepting.
