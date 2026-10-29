@@ -320,3 +320,41 @@ Each MDU above is sized for the repo's own orchestrator to complete in one close
   4. Run manifest created and validated.
 - **Suggested agents:** explore (session-storage forensics, quick), deep-research or research (known OpenCode issues), architect (classification + fix design), just-code (prompt/config fix), test-agent (gates), qa (validation).
 - **Dependencies:** none in this repo; evidence lives in the user's sprite_generator session storage.
+
+## P0bis — Free-tier quota crisis (new strategy, 2026-10-29)
+
+**Context (user-confirmed, live-diagnosed):** OpenCode drastically tightened free-tier (Zen) model usage caps — Zen models are heavily capped even when a Go subscription is purchased. In the user's `mmo` project session, the `grok-architect` spawn died with an opencode free-tier limit: the deployed zen default tier maps ~40 of 50 agents (all `opencode-go/*` AND both `xai/*` agents, via the mdu-36 overlay fallback) onto `opencode/big-pickle`, so all loop traffic crowds one free model until it caps out. The xAI API key + auto-top-up were not involved (the agent ran through OpenCode, which never calls xAI for those agents in the zen tier). New strategy direction set by the user: **stop using free-tier models entirely (Go tier + xAI via API key), or reduce free usage to a tiny explicit set**.
+
+### MDU-39 · Free-tier cap forensics & symptom-attribution ledger
+
+- **Why:** We do not know the actual new cap economics (requests/day? tokens/day? per-model? per-account?) and cannot design a usage strategy against unknown limits. The `mmo` failure needs to be pinned to exact cap events with evidence.
+- **Description:** Live-measure opencode's free-tier caps: inspect the caps/limit messages in recent degraded sessions (OpenCode storage working across repos as in mdu-35); run controlled probes to enumerate the cap surface (cheap `Reply with exactly: OK` requests until refusal, per free model id used by our agents); locate any published cap documentation; write `docs/model-registry.md` cap table + `docs/design/mdu-39-free-tier-forensics.md` with: cap shape, which models are affected, observed refusal message strings, and a per-agent audit of what routed to free models in the affected sessions.
+- **Acceptance criteria:**
+  1. `docs/model-registry.md` gains a dated "Free-tier caps (2026-10-29)" table: per model id, measured/observed cap, refusal strings.
+  2. A forensic note in the run design doc attributes at least the `mmo` grok-architect failure to concrete cap-evidence (session id, events) or the best available evidence; agent-to-free-model audit of the current zen tier included.
+  3. If the caps are undocumented/unstable, the doc says so explicitly and marks which measurements are from live probing.
+- **Suggested agents:** explore/devops (evidence sweep, probes), architect (cap table + attribution), qa (grading from evidence files).
+- **Dependencies:** none.
+
+### MDU-40 · Go/xAI-paid default tier — kill zen as default
+
+- **Why:** Strategy decision (user): stop using free-tier models entirely for the working loop — paid Go models for OpenCode-native agents and `xai/grok-4.7` (direct API key with auto-top-up) for the grok-family agents — because the free cap breakage is worse than paid cost.
+- **Description:** Introduce a new `paid` tier and make it the ACTIVE default everywhere (base build, overlay build, overlay deploy): OpenCode agents keep their true `opencode-go/*`+`xai/*` models (identity mapping, no zen remap); grok-family agents route to `xai/grok-4.7` (paid, API-key-authenticated); verify xAI auth works through opencode (`opencode models` shows the xai models; run the md-38 probe against xai endpoints — extend `probe_models.py` to probe xai models too). Keep zen available as an explicit emergency tier (`--tier=zen`) with a **hard tightened scope**: free models only for the small set that genuinely hurts cost (assign in design: candidates = `deep-research`/`research`/`qa-free` or none at all — decide from MDU-39's cap table). Validate the map_sha256 / gen_zen_config path keeps working so the emergency tier stays buildable.
+- **Acceptance criteria:**
+  1. `config/go-model-map.json` (or equivalent identity-map mechanism) ships; a `--tier=paid|go` (choose the name in design) tier builds and deploys; **the deployed default config has zero free-tier models** for loop agents.
+  2. `xai/grok-4.7` wired for grok-family agents and verified live via an inference probe (`probe_models.py` extended or a `-‑probe-xai` flag; xAI calls count against the user's paid xAI balance, no opencode free quota).
+  3. Live deploy with the new default tier; `opencode run` against the head/one agent probed ok; mdu-38 gate updated to cover the new tier's model set.
+  4. Free-tier agents list shrunk or removed per design decision; both builds exit 0; tests + docs updated; README + model-registry docs updated.
+- **Suggested agents:** architect (tier design, paid/free split), just-code (maps + probe extension + deploy wiring), devops (deploy + live verification), qa (validation), test-agent (tests).
+- **Dependencies:** MDU-39 (cap economics to inform the free-exempt list).
+
+### MDU-41 · Free-tier budgeting policy in agent definitions (while any free models remain)
+
+- **Why:** Even after MDU-40, any residual free usage (emergency zen or a small free-exempt set) needs harness-side discipline so a loop can't spiral into cap death mid-MDU.
+- **Description:** Update agent definitions (both mirrors) with an explicit free-quota policy: (a) orchestrator picks paid tiers for long-running phases (implement/large QA) and reserves free variants for tiny phases or emergencies; (b) on a cap-error from a free model, fallback order is documented (paid model or retry after waiting), never a naive free-variant rotation; (c) QA/test patterns for cap-error-handling branches; (d) docs section explaining the fallback ladder. Keep the changes sync'd across the opencode/grok/claude mirrors per repo conventions.
+- **Acceptance criteria:**
+  1. Policy blocks present in both `prompts/orchestrator.md` + `grok/agents/orchestrator.md` (+ grokestrator mirror) and any free-variant prompts (`*-free`), behaviorally equivalent.
+  2. A live cap-error spawn is handled with the documented fallback in a scripted dry-run demonstration.
+  3. Full suite and both builds green; QA PASS.
+- **Suggested agents:** architect (policy wording), just-code (mirror edits), test-agent, qa.
+- **Dependencies:** MDU-40.
