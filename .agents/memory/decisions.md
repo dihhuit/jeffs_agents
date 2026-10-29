@@ -29,3 +29,8 @@ updated: 2026-10-27T22:20:00Z
 - Context: mdu-37 burned three subagent spawns on a registry-"active" dead model; nothing ran inference before trust.
 - Decision: scripts/lib/probe_models.py --refresh/--gate (exact-match OK probe, canonical map hash, dated report); base deploy warn-only, overlay deploy hard-gates with --skip-probe escape; CI stays CLI-free.
 - Consequences: no map edit lands without a green probe (--gate red on hash mismatch); report files gitignored both repos; refresh --gate is the routine pre-deploy command.
+
+## 2026-10-29 — Free-tier quota crisis: paid-first strategy decided by user (mmo session)
+- Context: opencode drastically tightened Zen/free caps (drastic even with a Go subscription); in the user's mmo session the grok-architect spawn died on an opencode free-tier limit.
+- Decision: root cause = deployed zen default tier remaps ~40/50 agents (all opencode-go/* and xai/grok-* via the mdu-36 fallback) onto opencode/big-pickle, crowding ONE free model until it caps; xAI API/auto-top-up was never involved (agent ran through OpenCode). User strategy: default tier becomes paid — Go models for OpenCode agents, xai/grok via API key for grok-family, zen demoted to emergency tier with tiny explicit free-exempt list; free models must never be a loop default.
+- Consequences: backlog gained MDU-39 (cap forensics), MDU-40 (paid default tier), MDU-41 (free-budgeting policy); `grok-*` agents in the OpenCode harness will be rebuilt to actually hit the paid xAI endpoint; mmo-session cap evidence to be pinned next session.
