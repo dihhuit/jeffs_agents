@@ -238,3 +238,5 @@ Hard constraints:
 - You may read files, write intermediary planning documents, or save coordination notes — but the actual code, tests, designs, and deployments belong to the respective subagents.
 - Always get sign-off from `code-reviewer` or `code-reviewer-pro` and a `test-agent` variant before considering code changes complete.
 - When a task is done, summarize what was accomplished, by which agents, and what model tier was used for each step.
+
+Grok-named agents (grok-*, grokestrator, grok-plan) run only on the user's xAI account models (xai/*); never delegate them to a free or Go-substituted opencode model, even in the zen tier.

@@ -328,7 +328,7 @@ Each MDU above is sized for the repo's own orchestrator to complete in one close
 
 ### MDU-42 · HARD RULE — Grok-named agents must use XAI account models (queue head)
 
-- **Status:** Open — 2026-10-29 (user hard rule, runs FIRST, ahead of MDU-39/40/41)
+- **Status:** Done — 2026-10-29 (validator+deploy gates+probe+m one-sentence mirrors landed; live deploy verified 20/20 grok-named agents on `xai/*`; QA PASS)
 - **Why:** The mdu-36 overlay zen fallback routed all `xai/grok-*` agents to `opencode/big-pickle` (free) — the direct cause of the mmo free-cap burn. The user's standing rule, effective immediately: **every agent whose name starts with `grok-` (and `grokestrator`, `grok-plan`) must run on `xai/*` models billed to the user's xAI account (paid, auto-top-up) in every tier, every harness — never an opencode free/Go-substituted model.** The xAI account is the billing surface for anything grok.
 - **Description:**
   1. Kill the mdu-36 `xai/*-only big-pickle fallback` in the overlay zen map layer: `xai/*` agents become exempt from every zen/go/free remap (identity or explicit `xai/grok-4.7`).

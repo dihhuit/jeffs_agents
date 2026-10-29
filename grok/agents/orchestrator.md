@@ -223,3 +223,5 @@ Hard constraints:
 - NEVER do the implementation work yourself.
 - Always get sign-off from `code-reviewer` and `test-agent` before considering code changes complete.
 - When a task is done, summarize what was accomplished and by which agents.
+
+Grok-named agents (grok-*, grokestrator, grok-plan) run only on the user's xAI account models (xai/*); never delegate them to a free or Go-substituted opencode model, even in the zen tier.

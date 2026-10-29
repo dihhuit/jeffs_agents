@@ -4,16 +4,18 @@
 The Zen tier is a whole-file transform of the Go-tier config: every agent
 ``model`` that is a paid ``opencode-go/*`` reference is replaced by a free Zen
 model from ``config/zen-model-map.json``; already-free ``opencode/*`` agents
-pass through unchanged. Everything else (permissions, prompt refs, mode,
-colors, temperatures, top-level keys) is copied structurally identical, so the
-two tiers cannot drift by construction.
+pass through unchanged, as do ``xai/*`` agents (MDU-42: xAI account models
+run on the user's xAI subscription in the Zen tier too, never a downgrade).
+Everything else (permissions, prompt refs, mode, colors, temperatures,
+top-level keys) is copied structurally identical, so the two tiers cannot
+drift by construction.
 
 The transform is fail-closed: an agent with no ``model``, an agent model with
-no mapping that is not already free, an ``opencode/*`` model outside the free
-Zen allowlist, a mapping target outside that allowlist, or an override naming
-an unknown agent all exit non-zero instead of leaking a paid (or unroutable)
-model into the Zen file. A stale mapping source (a row no agent uses) only
-warns.
+no mapping that is neither already free nor ``xai/*``, an ``opencode/*``
+model outside the free Zen allowlist, a mapping target outside that
+allowlist, or an override naming an unknown agent all exit non-zero instead
+of leaking a paid (or unroutable) model into the Zen file. A stale mapping
+source (a row no agent uses) only warns.
 
 Usage:
     gen_zen_config.py --input <opencode.json> --output <opencode.zen.json>
@@ -86,6 +88,9 @@ def transform(
             errors.append(
                 f"agent '{name}' has a non-string model; cannot map it to a Zen model"
             )
+        elif source_model.startswith("xai/"):
+            # MDU-42: xai/* models are identity-exempt from every zen remap.
+            pass
         elif source_model in model_map:
             used_sources.add(source_model)
             zen_definition["model"] = model_map[source_model]

@@ -513,7 +513,7 @@ def test_refresh_then_gate_fails_closed_on_a_dead_target(tmp_path: Path) -> None
 # 5. wiring + docs
 # ---------------------------------------------------------------------------
 
-def test_overlay_deploy_runs_the_gate_hard_before_any_copy() -> None:
+def test_overlay_deploy_orders_probe_then_grok_xai_gate_before_any_copy() -> None:
     deploy = OVERLAY / "scripts" / "deploy.sh"
     if not deploy.is_file():
         pytest.skip("overlay checkout not present (base-only CI)")
@@ -525,8 +525,9 @@ def test_overlay_deploy_runs_the_gate_hard_before_any_copy() -> None:
     # Hard gate, escaping only through --skip-probe; dry runs warn.
     assert 'refusing to install' in text
     assert "dry run continues" in text
-    # Runs before the first copy in main().
-    assert "run_probe_gate\n  deploy_opencode_json" in text
+    # Documented deploy order in main(): build → probe → grok-xai gate → copy
+    # (MDU-42 pins the grok-xai gate between the probe and the first copy).
+    assert "run_probe_gate\n  run_grok_xai_gate\n  deploy_opencode_json" in text
 
 
 def test_base_deploy_gate_is_advisory() -> None:

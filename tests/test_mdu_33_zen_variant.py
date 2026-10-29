@@ -292,6 +292,67 @@ def test_generator_allows_already_free_models_through(tmp_path: Path) -> None:
     assert zen["agents"]["free-agent"]["model"] == "opencode/space-bunny-free"
 
 
+def test_generator_passes_xai_models_through_identity(tmp_path: Path) -> None:
+    """MDU-42: xai/* models are identity-exempt from every zen remap."""
+    config = {"agents": {"grok-x-y": _agent("xai/grok-4.7")}}
+    input_path = tmp_path / "opencode.json"
+    input_path.write_text(json.dumps(config), encoding="utf-8")
+    output = tmp_path / "zen.json"
+    exit_code = gen_zen_config.main(
+        [
+            "--input", str(input_path),
+            "--map", str(ZEN_MAP),
+            "--output", str(output),
+        ]
+    )
+    assert exit_code == 0
+    zen = json.loads(output.read_text(encoding="utf-8"))
+    assert zen["agents"]["grok-x-y"]["model"] == "xai/grok-4.7"
+
+
+def test_generator_passes_xai_through_for_any_agent_name(tmp_path: Path) -> None:
+    """The xai/* exemption is a model-family rule, not an agent-name rule."""
+    config = {"agents": {"brand-new-agent": _agent("xai/some-account-model")}}
+    input_path = tmp_path / "opencode.json"
+    input_path.write_text(json.dumps(config), encoding="utf-8")
+    output = tmp_path / "zen.json"
+    exit_code = gen_zen_config.main(
+        [
+            "--input", str(input_path),
+            "--map", str(ZEN_MAP),
+            "--output", str(output),
+        ]
+    )
+    assert exit_code == 0
+    zen = json.loads(output.read_text(encoding="utf-8"))
+    assert zen["agents"]["brand-new-agent"]["model"] == "xai/some-account-model"
+
+
+def test_generator_never_downgrades_xai_via_map_row(
+    tmp_path: Path, capsys: pytest.CaptureFixture
+) -> None:
+    """A stale xai/* map row cannot downgrade; identity wins and the row warns."""
+    config = {"agents": {"grok-x-y": _agent("xai/grok-4.7")}}
+    input_path = tmp_path / "opencode.json"
+    input_path.write_text(json.dumps(config), encoding="utf-8")
+    mapping = _mapping()
+    mapping["models"]["xai/grok-4.7"] = "opencode/big-pickle"
+    map_path = _write_map(tmp_path, mapping)
+    output = tmp_path / "zen.json"
+    exit_code = gen_zen_config.main(
+        [
+            "--input", str(input_path),
+            "--map", str(map_path),
+            "--output", str(output),
+        ]
+    )
+    assert exit_code == 0
+    zen = json.loads(output.read_text(encoding="utf-8"))
+    assert zen["agents"]["grok-x-y"]["model"] == "xai/grok-4.7"
+    stderr = capsys.readouterr().err
+    assert "stale row" in stderr and "'xai/grok-4.7'" in stderr
+
+
 def test_generator_fails_closed_on_free_prefix_outside_allowlist(
     tmp_path: Path, capsys: pytest.CaptureFixture
 ) -> None:

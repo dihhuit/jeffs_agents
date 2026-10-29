@@ -15,6 +15,10 @@ Usage:
     --report <file>           report (default: <repo>/config/model-probe-report.json)
     --config <file>           optional opencode.json; free refs absent from the
                               report warn only (never fails)
+    --include-xai             also probe the grok-named agents' xai/* models
+                              (MDU-42). Auto-enabled when a grok-named agent's
+                              model resolves to xai/* in the config under test;
+                              --gate fails when an xai entry is red or missing.
     --timeout 90              per-attempt timeout in seconds
     --attempts 2              total attempts per model (permanent errors: 1)
     --max-workers 2           models probed in parallel
@@ -42,6 +46,8 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
+from model_registry import is_grok_named
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_MAP = REPO_ROOT / "config" / "zen-model-map.json"
@@ -119,6 +125,31 @@ def probe_set(mapping: dict) -> tuple[list[str], list[str]]:
         if isinstance(model, str) and model
     }
     return sorted(targets), sorted(alternates - targets)
+
+
+def collect_xai_models(config_path: Path | None) -> list[str]:
+    """Return the sorted xai/* models of grok-named agents in the config (MDU-42).
+
+    Grok-named agents (grok-*, grokestrator, grok-plan) must run on the user's
+    xAI account models; their ``xai/*`` targets are probed with the same
+    exact-match OK rule as the zen targets into the report's ``xai_results``
+    section. Probing is auto-enabled exactly when this returns a non-empty
+    list (``--include-xai`` requests the section even when the list is empty).
+    """
+    if config_path is None:
+        return []
+    try:
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ProbeError(f"opencode config unreadable: {config_path} ({exc})") from exc
+    models: set[str] = set()
+    for name, definition in (config.get("agents") or {}).items():
+        if not isinstance(definition, dict) or not is_grok_named(name):
+            continue
+        model = definition.get("model")
+        if isinstance(model, str) and model.startswith("xai/"):
+            models.add(model)
+    return sorted(models)
 
 
 def _portable_path(path: Path) -> str:
@@ -268,8 +299,8 @@ def _probe_model(
     return {"model": model, "role": role, **outcome}
 
 
-def build_results(
-    mapping: dict,
+def _run_plan(
+    plan: list[tuple[str, str]],
     *,
     cli: str,
     timeout: int,
@@ -278,11 +309,7 @@ def build_results(
     max_runtime_s: int,
     runner=subprocess.run,
 ) -> list[dict]:
-    """Probe every target and alternate; return results in stable order."""
-    targets, alternates = probe_set(mapping)
-    plan = [(model, "target") for model in targets] + [
-        (model, "alternate") for model in alternates
-    ]
+    """Probe a ``(model, role)`` plan honouring the refresh budget, stable order."""
     deadline = (
         time.monotonic() + max_runtime_s
         if max_runtime_s and max_runtime_s > 0
@@ -306,9 +333,62 @@ def build_results(
     else:
         with ThreadPoolExecutor(max_workers=workers) as pool:
             results = list(pool.map(job, plan))
+    return results
+
+
+def build_results(
+    mapping: dict,
+    *,
+    cli: str,
+    timeout: int,
+    attempts: int,
+    max_workers: int,
+    max_runtime_s: int,
+    runner=subprocess.run,
+) -> list[dict]:
+    """Probe every target and alternate; return results in stable order."""
+    targets, alternates = probe_set(mapping)
+    plan = [(model, "target") for model in targets] + [
+        (model, "alternate") for model in alternates
+    ]
+    results = _run_plan(
+        plan,
+        cli=cli,
+        timeout=timeout,
+        attempts=attempts,
+        max_workers=max_workers,
+        max_runtime_s=max_runtime_s,
+        runner=runner,
+    )
 
     role_order = {"target": 0, "alternate": 1}
     return sorted(results, key=lambda r: (role_order.get(r["role"], 2), r["model"]))
+
+
+def build_xai_results(
+    xai_models: list[str],
+    *,
+    cli: str,
+    timeout: int,
+    attempts: int,
+    max_workers: int,
+    max_runtime_s: int,
+    runner=subprocess.run,
+) -> list[dict]:
+    """Probe the grok-named agents' xai/* models (MDU-42).
+
+    Same exact-match OK rule as the zen targets; entries carry ``role:
+    "xai"`` and land in the report's distinct ``xai_results`` section.
+    """
+    return _run_plan(
+        [(model, "xai") for model in xai_models],
+        cli=cli,
+        timeout=timeout,
+        attempts=attempts,
+        max_workers=max_workers,
+        max_runtime_s=max_runtime_s,
+        runner=runner,
+    )
 
 
 def refresh_report(
@@ -322,6 +402,8 @@ def refresh_report(
     max_workers: int,
     max_runtime_s: int,
     runner=subprocess.run,
+    xai_models: list[str] | None = None,
+    include_xai: bool = False,
 ) -> int:
     """Probe and rewrite the report; return 0 when it was written, 2 when not."""
     results = build_results(
@@ -333,7 +415,20 @@ def refresh_report(
         max_runtime_s=max_runtime_s,
         runner=runner,
     )
-    report = {
+    # MDU-42: grok-named agents' xai/* probes into a distinct report section,
+    # written only when xai probing is enabled (explicit flag or any xai/*-
+    # resolving grok-named agent in the config under test).
+    xai_results = build_xai_results(
+        list(xai_models or []),
+        cli=cli,
+        timeout=timeout,
+        attempts=attempts,
+        max_workers=max_workers,
+        max_runtime_s=max_runtime_s,
+        runner=runner,
+    )
+    xai_enabled = bool(xai_models) or include_xai
+    report: dict = {
         "schema_version": SCHEMA_VERSION,
         "probed_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "mode": "refresh",
@@ -343,6 +438,9 @@ def refresh_report(
         "map_sha256": canonical_map_sha256(mapping),
         "results": results,
     }
+    if xai_enabled:
+        report["xai_enabled"] = xai_enabled
+        report["xai_results"] = xai_results
     try:
         write_report(report_path, report)
     except OSError as exc:
@@ -368,6 +466,14 @@ def refresh_report(
         f"{len(results)} model(s) probed: {counts['ok']} ok, "
         f"{counts['fail']} fail, {counts['skipped']} skipped"
     )
+    if xai_results:
+        xai_counts = {"ok": 0, "fail": 0, "skipped": 0}
+        for result in xai_results:
+            xai_counts[result["status"]] = xai_counts.get(result["status"], 0) + 1
+        summary += (
+            f"; xai: {len(xai_results)} probed, {xai_counts['ok']} ok, "
+            f"{xai_counts['fail']} fail, {xai_counts['skipped']} skipped"
+        )
     print(f"  [info]  {summary} → {report_path}")
     return 0
 
@@ -383,6 +489,7 @@ def gate_offences(
     max_age_days: int,
     config_path: Path | None = None,
     now: datetime | None = None,
+    include_xai: bool = False,
 ) -> tuple[list[str], list[str]]:
     """Evaluate the report against the map; return ``(offences, warnings)``.
 
@@ -467,6 +574,53 @@ def gate_offences(
         status = entries[0].get("status") if entries else "missing from the report"
         warnings.append(f"alternate '{model}' is {status}")
 
+    # 6.5 xai hard rule (MDU-42): grok-named agents' xai/* models must be
+    # probed and ok. Auto-enabled when the config under test resolves any
+    # grok-named agent to an xai/* model; --include-xai also requires the
+    # xai_results section to exist in the report at all.
+    try:
+        xai_models = collect_xai_models(config_path)
+    except ProbeError as exc:
+        return [f"xai gate rule cannot run: {exc}"], warnings
+    xai_enabled = bool(xai_models) or include_xai
+    if xai_enabled:
+        xai_results = report.get("xai_results")
+        if include_xai and not isinstance(xai_results, list):
+            offences.append(
+                "report has no xai_results section "
+                "(--include-xai requested; re-run probe_models.py --refresh --include-xai)"
+            )
+            xai_results = []
+        xai_by_model: dict[str, list[dict]] = {}
+        for entry in xai_results or []:
+            if isinstance(entry, dict) and isinstance(entry.get("model"), str):
+                xai_by_model.setdefault(entry["model"], []).append(entry)
+        for model in xai_models:
+            entries = xai_by_model.get(model, [])
+            if not entries:
+                offences.append(
+                    f"xai target '{model}' missing from the xai_results "
+                    "report section (grok-named agent)"
+                )
+                continue
+            # Mirrors the target rule above exactly: duplicates are tolerated
+            # when exactly one probe attempt is ok; only zero-ok duplicates
+            # name the duplicate count, and a single red entry names its own
+            # status (never a green-looking "is ok" offence).
+            ok_entries = [entry for entry in entries if entry.get("status") == "ok"]
+            if len(ok_entries) == 1:
+                continue
+            if len(entries) > 1 and len(ok_entries) != 1:
+                offences.append(
+                    f"xai target '{model}' has {len(entries)} results, "
+                    "need exactly one ok"
+                )
+                continue
+            status = entries[0].get("status")
+            error = entries[0].get("error")
+            detail = f" ({error})" if error else ""
+            offences.append(f"xai target '{model}' is {status}{detail}")
+
     # 6. free config refs beyond the reported set warn only.
     if config_path is not None:
         try:
@@ -544,6 +698,14 @@ def main(argv: list[str] | None = None, *, runner=subprocess.run) -> int:
         help="optional opencode.json; free refs absent from the report warn only",
     )
     parser.add_argument(
+        "--include-xai",
+        action="store_true",
+        help=(
+            "probe/gate the grok-named agents' xai/* models too (MDU-42); "
+            "auto-enabled when the config resolves any grok-named agent to xai/*"
+        ),
+    )
+    parser.add_argument(
         "--timeout", type=int, default=90, metavar="s", help="per-attempt timeout (default: 90)"
     )
     parser.add_argument(
@@ -606,6 +768,8 @@ def main(argv: list[str] | None = None, *, runner=subprocess.run) -> int:
 
     try:
         mapping = load_map(map_path)
+        config_path = Path(args.config) if args.config else None
+        xai_models = collect_xai_models(config_path)
     except ProbeError as exc:
         print(f"  [error] {exc}", file=sys.stderr)
         return 2
@@ -621,6 +785,8 @@ def main(argv: list[str] | None = None, *, runner=subprocess.run) -> int:
             max_workers=args.max_workers,
             max_runtime_s=args.max_runtime_s,
             runner=runner,
+            xai_models=xai_models,
+            include_xai=args.include_xai,
         )
         if exit_code != 0:
             return exit_code
@@ -632,7 +798,8 @@ def main(argv: list[str] | None = None, *, runner=subprocess.run) -> int:
             report_path,
             mapping,
             max_age_days=args.max_age_days,
-            config_path=Path(args.config) if args.config else None,
+            config_path=config_path,
+            include_xai=args.include_xai,
         )
     except ProbeError as exc:
         print(f"  [error] {exc}", file=sys.stderr)

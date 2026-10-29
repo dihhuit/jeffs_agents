@@ -120,6 +120,8 @@ claude --agent just-code -p "Implement a small feature..."
 
 The agent definitions follow a **model tier variant** pattern — each role has multiple clones configured with different models so the orchestrator can spread token cost and choose the cheapest reliable model for each subtask. See [docs/model-registry.md](docs/model-registry.md) for the full model allowlist and verification dates.
 
+Grok-named agents (`grok-*`, `grokestrator`, `grok-plan`) must resolve to `xai/*` models in every tier/harness — enforced by the validator, the deploy-time grok-xai gate, and the model-health probe (see [docs/model-registry.md](docs/model-registry.md)).
+
 ### OpenCode agents (defined in [`opencode.json`](opencode.json) and [`prompts/`](prompts/))
 
 | Role group | Agent | Prompt | Notes |

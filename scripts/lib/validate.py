@@ -14,6 +14,7 @@ from model_registry import (
     check_models,
     find_model_refs,
     free_zen_models,
+    grok_xai_errors,
     load_registry,
 )
 
@@ -94,6 +95,8 @@ ROLE_KEYWORDS: dict[str, list[tuple[str, ...]]] = {
         ("dropped approval gate",),
         ("resume_block.py",),
         ("canonical shape",),
+        # MDU-42: grok-named agents stay on xAI account models in every tier.
+        ("run only on the user's xai account models",),
     ],
     "ui-ux-designer": [("design",)],
     "introspector": [
@@ -176,6 +179,8 @@ def validate_opencode(build_dir: Path) -> list[str]:
         return [f"invalid JSON in opencode.json: {exc}"]
 
     errors.extend(_check_scratch_permissions(config))
+    # MDU-42: grok-named agents must resolve to xai/* account models.
+    errors.extend(grok_xai_errors(config.get("agents") or {}, label="opencode.json"))
 
     agents = config.get("agents")
     if not isinstance(agents, dict) or not agents:
@@ -471,7 +476,8 @@ def validate_zen(build_dir: Path, snapshot_path: Path = DEFAULT_SNAPSHOT) -> lis
 
     Checks (MDU-33 design D4.2):
     (a) every agent model reference is in the free Zen allowlist and none is a
-        paid ``opencode-go/*`` model;
+        paid ``opencode-go/*`` model; MDU-42 exempts grok-named agents, whose
+        ``xai/*`` account models pass through untransformed by design;
     (b) the raw file text contains no ``opencode-go/`` substring anywhere
         (models *and* descriptions);
     (c) agent-set parity with ``opencode.json``, and per-agent parity apart
@@ -500,6 +506,11 @@ def validate_zen(build_dir: Path, snapshot_path: Path = DEFAULT_SNAPSHOT) -> lis
             errors.append(
                 f"opencode.zen.json agent '{agent}' uses paid Go model '{model}'"
             )
+        elif model.startswith("xai/"):
+            # MDU-42: xai/* models pass through untransformed by design — a
+            # model-family rule, not gated on the agent name (the hard rule
+            # below still pins grok-named agents to xai/*).
+            continue
         elif model not in free_models:
             errors.append(
                 f"opencode.zen.json agent '{agent}' uses non-free model '{model}' "
@@ -521,6 +532,10 @@ def validate_zen(build_dir: Path, snapshot_path: Path = DEFAULT_SNAPSHOT) -> lis
         zen = load_json(zen_path)
     except json.JSONDecodeError as exc:
         return [f"invalid JSON in Zen variant config: {exc}"]
+
+    # MDU-42: the hard rule applies in the zen tier too — every grok-named
+    # agent in the zen config must still resolve to xai/*.
+    errors.extend(grok_xai_errors(zen.get("agents") or {}, label="opencode.zen.json"))
 
     base_agents = base.get("agents") or {}
     zen_agents = zen.get("agents") or {}
@@ -689,7 +704,8 @@ def main(argv: list[str] | None = None) -> int:
         zen_agent_count = len(load_json(zen_path).get("agents", {}))
         print(
             f"  [ok]    opencode.zen.json: {zen_agent_count} agents, "
-            "free Zen allowlist, parity with opencode.json"
+            "free Zen allowlist (xai/* pass through by design), "
+            "parity with opencode.json"
         )
         if zen_schema_ran:
             print(

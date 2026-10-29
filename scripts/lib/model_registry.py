@@ -49,6 +49,54 @@ def free_zen_models(registry: set[str]) -> set[str]:
     return {model for model in registry if model.startswith("opencode/")}
 
 
+# ---------------------------------------------------------------------------
+# MDU-42: grok-named agents must run on xAI account models
+# ---------------------------------------------------------------------------
+
+#: Exact names treated as grok-named beyond the ``grok-`` prefix.
+GROK_NAMED_EXACT = {"grokestrator", "grok-plan"}
+
+
+def is_grok_named(agent_name: str) -> bool:
+    """True when an agent name identifies a Grok-harness agent (MDU-42).
+
+    Grok-named = the name starts with ``grok-`` or is exactly ``grokestrator``
+    or ``grok-plan``. These agents must always run on the user's xAI account
+    models (``xai/*``) — never a free or Go-substituted opencode model.
+    """
+    return agent_name.startswith("grok-") or agent_name in GROK_NAMED_EXACT
+
+
+def grok_xai_errors(agents: dict, *, label: str) -> list[str]:
+    """Return named errors for grok-named agents whose model is not ``xai/*``.
+
+    ``label`` names the config under test (e.g. ``"opencode.json"``). Agents
+    without a usable string ``model`` field are also flagged: they would
+    resolve to an unknown default rather than the xAI account.
+    """
+    errors: list[str] = []
+    for name, definition in agents.items():
+        if not isinstance(definition, dict) or not is_grok_named(name):
+            continue
+        model = definition.get("model")
+        if not isinstance(model, str) or not model:
+            errors.append(
+                f"{label} grok-named agent '{name}' has no model field "
+                "(grok-named agents must resolve to an xai/* model)"
+            )
+        elif not model.startswith("xai/"):
+            errors.append(
+                f"{label} grok-named agent '{name}' uses model '{model}', "
+                "which does not start with 'xai/'"
+            )
+        elif len(model) <= len("xai/"):
+            errors.append(
+                f"{label} grok-named agent '{name}' uses model '{model}', "
+                "which has an empty xai/ provider suffix"
+            )
+    return errors
+
+
 def find_model_refs(opencode_json_path: Path) -> list[tuple[str, str]]:
     """Return ``(agent_name, model_ref)`` pairs for every agent in opencode.json.
 
@@ -125,14 +173,51 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="also diff the snapshot against `opencode models` (never fails)",
     )
+    parser.add_argument(
+        "--grok-xai-check",
+        metavar="opencode.json",
+        help=(
+            "verify every grok-named agent resolves to an xai/* model (MDU-42); "
+            "exit 1 with named errors otherwise"
+        ),
+    )
     args = parser.parse_args(argv)
 
     snapshot_path = Path(args.snapshot)
-    if not snapshot_path.is_file():
+    if args.check and not snapshot_path.is_file():
         print(f"  [error] registry snapshot not found: {snapshot_path}", file=sys.stderr)
         return 1
 
     exit_code = 0
+
+    if args.grok_xai_check:
+        check_path = Path(args.grok_xai_check)
+        if not check_path.is_file():
+            print(
+                f"  [error] opencode config not found: {check_path}",
+                file=sys.stderr,
+            )
+            return 1
+        try:
+            agents = json.loads(check_path.read_text(encoding="utf-8")).get(
+                "agents"
+            ) or {}
+        except json.JSONDecodeError as exc:
+            print(
+                f"  [error] invalid JSON in {check_path}: {exc}", file=sys.stderr
+            )
+            return 1
+        errors = grok_xai_errors(agents, label=str(check_path))
+        if errors:
+            print(
+                f"  [fail]  grok-xai hard rule violated in {check_path} "
+                f"({len(errors)} offence(s)):"
+            )
+            for err in errors:
+                print(f"          - {err}")
+            exit_code = 1
+        else:
+            print(f"  [ok]    grok-xai hard rule holds in {check_path}")
 
     if args.check:
         check_path = Path(args.check)
@@ -172,7 +257,7 @@ def main(argv: list[str] | None = None) -> int:
                     "`opencode models > config/model-registry.txt`"
                 )
 
-    if not args.check and not args.live:
+    if not args.check and not args.live and not args.grok_xai_check:
         parser.print_usage(sys.stderr)
         return 2
 

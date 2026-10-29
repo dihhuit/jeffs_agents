@@ -92,22 +92,48 @@ ensure_tier_sources() {
 # every outcome prints and returns 0. The overlay deploy.sh runs this hard.
 probe_gate_advisory() {
   local report="${REPO_ROOT}/config/model-probe-report.json"
+  # The gate also needs the ACTIVE tier config: --include-xai + --config make
+  # it probe/evaluate the grok-named agents' xai/* targets (MDU-42).
+  local active="${DEPLOY_ROOT}/opencode.zen.json"
+  if [[ "$TIER" == "go" && -f "${DEPLOY_ROOT}/opencode.json" ]]; then
+    active="${DEPLOY_ROOT}/opencode.json"
+  fi
   local output="" rc=0
   log_step "Model-health probe gate (advisory)"
   output="$(python3 "${SCRIPT_DIR}/lib/probe_models.py" --gate \
     --map "${REPO_ROOT}/config/zen-model-map.json" \
-    --report "$report" 2>&1)" || rc=$?
+    --report "$report" \
+    --include-xai --config "$active" 2>&1)" || rc=$?
   if [[ "$rc" -eq 0 ]]; then
     log_ok "model-health probe gate: green"
   elif [[ "$rc" -eq 2 ]]; then
-    log_info "[gate] model-health probe not evaluable here (no CLI, report or map); advisory only in the base repo"
-    log_info "  bootstrap: python3 scripts/lib/probe_models.py --refresh --gate"
+    log_info "[gate] model-health probe not evaluable here (no CLI, report, map or config); advisory only in the base repo"
+    log_info "  bootstrap: python3 scripts/lib/probe_models.py --refresh --gate --include-xai --config '$active'"
   else
     log_warn "[gate] model-health probe RED — advisory only in the base repo, deploy continues"
     printf '%s\n' "$output" >&2
-    log_warn "  bootstrap: python3 scripts/lib/probe_models.py --refresh --gate"
+    log_warn "  bootstrap: python3 scripts/lib/probe_models.py --refresh --gate --include-xai --config '$active'"
   fi
   return 0
+}
+
+# Grok-xai hard rule check (MDU-42): every grok-named agent (grok-*,
+# grokestrator, grok-plan) in a config must resolve to an xai/* model. Unlike
+# the probe gate this is a hard failure in the base repo too: delegating a
+# grok-named agent to a free or Go-substituted opencode model is never
+# allowed, so a named failure aborts before any copy.
+grok_xai_gate() {
+  local active="$1"
+  local output rc=0
+  log_step "Grok-xai hard-rule gate (${active})"
+  output="$(python3 "${SCRIPT_DIR}/lib/model_registry.py" --grok-xai-check "$active" 2>&1)" || rc=$?
+  if [[ "$rc" -eq 0 ]]; then
+    log_ok "grok-xai hard-rule gate: green"
+    return 0
+  fi
+  log_error "grok-named agent(s) must use xai/* account models"
+  printf '%s\n' "$output" >&2
+  return 1
 }
 
 deploy_opencode_json() {
@@ -135,6 +161,16 @@ deploy_opencode_json() {
     log_warn "selected ${TIER} tier config not found: ${active} (run ./build.sh)"
     return 0
   fi
+
+  # MDU-42: the grok-xai hard rule runs before any copy. The probe gate earlier
+  # in main() now receives --config/--include-xai, so missing xai auth or a
+  # dead xai/* target surfaces there first — but only as an advisory in this
+  # repo; this gate is what actually aborts. Both installed tier files are
+  # checked — the hard rule applies in every tier.
+  if [[ -f "$parked" ]]; then
+    grok_xai_gate "$parked"
+  fi
+  grok_xai_gate "$active"
 
   if [[ "$DO_COPY" == true ]]; then
     mkdir -p "$OPENCODE_CONFIG_DIR"

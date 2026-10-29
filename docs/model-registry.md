@@ -329,3 +329,36 @@ Documented order: **(1) build → (2) probe gate → (3) install →
 Probe answers "can it answer at all", not "is it good" — hence alternates are
 warn-only and auto-remap is out of scope; the operator edits the map using the
 report as evidence.
+
+## Grok-xai hard rule (MDU-42)
+
+Grok-named agents (any agent whose name starts with `grok-`, or is exactly
+`grokestrator` or `grok-plan`) run **only** on the user's xAI account models
+(`xai/*`, currently `xai/grok-4.7`) — in every tier (Go and Zen) and every
+harness. They are never delegated to a free (`opencode/*`) or Go-substituted
+(`opencode-go/*`) opencode model, and the Zen transform keeps their `xai/*`
+model identity untransformed (the former `xai/* → opencode/big-pickle` Zen
+fallback is removed).
+
+Enforcement layers, in documented order:
+
+1. **Build validator** (`scripts/lib/validate.py`): every grok-named agent in
+   `opencode.json` and `opencode.zen.json` must resolve to an `xai/*` model;
+   violations are named errors (agent → model) and fail the build in both
+   normal and `--variant zen` mode.
+2. **Probe** (`scripts/lib/probe_models.py --include-xai`): the grok-named
+   agents' `xai/*` models are probed with the same exact-match OK rule as the
+   Zen targets, into the report's distinct `xai_results` section. Probing is
+   auto-enabled when the config under test resolves any grok-named agent to
+   `xai/*`; `--gate` goes red when an xai entry is red or missing from the
+   report.
+3. **Deploy gate** (`scripts/deploy.sh`): the active-tier config is checked
+   with `model_registry.py --grok-xai-check` before install; a named failure
+   exits non-zero and the deploy aborts.
+
+**Refusal stance (D6):** there is no runtime fallback. If xAI credentials are
+missing or the account model is dead, the probe gate fails with a named
+(credential-naming) error and deploy refuses to install — the grok-named agent
+staying unavailable is the intended outcome, not silently running it on a
+substitute model. Refresh with
+`python3 scripts/lib/probe_models.py --refresh --gate --include-xai --config <opencode.json>`.
