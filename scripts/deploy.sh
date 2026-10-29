@@ -10,6 +10,10 @@
 # Both tiers are always installed: the selected tier becomes
 # ~/.config/opencode/opencode.json (active) and the other is parked as
 # opencode.zen.json / opencode.go.json (inert by config discovery).
+#
+# A model-health probe gate (scripts/lib/probe_models.py --gate) runs before the
+# copy. In this public base repo it is ADVISORY: a missing report or no
+# `opencode` CLI only prints, never aborts. Overlays run the same gate hard.
 
 set -euo pipefail
 
@@ -81,6 +85,29 @@ ensure_tier_sources() {
   else
     log_warn "opencode.zen.json missing; run ./build.sh to generate the Zen tier"
   fi
+}
+
+# Model-health probe gate (MDU-38), advisory in the public base repo. A stranger
+# with no probe report or no `opencode` CLI must still be able to deploy, so
+# every outcome prints and returns 0. The overlay deploy.sh runs this hard.
+probe_gate_advisory() {
+  local report="${REPO_ROOT}/config/model-probe-report.json"
+  local output="" rc=0
+  log_step "Model-health probe gate (advisory)"
+  output="$(python3 "${SCRIPT_DIR}/lib/probe_models.py" --gate \
+    --map "${REPO_ROOT}/config/zen-model-map.json" \
+    --report "$report" 2>&1)" || rc=$?
+  if [[ "$rc" -eq 0 ]]; then
+    log_ok "model-health probe gate: green"
+  elif [[ "$rc" -eq 2 ]]; then
+    log_info "[gate] model-health probe not evaluable here (no CLI, report or map); advisory only in the base repo"
+    log_info "  bootstrap: python3 scripts/lib/probe_models.py --refresh --gate"
+  else
+    log_warn "[gate] model-health probe RED — advisory only in the base repo, deploy continues"
+    printf '%s\n' "$output" >&2
+    log_warn "  bootstrap: python3 scripts/lib/probe_models.py --refresh --gate"
+  fi
+  return 0
 }
 
 deploy_opencode_json() {
@@ -230,6 +257,7 @@ main() {
   [[ "$HAS_GROK" == true ]] && log_info "Grok target: ${GROK_AGENTS_DIR}"
   [[ "$HAS_CLAUDE" == true ]] && log_info "Claude target: ${CLAUDE_AGENTS_DIR}"
 
+  probe_gate_advisory
   deploy_opencode_json
   deploy_prompts
   deploy_skills

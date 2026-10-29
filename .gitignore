@@ -2,3 +2,4 @@ build/
 __pycache__/
 /runs/
 evals/results/
+config/model-probe-report.json

@@ -41,6 +41,11 @@
 #      runs on push to main. Fails closed — a missing/malformed baseline exits
 #      2 and fails the job.
 #
+# Model-health probing (scripts/lib/probe_models.py, MDU-38) is deliberately
+# NOT wired in here: CI has no `opencode` CLI by design, and a probe costs one
+# live inference per model. It runs locally and is gated at deploy time
+# (deploy.sh --gate); the report is machine-local and gitignored.
+#
 # No Docker, no npm. Only actions/checkout and actions/setup-python.
 
 name: ci

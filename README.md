@@ -41,6 +41,8 @@ The OpenCode agents ship as **two tiers generated from the same `opencode.json` 
 
 Deploy always installs both tier files: the selected tier becomes `~/.config/opencode/opencode.json` (active), the other is parked beside it as `~/.config/opencode/opencode.zen.json` or `opencode.go.json` (inert — config discovery only reads `opencode.json`). Switch back at any time with `./deploy.sh --force --tier=zen`.
 
+> **Probe gate (MDU-38):** deploys are gated on a fresh live model-health probe report — `opencode models` can list a model as `active` after it has died. In this base repo the gate is advisory; the private overlay runs it hard and aborts on a dead mapped target. Refresh with `python3 scripts/lib/probe_models.py --refresh --gate`; `--skip-probe` bypasses the check knowingly. Probing is local-only and never runs in CI. See [docs/model-registry.md](docs/model-registry.md#live-model-health-probe-mdu-38).
+
 **Switch without the repo (manual one-liner):**
 
 ```bash

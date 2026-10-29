@@ -24,7 +24,7 @@ reference is missing from the snapshot, so a stale reference cannot ship.
 | Agent                 | Model                              |
 |-----------------------|------------------------------------|
 | `research`            | `opencode/mimo-v2.6-flash-free` |
-| `deepseek-research`   | `opencode/nemotron-3-ultra-free`   |
+| `deepseek-research`   | `opencode/nemotron-3.5-lightning-free` |
 | `nemotron-research`   | `opencode/nemotron-3.5-lightning-free` |
 | `deep-research`       | `opencode-go/mimo-v2.5` (Go budget) |
 
@@ -158,8 +158,8 @@ exactly why concentrating all five premium agents on it is unattractive.
 The Zen tier (`build/opencode.zen.json`, generated at build time from
 `opencode.json` + `config/zen-model-map.json`) replaces every paid
 `opencode-go/*` model with a free Zen model. The map was verified against
-`opencode models` on **2026-10-24**: `opencode/big-pickle` and
-`opencode/nemotron-3-ultra-free` were both present, and both are free Zen
+`opencode models` on **2026-10-28**: `opencode/big-pickle` and
+`opencode/nemotron-3.5-lightning-free` were both present, and both are free Zen
 (`opencode/big-pickle` despite carrying no `-free` suffix). The free allowlist
 is derived from the committed snapshot by provider prefix — every
 `opencode/*` entry in `config/model-registry.txt`.
@@ -174,14 +174,16 @@ opencode models | grep '^opencode/'
 
 The free catalog preserves none of the Go budget/mid/premium distinction, so
 the four Go source models collapse onto the two free models with in-repo usage
-evidence.
+evidence. `big-pickle` takes every source except `opencode-go/mimo-v2.5`, which
+lands on `nemotron-3.5-lightning-free` — the two-model split keeps the free
+coding loop off a single model.
 
 | Source (`opencode-go/*`) | Agents (count) | Zen target | Rationale |
 | --- | --- | --- | --- |
 | `opencode-go/deepseek-v4.1-flash` | just-code, test-agent, inception (3) | `opencode/big-pickle` | Strongest proven free model; already carries these roles via the `-free` variants. |
-| `opencode-go/kimi-k2.7-code` | just-code-mid, test-agent-pro, qa-pro, ui-ux-designer-pro (4) | `opencode/nemotron-3-ultra-free` | Second proven free generalist; spreads the coding loop across two free models. |
+| `opencode-go/kimi-k2.7-code` | just-code-mid, test-agent-pro, qa-pro, ui-ux-designer-pro (4) | `opencode/big-pickle` | Free catalog has no code-specialised mid model; big-pickle is the proven generalist. |
 | `opencode-go/glm-5.2` | just-code-pro, code-reviewer-pro, architect, architect-premium, devops-pro (5) | `opencode/big-pickle` | **Documented capability regression** — nothing free matches glm-5.2's reasoning tier. These premium slots are the primary documented trigger to switch up to Go mid-period. |
-| `opencode-go/mimo-v2.5` | test-agent-mid, code-reviewer, devops, qa, deep-research, ui-ux-designer, introspector (7) | `opencode/nemotron-3-ultra-free` | Mid slots → the second free generalist, spreading load. |
+| `opencode-go/mimo-v2.5` | test-agent-mid, code-reviewer, devops, qa, deep-research, ui-ux-designer, introspector (7) | `opencode/nemotron-3.5-lightning-free` | Mid slots → the second free generalist, spreading load off big-pickle. |
 
 ### Unchanged (already free, 9)
 
@@ -189,13 +191,13 @@ evidence.
 | --- | --- |
 | orchestrator, just-code-free, test-agent-free, code-reviewer-free, devops-free, qa-free | `opencode/big-pickle` |
 | research | `opencode/mimo-v2.6-flash-free` |
-| deepseek-research | `opencode/nemotron-3-ultra-free` |
+| deepseek-research | `opencode/nemotron-3.5-lightning-free` |
 | nemotron-research | `opencode/nemotron-3.5-lightning-free` |
 
-Resulting Zen distribution (28 agents): `opencode/big-pickle` 14 agents,
-`opencode/nemotron-3-ultra-free` 12, plus the two remaining research agents
-above (`opencode/mimo-v2.6-flash-free` 1, `opencode/nemotron-3.5-lightning-free`
-1); `deepseek-research`'s `opencode/nemotron-3-ultra-free` is counted in the 12.
+Resulting Zen distribution (28 agents): `opencode/big-pickle` 18 agents,
+`opencode/nemotron-3.5-lightning-free` 9 (the 7 `mimo-v2.5` slots plus
+`deepseek-research` and `nemotron-research`), and
+`opencode/mimo-v2.6-flash-free` 1 (`research`).
 Concentration on `big-pickle` is a known limitation, mitigated by the Go
 switch-up, the per-agent `overrides` knob in `config/zen-model-map.json`, and
 premium slots being low-volume (see the MDU-32 cost audit).
@@ -203,9 +205,10 @@ premium slots being low-volume (see the MDU-32 cost audit).
 ### Alternates and overrides
 
 Alternates are catalogued in the map but **not placed on hot paths** (no
-bake-off evidence): `opencode/exo-free`, `opencode/space-bunny-free`,
-`opencode/step-5-preview-free`, `opencode/longcat-2.5-preview-free`,
-`opencode/muse-spark-1.3-contributor-free`, `opencode/ling-3.1-flash-free`.
+bake-off evidence): `opencode/nemotron-3.5-super-vl-free`,
+`opencode/mimo-v2.6-flash-free`, `opencode/deepseek-v4.1-flash-free`,
+`opencode/flint-40b-free`, `opencode/beam-free`. They are probed by
+`probe_models.py` too, but a failing alternate only warns.
 
 `config/zen-model-map.json` also carries `overrides: { "<agent-name>": "<model>" }`,
 applied after the model-keyed rules. It is empty by default and is the tuning
@@ -234,3 +237,95 @@ commands and the manual `cp` one-liner.
   response to exhaustion is `--tier=go`.
 - The overlay repo builds its own `opencode.json` and does not consume this
   generated file; adopting the Zen tier there is a follow-up in that repo.
+
+## Live model-health probe (MDU-38)
+
+`opencode models` can list a model as `active` after upstream has killed it —
+that is exactly what caused the mdu-37 incident (12 agents routed to a dead
+`opencode/nemotron-3-ultra-free`, three spawns failed with
+`Model is unavailable`). A listing is not proof of life, so deploys are gated
+on a real inference:
+
+```bash
+timeout 90 opencode run -m opencode/big-pickle "Reply with exactly: OK"
+```
+
+`scripts/lib/probe_models.py` runs that command once per model, records the
+result in `config/model-probe-report.json` (machine-local, gitignored), and
+grades the report. Success is strict: exit 0 **and** stdout stripped exactly
+`OK` — a truncated run, or an answer that merely contains `OK` (`NOT OK`), is
+not proof the model answered.
+
+```bash
+# Bootstrap and routine refresh (probe, then gate):
+python3 scripts/lib/probe_models.py --refresh --gate
+
+# Gate only (what deploy.sh runs):
+python3 scripts/lib/probe_models.py --gate
+```
+
+### Probe set (7 models)
+
+Targets are `zen-model-map.json` `models` values plus `overrides` values
+(deduped): `opencode/big-pickle` and `opencode/nemotron-3.5-lightning-free`.
+Alternates (warn-only): `opencode/nemotron-3.5-super-vl-free`,
+`opencode/mimo-v2.6-flash-free`, `opencode/deepseek-v4.1-flash-free`,
+`opencode/flint-40b-free`, `opencode/beam-free`. Only `opencode/*` free Zen is
+probed — Grok `xai/*` and paid `opencode-go/*` are out of scope by design.
+
+### Report
+
+`config/model-probe-report.json`, schema version 1: one report-level
+`probed_at` (no per-model timestamps), `map_sha256` over the **canonicalised**
+map JSON (so the overlay's re-indented `build/zen-model-map.json` hashes
+identically), and one result per model with `status` `ok` / `fail` /
+`skipped`, `attempts`, `latency_s` and `error`. Each `--refresh` rewrites the
+whole report: any merge union could keep an `ok` for a model that has since
+died. `--refresh` exits 0 whenever the report was written, even with failing
+models — the result is data; grading is `--gate`.
+
+Permanent failures (`Model is unavailable`, `not found`, `404`, invalid model)
+are not retried; transient ones (timeout, `429`, `5xx`, connection errors) get
+one retry. A missing `opencode` CLI writes **no** report and exits 2.
+
+### Gate rules and exit codes
+
+Evaluated in order; every offence is listed one per line.
+
+1. Report missing/unreadable/malformed, wrong `schema_version`, or an
+   unparsable / more-than-1-hour-future `probed_at` → red.
+2. `map_sha256` differs from the current map → red (`map changed since last
+   probe`). Editing the map therefore forces a re-probe.
+3. Older than `--max-age-days` (default **7**) → red. `--max-age-days 0`
+   disables only the age rule; `ok` and the hash match are still required.
+4. Every map target needs exactly one `ok` result. Missing, `fail` and
+   `skipped` are all red — a skipped probe never satisfies freshness.
+5. Alternates that are failed, skipped or missing → `[warn]` only.
+6. With `--config <opencode.json>`, free `opencode/*` refs absent from the
+   report → `[warn]` only.
+
+| Exit | Meaning |
+| --- | --- |
+| 0 | green: every target ok, report fresh, map hash matches |
+| 1 | red: any rule 1–4 offence, offenders listed |
+| 2 | cannot evaluate: no `opencode` CLI, missing map, bad arguments |
+
+### Where it runs
+
+Documented order: **(1) build → (2) probe gate → (3) install →
+(4) `opencode debug agents`**.
+
+- `open-agent-definitions/scripts/deploy.sh` runs the gate **advisory only**
+  (it is the public repo: a stranger with no report or no CLI must still
+  deploy). Red prints a `[warn]` and continues.
+- The overlay `opencode_agents/scripts/deploy.sh` runs the same gate **hard**
+  before any copy, with its own report under the overlay tree. A dry run warns
+  and continues; `--force` aborts on red. `--skip-probe` is the documented
+  escape hatch.
+- Never in CI: no `opencode` CLI there by design, and the probe is a live,
+  machine-local check.
+
+**Trust rule:** no model enters `zen-model-map.json` without a green probe.
+Probe answers "can it answer at all", not "is it good" — hence alternates are
+warn-only and auto-remap is out of scope; the operator edits the map using the
+report as evidence.

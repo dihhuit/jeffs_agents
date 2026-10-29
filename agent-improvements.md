@@ -244,6 +244,18 @@ Items marked `[x]` are resolved on live evidence and kept for history; orchestra
   - definition change: Codify in base prompts/orchestrator.md and mirrors: "Before dispatching QA, ensure runs/<mdu-id>/manifest.json has all completed phases, the verification block, a summary and completed_at; run scripts/lib/run_ledger.py validate and require exit 0; pass the exact manifest path to QA and require QA to validate it. After QA, only flip qa_grade (and re-run the validator)."
   - apply-now: Before dispatching QA, finalize the manifest fully (all phases, verification block, summary, completed_at), validate with `scripts/lib/run_ledger.py validate` to exit 0, pass the exact path to QA and require QA to validate it; after QA only flip `qa_grade` and re-run the validator.
 
+- [ ] id: 20261029-1 | severity: warn | target: qa | kind: qa_fail_repeat
+  - evidence: mdu-38 (2026-10-29, opencode harness): QA first reply returned empty/corrupted output; explicit re-request in the same session produced correct GRADE PASS 5/5 result. The orchestrator accepted the re-requested verdict without re-running the phase. fix_iterations=3 (2 fix cycles + 1 procedural QA redo). No dead-model spawn failures; tiers per mdu-lifecycle table.
+  - definition change: In base prompts/qa.md and the QA mirrors add: "If the first QA reply returns empty or obviously corrupted output (e.g. missing verdict format, placeholder text), do not accept immediately. Request a re-run with the same brief, and only accept the verdict after a second response. Label the initial failed attempt in the phase notes."
+  - apply-now: In the next MDU brief, instruct the QA child: "If the first response is empty or lacks the QA GRADE line, do not grade; instead request a re-run and wait for a second response before proceeding."
+
+## Session records
+
+### 2026-10-29T09:00:00Z — opencode session — mdu mdu-38-model-health-probe
+MDU-38 model-health probe: design (architect-premium, top-tier) → implement (just-code-mid, mid) → review (code-reviewer-minor reject, then code-reviewer-free APPROVE) → implement fix (just-code, budget) → narrow re-review (code-reviewer-free, free APPROVE) → test (test-agent, budget, +7 cases mutation-checked; found soft runtime-budget doc mismatch) → implement fix (just-code-free, free, doc-only) → deploy (devops, mid, both builds exit 0, live probe 7/7 ok both repos, gate green) → validate (qa, mid, GRADE PASS 5/5 with live re-verification; first QA reply empty/corrupted, re-requested and answered). Signals: qa_fail_repeat (first QA reply empty/corrupted, required re-request), fix_iterations=3 (2 fix cycles + 1 procedural QA redo). No review-rejection streak, no token hotspots directly observable from manifest, no cache misses reported, no permission thrash. Phase order observed: devops ran after review and last fix cycle; QA validated post-fix state.
+
+## Definition proposals
+
 ## Session records
 
 ### 2026-10-14T16:52-07:00 — opencode session ses_ec32e70b8ffeoSxBhBeVezU1Jg — mdu mdu-20
