@@ -325,6 +325,25 @@ Each MDU above is sized for the repo's own orchestrator to complete in one close
 
 **Context (user-confirmed, live-diagnosed):** OpenCode drastically tightened free-tier (Zen) model usage caps — Zen models are heavily capped even when a Go subscription is purchased. In the user's `mmo` project session, the `grok-architect` spawn died with an opencode free-tier limit: the deployed zen default tier maps ~40 of 50 agents (all `opencode-go/*` AND both `xai/*` agents, via the mdu-36 overlay fallback) onto `opencode/big-pickle`, so all loop traffic crowds one free model until it caps out. The xAI API key + auto-top-up were not involved (the agent ran through OpenCode, which never calls xAI for those agents in the zen tier). New strategy direction set by the user: **stop using free-tier models entirely (Go tier + xAI via API key), or reduce free usage to a tiny explicit set**.
 
+
+### MDU-42 · HARD RULE — Grok-named agents must use XAI account models (queue head)
+
+- **Status:** Open — 2026-10-29 (user hard rule, runs FIRST, ahead of MDU-39/40/41)
+- **Why:** The mdu-36 overlay zen fallback routed all `xai/grok-*` agents to `opencode/big-pickle` (free) — the direct cause of the mmo free-cap burn. The user's standing rule, effective immediately: **every agent whose name starts with `grok-` (and `grokestrator`, `grok-plan`) must run on `xai/*` models billed to the user's xAI account (paid, auto-top-up) in every tier, every harness — never an opencode free/Go-substituted model.** The xAI account is the billing surface for anything grok.
+- **Description:**
+  1. Kill the mdu-36 `xai/*-only big-pickle fallback` in the overlay zen map layer: `xai/*` agents become exempt from every zen/go/free remap (identity or explicit `xai/grok-4.7`).
+  2. Validator clause (base + overlay): any build/deploy config in which a `grok`-named agent's `model` is not `xai/*` fails with a named error. Same check at deploy time in both deploy.sh gate functions.
+  3. mdu-38 `probe_models.py` gains an xai probe path (`--include-xai` or automatic for grok-mapped models) so the hard rule is enforced with live evidence, not just config inspection.
+  4. Orchestrator mirrors (base prompts/grok/claude + grokestrator): one-sentence delegation rule — "Grok-named agents run on the user's xAI account models; never delegate them to a free or Go-substituted opencode model, even in the zen tier."
+  5. If xAI auth is unavailable in a harness, the grok agent should refuse cleanly (error naming the missing credential), not silently fall back.
+- **Acceptance criteria:**
+  1. Validator + deploy-time check both fail (named error) on any config where a grok-named agent resolves to a non-`xai/*` model.
+  2. Live deploy: every `grok`-named agent in the deployed opencode config resolves to `xai/grok-4.7` (or an allowlisted `xai/*`), verified by the mdu-38 gate + config inspection.
+  3. Zen tier still builds and deploys (grok agents excluded from remapping by design, not by accident).
+  4. mdu-38 live probe covers the xai models now in use; suite + both builds green; docs + README updated.
+- **Suggested agents:** just-code (map/validator/probe/mirror edits), test-agent (clause+probe tests), devops (deploy + live verification), qa (validation).
+- **Dependencies:** none (this is a hard rule, run before MDU-39 forensics and MDU-40 paid-default design).
+
 ### MDU-39 · Free-tier cap forensics & symptom-attribution ledger
 
 - **Why:** We do not know the actual new cap economics (requests/day? tokens/day? per-model? per-account?) and cannot design a usage strategy against unknown limits. The `mmo` failure needs to be pinned to exact cap events with evidence.
