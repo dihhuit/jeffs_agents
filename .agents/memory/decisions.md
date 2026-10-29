@@ -1,7 +1,7 @@
 ---
 type: decisions
 created: 2026-10-27T13:24:20Z
-updated: 2026-10-27T22:20:00Z
+updated: 2026-10-29T15:05:00Z
 ---
 
 # Decision log
@@ -39,3 +39,8 @@ updated: 2026-10-27T22:20:00Z
 - Context: mdu-36's overlay zen fallback sent xai/grok-* agents to free opencode/big-pickle, causing the mmo cap burn.
 - Decision: every agent whose name starts with grok- (plus grokestrator, grok-plan) must resolve to xai/* billed to the user's xAI account, in every tier/harness; xai/* is exempt from every zen/go/free remap; validator + deploy gates fail named on violations; mdu-38 probe covers xai models.
 - Consequences: MDU-42 added at the HEAD of the backlog queue (commit 60280b7), runs before MDU-39/40/41; the mdu-36 decision's 'xai-only big-pickle fallback' is now a superseded defect to remove.
+
+## 2026-10-29 — Grok agents pinned to xai account models, four enforcement layers (mdu-42)
+- Context: user hard rule after the mmo cap burn; mdu-36's 'xai-only big-pickle fallback' marked superseded (that entry stays appended, never rewritten).
+- Decision: enforce in four layers — validator clauses in both variants, deploy gates in both repos (base hard both tiers; overlay hard on --force over active+parked before install), probe_models.py --include-xai gate, and the mirrors delegation sentence; overlay build xai/* identity pass-through ends the big-pickle fallback.
+- Consequences: xAI account is the billing surface for all grok-family spawns; missing xai auth refuses via the named gates (no runtime fallback); live deploy verified 20/20 grok-named agents on xai/* in both installed tiers with xai/grok-4.7 and grok-build-0.1 both probing OK; free zen targets still cap-fail so the documented --skip-probe escape carried the deploy until MDU-40 makes the paid tier default.

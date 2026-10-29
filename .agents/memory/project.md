@@ -1,7 +1,7 @@
 ---
 type: project
 created: 2026-10-27T13:24:20Z
-updated: 2026-10-27T22:20:00Z
+updated: 2026-10-29T15:05:00Z
 ---
 
 # Project facts — open-agent-definitions (base agent-team repo)
@@ -25,3 +25,10 @@ updated: 2026-10-27T22:20:00Z
 - scripts/lib/probe_models.py --refresh --gate: probes zen-map targets (hard, exit 1 if any not ok/stale/missing) + alternates (warn-only); success = exit 0 AND stdout stripped == "OK" exactly; success rule pins the F1 "NOT OK"/"OKChrome" substring finding; report exits 0 as data even when models fail — only --gate grades.
 - Base /runs/ is gitignored too (manifests local-only in BOTH repos now, contrary to the older mdu-36 note); runs/ ledger validate still required pre-commit.
 - qa child regression (new 20261029-1): a QA subagent can return an empty/corrupted first reply; the protocol is to re-request in the same session before accepting.
+
+## 2026-10-29 (mdu-42)
+- Grok-xai hard rule, four enforcement layers: base validate.py clauses (go + zen variants), base deploy.sh grok_xai_gate (hard, both tier files), overlay deploy.sh run_grok_xai_gate over active+parked (inline scripts/lib/check_grok_xai.py), probe_models.py --include-xai (xai_results report section + gate rule 6.5; ok==1-among-duplicates is green, mirroring the zen branch). Grok-named = grok-* prefix or exactly grokestrator/grok-plan; bare `xai/` suffix is a violation in both engines.
+- Overlay zen build treats xai/* as IDENTITY pass-through for ALL agents (family rule, not name-scoped; thought-leadership-coach stays on xai in zen — correct, not a violation); no xai rows ever land in zen-model-map.json.
+- Spawn model overrides: the deployed default tier still routes coder/reviewer/test/qa/devops defaults to free models (big-pickle / lightning-free) that cap mid-loop — every dispatch this MDU used an explicit paid model override `opencode-go/glm-5.3-flash` on the spawn (apply-now 20261029-2). Keep until MDU-39/40/41 change the default tier; mutate away from big-pickle defaults then.
+- Verbatim free-cap refusal string (for MDU-39): `Error: Free usage limit reached. Free models work in OpenCode (https://opencode.ai); subscribe to OpenCode Go to keep going: https://opencode.ai/go` — big-pickle + deepseek-v4.1-flash-free + mimo-v2.6-flash-free + nemotron-3.5-super-vl-free; evidence /tmp/opencode/mdu-42-deploy-evidence.md.
+- Introspector shell permission regression (first denial since the mdu-30 fix): session_signals.py did not run in this MDU's introspection — regression watch attached to closed suggestion 20261014-6; machine signals UNKNOWN, not zero (20261029-2 note).
