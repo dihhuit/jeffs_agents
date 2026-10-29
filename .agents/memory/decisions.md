@@ -34,3 +34,8 @@ updated: 2026-10-27T22:20:00Z
 - Context: opencode drastically tightened Zen/free caps (drastic even with a Go subscription); in the user's mmo session the grok-architect spawn died on an opencode free-tier limit.
 - Decision: root cause = deployed zen default tier remaps ~40/50 agents (all opencode-go/* and xai/grok-* via the mdu-36 fallback) onto opencode/big-pickle, crowding ONE free model until it caps; xAI API/auto-top-up was never involved (agent ran through OpenCode). User strategy: default tier becomes paid — Go models for OpenCode agents, xai/grok via API key for grok-family, zen demoted to emergency tier with tiny explicit free-exempt list; free models must never be a loop default.
 - Consequences: backlog gained MDU-39 (cap forensics), MDU-40 (paid default tier), MDU-41 (free-budgeting policy); `grok-*` agents in the OpenCode harness will be rebuilt to actually hit the paid xAI endpoint; mmo-session cap evidence to be pinned next session.
+
+## 2026-10-29 — HARD RULE: grok-named agents must use XAI account models (user, effective now)
+- Context: mdu-36's overlay zen fallback sent xai/grok-* agents to free opencode/big-pickle, causing the mmo cap burn.
+- Decision: every agent whose name starts with grok- (plus grokestrator, grok-plan) must resolve to xai/* billed to the user's xAI account, in every tier/harness; xai/* is exempt from every zen/go/free remap; validator + deploy gates fail named on violations; mdu-38 probe covers xai models.
+- Consequences: MDU-42 added at the HEAD of the backlog queue (commit 60280b7), runs before MDU-39/40/41; the mdu-36 decision's 'xai-only big-pickle fallback' is now a superseded defect to remove.

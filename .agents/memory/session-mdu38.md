@@ -1,7 +1,7 @@
 ---
 type: session
 created: 2026-10-29T09:00:00Z
-updated: 2026-10-29T11:30:00Z
+updated: 2026-10-29T12:15:00Z
 ---
 
 ## 2026-10-29T10:30:00Z — mdu-complete (mdu-38-model-health-probe)
@@ -17,3 +17,9 @@ updated: 2026-10-29T11:30:00Z
 - next: run MDU-39 (cap forensics) first, then MDU-40 (paid-default tier) in a following session.
 - blockers: none (user confirmed xAI tokens remain + auto-top-up).
 - artifacts: open-agent-definitions/FEATURE_BACKLOG.md (MDU-39/40/41), updated opencode free-cap diagnosis; live ~/.config/opencode/opencode.json verified: ~40 agents -> opencode/big-pickle.
+
+## 2026-10-29T12:15:00Z — checkpoint (mdu-42 hard rule)
+- completed: MDU-42 (hard rule: grok-named agents use xai account models) written at queue head and pushed (commit 60280b7); decisions.md ADR appended.
+- next: run MDU-42 first (small config/validator/probe slice), then MDU-39 forensics, then MDU-40 paid default, then MDU-41 policy.
+- blockers: none.
+- artifacts: open-agent-definitions/FEATURE_BACKLOG.md (MDU-42 at head).
