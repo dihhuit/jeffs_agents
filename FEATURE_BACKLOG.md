@@ -185,6 +185,8 @@ This backlog is written so the repo's **current** agent definitions can build th
 
 ### MDU-12 · Approval gates & autonomy ladder documentation
 
+- **Status:** Done — 2026-09-15
+
 - **Why:** Claims of "fully autonomous" need precision; destructive ops need gates.
 - **Description:** Define and document an autonomy ladder (L0–L4, per industry 2026 reference) and position the team on it. Add explicit approval-gate rules to the orchestrator: always require human approval for (a) push to protected branches, (b) production deploys of non-green MDUs, (c) destructive operations (deletes, DB migrations), (d) >3 retries (existing cap, formalized). Add an `autonomy` field to the run manifest (MDU-07) recording the level at which each MDU ran. Document target: L3 goal-directed with gates.
 - **Acceptance criteria:**
@@ -210,6 +212,8 @@ This backlog is written so the repo's **current** agent definitions can build th
 - **Dependencies:** MDU-02, MDU-07, MDU-08.
 
 ### MDU-14 · Cross-CLI parity & contract tests
+
+- **Status:** Done — 2026-09-15
 
 - **Why:** OpenCode/Grok/Claude definitions can drift; the build generates Claude but nothing verifies behavioral parity.
 - **Description:** Add a parity check to `validate.py`: for each `prompts/*.md` vs `grok/agents/*.md`, verify that key behavioral clauses (responsibilities, hard constraints, safety constraints) are present in both (fuzzy keyword checks, not exact match). Fail on missing sections. Optionally add a smoke test that generates Claude agents (existing generator) and verifies frontmatter parity with the source. Document the "dual-authoring" contract (README already partly covers it).
@@ -275,7 +279,7 @@ Each MDU above is sized for the repo's own orchestrator to complete in one close
 
 ### MDU-33 · Zen-only variant set (two tiers: Zen default, Go switch-up)
 
-- **Status:** Open — 2026-10-24 (scope clarified same day)
+- **Status:** Superseded by MDU-40 — 2026-10-30
 - **Why:** The current `opencode.json` assumes an OpenCode Go subscription for most agents. Users without a Go subscription need a parallel set using only free Zen models (`opencode/*`). **Scope clarification (2026-10-24, user):** the user has repeatedly hit Zen usage limits, so this is a **two-tier setup, not just a Go-free fallback** — run the Zen tier by default, and switch up to the Go tier when a session runs out of Zen usage for the period. Switching between tiers mid-period must be a first-class, documented workflow.
 - **Description:** Create two parallel agent sets for OpenCode: a Zen-only set (free `opencode/*` models) and the existing Go-subscription set, kept side by side. Options: a separate config file (e.g. `opencode.zen.json` alongside the Go default) or a build-time flag emitting both variants. Update docs to document both paths and the switch-up workflow. Ensure parity where possible, document limitations, and add validation.
 - **Acceptance criteria:**
@@ -306,7 +310,7 @@ Each MDU above is sized for the repo's own orchestrator to complete in one close
 
 ### MDU-35 · Question-tool failure deep dive (sprite_generator sessions)
 
-- **Status:** Open — 2026-10-24
+- **Status:** Done — 2026-10-26
 - **Why:** In the user's `sprite_generator` project sessions, every `question` tool call renders as "Asked N questions" in red with no question prompt visible to the user; the user must manually prompt the agent to retry. This breaks the interactive-question loop that `prompts/inception.md` explicitly relies on ("Use the question tool for interactive follow-ups") and wastes turns. The repo already has a known family of harness-level subagent defects (shell permission denials, cf. `sprite_generator/agent-improvements.md` 20261017-1/-5), so this may be harness, config, model tool-call shape, or agent-definition — which is exactly what needs to be determined.
 - **Description:** Deep dive the failing sessions, then fix at whatever level the evidence supports:
   1. **Evidence gathering.** Locate the failing question tool calls in OpenCode session storage (`~/.local/share/opencode/...`, project dir `/mnt/FastSSDXFS/projects/sprite_generator`). Extract: exact tool call payload (params, model, session id), the error/result event, timestamps, and whether the failure is deterministic (every call) or intermittent. Confirm which agent/model/CLI actually ran those sessions (user confirmation if storage is ambiguous).

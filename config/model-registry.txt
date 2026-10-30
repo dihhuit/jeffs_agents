@@ -18,8 +18,9 @@ opencode-go/kimi-k2.7-code
 opencode-go/kimi-k3
 opencode-go/longcat-2.0
 opencode-go/longcat-2.5-preview-free
-opencode-go/mimo-v2.5
-opencode-go/mimo-v2.5-pro
+# 2026-10-30 (MDU-43): deprecated upstream per MDU-40 live probe — never reference or re-activate.
+# opencode-go/mimo-v2.5
+# opencode-go/mimo-v2.5-pro
 opencode-go/mimo-v2.6-flash
 opencode-go/mimo-v2.6-pro
 opencode-go/minimax-m2.7
