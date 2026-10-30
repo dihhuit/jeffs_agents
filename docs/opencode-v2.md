@@ -37,15 +37,14 @@ the gateway reply "OpenCode's free tier can only be used from within OpenCode." 
 
 All target IDs already exist in `config/model-registry.txt` — no registry edits needed.
 
-- `opencode-zen/big-pickle` → `opencode/big-pickle` — orchestrator, just-code-free, test-agent-free, code-reviewer-free, devops-free, qa-free
+- `opencode-zen/big-pickle` → `opencode-go/mimo-v2.6-flash` — orchestrator (MDU-40 repointed it off the free alias)
 - `opencode-go/deepseek-v4-flash` → `opencode-go/deepseek-v4.1-flash` — just-code, test-agent, inception
-- `opencode/ling-3.0-flash-fin-free` → `opencode/mimo-v2.6-flash-free` — research
+- `opencode/ling-3.0-flash-fin-free` → `opencode-go/mimo-v2.6-flash` — the single research agent, `deep-research` (MDU-40 retired the free research variants)
 - `opencode-go/deepseek-v4-pro` → `opencode-go/glm-5.2` — just-code-pro, code-reviewer-pro, architect, devops-pro
-- `opencode-go/minimax-m3` → `opencode-go/mimo-v2.5` — test-agent-mid, code-reviewer, devops, qa, ui-ux-designer, introspector
+- `opencode-go/minimax-m3` → `opencode-go/mimo-v2.6-flash` — test-agent-mid, code-reviewer, devops, qa, ui-ux-designer, introspector
 
 Leave unchanged: architect-premium (already `opencode-go/glm-5.2`), the kimi-k2.7-code agents, qa-pro,
-ui-ux-designer-pro, test-agent-pro, just-code-mid, deep-research (`opencode-go/mimo-v2.5`),
-deepseek-research (`opencode/nemotron-3-ultra-free`), nemotron-research (`opencode/nemotron-3.5-lightning-free`).
+ui-ux-designer-pro, test-agent-pro, just-code-mid, and deep-research (`opencode-go/mimo-v2.6-flash`).
 
 ## 4. Shell `ask` on the three free research agents
 
@@ -109,7 +108,7 @@ After (installed, V2 — this exact order):
 "code-reviewer": {
   "mode": "subagent",
   "description": "Reviews code using mid-tier Go model. Signs off on changes for quality, security, and maintainability",
-  "model": "opencode-go/mimo-v2.5",
+  "model": "opencode-go/mimo-v2.6-flash",
   "color": "#3b82f6",
   "system": "{file:./prompts/code-reviewer.md}",
   "request": { "body": { "temperature": 0.1 } },
@@ -184,7 +183,7 @@ After (installed, V2 — this exact order):
 
 Visible here: `write`+`edit` → one `edit`; `bash` → `shell` with deny-`*` first; `task` → `subagent` with
 `allow research` before `deny *`; `prompt` → `system`; `temperature` → `request.body.temperature`;
-model retarget `minimax-m3` → `mimo-v2.5`. The expanded read-only allows and the deny wall in this
+model retarget `minimax-m3` → `mimo-v2.6-flash`. The expanded read-only allows and the deny wall in this
 block are the MDU-30 shape (§5); the other six allowlist agents differ only in their allow set. The wall is
 40 entries (39 denies + the `*2>/dev/null*` allow); this block also carries `*python* -c*` right after the
 exception. A block missing `*>/*` (unspaced) or `*sort*-o*` has drifted from `opencode.json`.

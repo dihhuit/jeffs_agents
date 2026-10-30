@@ -25,22 +25,22 @@ An MDU (minimum deployable unit) is the smallest slice of functionality that can
 
 Choose the cheapest reliable model for each task; rotate variants to spread token cost across tiers.
 
-| Task | Default | Mid | Pro | Free |
-|------|---------|-----|-----|------|
-| Coding | just-code (deepseek-v4-flash) | just-code-mid (kimi-k2.7-code) | just-code-pro (deepseek-v4-pro) | just-code-free (big-pickle) |
-| Testing | test-agent (deepseek-v4-flash) | test-agent-mid (minimax-m3) | test-agent-pro (kimi-k2.7-code) | test-agent-free (big-pickle) |
-| Review | code-reviewer (minimax-m3) | — | code-reviewer-pro (deepseek-v4-pro) | code-reviewer-free (big-pickle) |
-| Architecture | architect (deepseek-v4-pro) | — | architect-premium (glm-5.2) | — |
-| DevOps | devops (minimax-m3) | — | devops-pro (deepseek-v4-pro) | devops-free (big-pickle) |
-| QA | qa (minimax-m3) | — | qa-pro (kimi-k2.7-code) | qa-free (big-pickle) |
-| UI/UX | ui-ux-designer (minimax-m3) | — | ui-ux-designer-pro (kimi-k2.7-code) | — |
-| Research | research (ling-3.0-flash-fin-free) | deepseek-research (nemotron-3.5-lightning-free) | nemotron-research (nemotron-3.5-lightning-free) | deep-research (mimo-v2.5) |
+| Task | Default | Mid | Pro |
+|------|---------|-----|-----|
+| Coding | just-code (deepseek-v4.1-flash) | just-code-mid (kimi-k2.7-code) | just-code-pro (glm-5.2) |
+| Testing | test-agent (deepseek-v4.1-flash) | test-agent-mid (mimo-v2.6-flash) | test-agent-pro (kimi-k2.7-code) |
+| Review | code-reviewer (mimo-v2.6-flash) | — | code-reviewer-pro (glm-5.2) |
+| Architecture | architect (glm-5.2) | — | architect-premium (glm-5.2) |
+| DevOps | devops (mimo-v2.6-flash) | — | devops-pro (glm-5.2) |
+| QA | qa (mimo-v2.6-flash) | — | qa-pro (kimi-k2.7-code) |
+| UI/UX | ui-ux-designer (mimo-v2.6-flash) | — | ui-ux-designer-pro (kimi-k2.7-code) |
+| Research | deep-research (mimo-v2.6-flash) | — | — |
 
 Rules:
 
 - Default to the cheapest adequate variant; upgrade only when the task genuinely requires deeper reasoning.
-- Free-tier research agents are independent of the Go budget — prefer them for all research tasks.
-- On token or rate-limit errors, retry with a different variant (e.g., `just-code` → `just-code-free`).
+- All loop phases run on paid models; free-tier variants are retired (MDU-40).
+- On token or rate-limit errors, retry once on the same variant, then escalate one rung (e.g. `just-code` → `just-code-mid`); never to a free variant, and never past the fourth-retry gate.
 - Reserve `architect-premium` and `code-reviewer-pro` for the most complex tasks.
 
 ## Failure routing

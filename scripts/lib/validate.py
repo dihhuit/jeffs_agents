@@ -13,7 +13,6 @@ from model_registry import (
     check_live,
     check_models,
     find_model_refs,
-    free_zen_models,
     grok_xai_errors,
     load_registry,
 )
@@ -427,7 +426,7 @@ def validate_schema(
     """Validate a build config against schemas/opencode.schema.json.
 
     ``config_name`` selects the file under ``build_dir`` (default
-    ``opencode.json``); the Zen variant passes ``opencode.zen.json``.
+    ``opencode.json``).
 
     Returns ``(errors, ran)``. When ``jsonschema`` is not installed the check
     is skipped with a warning (``ran=False``) so environments without the
@@ -471,111 +470,57 @@ def validate_model_refs(build_dir: Path, snapshot_path: Path) -> list[str]:
     return check_models(registry, refs)
 
 
-def validate_zen(build_dir: Path, snapshot_path: Path = DEFAULT_SNAPSHOT) -> list[str]:
-    """Validate build_dir/opencode.zen.json as a free-Zen-only config variant.
+#: Providers that count as paid: the OpenCode Go subscription and the user's
+#: xAI account. MDU-40 retires every free ``opencode/*`` row.
+PAID_PROVIDER_PREFIXES = ("opencode-go/", "xai/")
+#: Free-model tokens that must not appear anywhere in a shipped config, even in
+#: prose that ``find_model_refs`` never looks at (descriptions, notes).
+FREE_MODEL_TOKENS = re.compile(r"\bbig-pickle\b|[A-Za-z0-9][A-Za-z0-9._/-]*-free\b")
 
-    Checks (MDU-33 design D4.2):
-    (a) every agent model reference is in the free Zen allowlist and none is a
-        paid ``opencode-go/*`` model; MDU-42 exempts grok-named agents, whose
-        ``xai/*`` account models pass through untransformed by design;
-    (b) the raw file text contains no ``opencode-go/`` substring anywhere
-        (models *and* descriptions);
-    (c) agent-set parity with ``opencode.json``, and per-agent parity apart
-        from ``model`` and ``description`` (permissions, system ref, mode,
-        color, temperature, and any other keys);
-    (d) every other top-level key (``$schema``, ``default_agent``,
-        ``permissions``, ...) is identical to ``opencode.json``, which the
-        generator guarantees because it deep-copies the source config.
 
-    Schema conformance is checked separately by :func:`validate_schema` with
-    ``config_name="opencode.zen.json"``. Returns ``[]`` when the Zen file is
-    absent so a pre-MDU-33 build tree stays valid; :func:`main` turns absence
-    into an error when ``--variant zen`` is requested explicitly.
+def validate_paid_census(build_dir: Path) -> list[str]:
+    """Fail closed unless every agent in build_dir/opencode.json is paid (MDU-40).
+
+    (a) every agent model starts with ``opencode-go/`` or ``xai/`` — there is
+        no free tier left to fall back to;
+    (b) the raw file text carries neither ``big-pickle`` nor a ``*-free`` model
+        token, which catches description drift that a model scan would miss;
+    (c) ``default_agent`` is present and names a declared agent.
     """
-    errors: list[str] = []
-    zen_path = build_dir / "opencode.zen.json"
-    if not zen_path.is_file():
-        return errors
-
-    if not snapshot_path.is_file():
-        return [f"model registry snapshot not found: {snapshot_path}"]
-    free_models = free_zen_models(load_registry(snapshot_path))
-
-    for agent, model in find_model_refs(zen_path):
-        if model.startswith("opencode-go/"):
-            errors.append(
-                f"opencode.zen.json agent '{agent}' uses paid Go model '{model}'"
-            )
-        elif model.startswith("xai/"):
-            # MDU-42: xai/* models pass through untransformed by design — a
-            # model-family rule, not gated on the agent name (the hard rule
-            # below still pins grok-named agents to xai/*).
-            continue
-        elif model not in free_models:
-            errors.append(
-                f"opencode.zen.json agent '{agent}' uses non-free model '{model}' "
-                f"(not in {snapshot_path})"
-            )
-
-    if "opencode-go/" in zen_path.read_text(encoding="utf-8"):
-        errors.append(
-            "opencode.zen.json still contains 'opencode-go/' "
-            "(a model or description was not transformed)"
-        )
-
-    base_path = build_dir / "opencode.json"
-    if not base_path.is_file():
-        errors.append("missing opencode.json for opencode.zen.json parity check")
-        return errors
+    config_path = build_dir / "opencode.json"
+    if not config_path.is_file():
+        return ["missing opencode.json for paid-census check"]
     try:
-        base = load_json(base_path)
-        zen = load_json(zen_path)
+        config = load_json(config_path)
+        text = config_path.read_text(encoding="utf-8")
     except json.JSONDecodeError as exc:
-        return [f"invalid JSON in Zen variant config: {exc}"]
+        return [f"invalid JSON in opencode.json: {exc}"]
 
-    # MDU-42: the hard rule applies in the zen tier too — every grok-named
-    # agent in the zen config must still resolve to xai/*.
-    errors.extend(grok_xai_errors(zen.get("agents") or {}, label="opencode.zen.json"))
+    agents = config.get("agents")
+    if not isinstance(agents, dict) or not agents:
+        return ["opencode.json has no agents object (paid-only census)"]
 
-    base_agents = base.get("agents") or {}
-    zen_agents = zen.get("agents") or {}
-    for name in sorted(set(base_agents) - set(zen_agents)):
-        errors.append(
-            f"opencode.zen.json missing agent '{name}' present in opencode.json"
-        )
-    for name in sorted(set(zen_agents) - set(base_agents)):
-        errors.append(
-            f"opencode.zen.json has agent '{name}' absent from opencode.json"
-        )
-    for name in sorted(set(base_agents) & set(zen_agents)):
-        base_agent = base_agents[name]
-        zen_agent = zen_agents[name]
-        if not isinstance(base_agent, dict) or not isinstance(zen_agent, dict):
-            errors.append(f"agent '{name}' is not an object in both configs")
-            continue
-        base_cmp = {
-            key: value
-            for key, value in base_agent.items()
-            if key not in ("model", "description")
-        }
-        zen_cmp = {
-            key: value
-            for key, value in zen_agent.items()
-            if key not in ("model", "description")
-        }
-        if base_cmp != zen_cmp:
+    errors: list[str] = []
+    for agent, model in find_model_refs(config_path):
+        if not model.startswith(PAID_PROVIDER_PREFIXES):
             errors.append(
-                f"opencode.zen.json agent '{name}' differs from opencode.json "
-                "beyond model/description"
+                f"agent '{agent}' uses non-paid model '{model}' (paid-only census)"
             )
-    for key in sorted(set(base) | set(zen)):
-        if key == "agents":
-            continue
-        if base.get(key) != zen.get(key):
-            errors.append(
-                f"opencode.zen.json top-level key '{key}' differs from "
-                "opencode.json (the generator must copy it unchanged)"
-            )
+
+    for token in sorted(set(FREE_MODEL_TOKENS.findall(text))):
+        errors.append(
+            f"opencode.json still contains free-model token '{token}' "
+            "(paid-only census)"
+        )
+
+    default_agent = config.get("default_agent")
+    if default_agent is None:
+        errors.append("opencode.json has no default_agent (paid-only census)")
+    elif default_agent not in agents:
+        errors.append(
+            f"default_agent '{default_agent}' is not a declared agent "
+            "(paid-only census)"
+        )
     return errors
 
 
@@ -616,58 +561,23 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="print live model drift vs the registry snapshot (informational)",
     )
-    parser.add_argument(
-        "--variant",
-        choices=("go", "zen", "both"),
-        default="both",
-        help=(
-            "which OpenCode config variant to validate: 'go' (opencode.json), "
-            "'zen' (opencode.zen.json), or 'both' (default)"
-        ),
-    )
     args = parser.parse_args(argv)
 
     build_dir = Path(args.build_dir).resolve()
     print(f"==> Validating build output: {build_dir}")
 
-    variant = args.variant
-    base_checks = variant in ("go", "both")
-    zen_checks = variant in ("zen", "both")
-    zen_path = build_dir / "opencode.zen.json"
-    zen_present = zen_path.is_file()
-
     errors: list[str] = []
     schema_ran = False
-    zen_schema_ran = False
 
-    if base_checks:
-        errors.extend(validate_opencode(build_dir))
-        errors.extend(validate_grok_agents(build_dir))
-        errors.extend(validate_claude_agents(build_dir))
-        errors.extend(validate_skills(build_dir))
-        errors.extend(validate_parity(build_dir))
-        errors.extend(validate_model_refs(build_dir, DEFAULT_SNAPSHOT))
-        schema_errors, schema_ran = validate_schema(build_dir)
-        errors.extend(schema_errors)
-
-    if zen_checks:
-        if zen_present:
-            errors.extend(validate_zen(build_dir))
-            zen_schema_errors, zen_schema_ran = validate_schema(
-                build_dir, config_name="opencode.zen.json"
-            )
-            errors.extend(zen_schema_errors)
-        else:
-            if variant == "zen":
-                errors.append(
-                    "opencode.zen.json absent but --variant zen was requested "
-                    "(generate it with scripts/lib/gen_zen_config.py)"
-                )
-            else:
-                print(
-                    "  [info]  opencode.zen.json absent; "
-                    "skipping Zen variant checks"
-                )
+    errors.extend(validate_opencode(build_dir))
+    errors.extend(validate_grok_agents(build_dir))
+    errors.extend(validate_claude_agents(build_dir))
+    errors.extend(validate_skills(build_dir))
+    errors.extend(validate_parity(build_dir))
+    errors.extend(validate_model_refs(build_dir, DEFAULT_SNAPSHOT))
+    errors.extend(validate_paid_census(build_dir))
+    schema_errors, schema_ran = validate_schema(build_dir)
+    errors.extend(schema_errors)
 
     if errors:
         print("  [fail]  validation errors:")
@@ -675,43 +585,30 @@ def main(argv: list[str] | None = None) -> int:
             print(f"          - {err}")
         return 1
 
-    if base_checks:
-        agent_count = len(load_json(build_dir / "opencode.json").get("agents", {}))
-        grok_count = len(list((build_dir / "grok" / "agents").glob("*.md")))
-        claude_count = len(list((build_dir / "claude" / "agents").glob("*.md")))
-        print(f"  [ok]    opencode.json: {agent_count} agents, all prompt refs resolved")
-        if schema_ran:
-            print("  [ok]    opencode.json: conforms to schemas/opencode.schema.json")
-        print(f"  [ok]    grok/agents: {grok_count} profiles with valid frontmatter")
-        print(f"  [ok]    claude/agents: {claude_count} subagents with valid frontmatter")
-        parity_pairs = sum(
-            len(GROK_MIRRORS[stem])
-            for stem in GROK_MIRRORS
-            if (build_dir / "prompts" / f"{stem}.md").is_file()
-        )
-        print(f"  [ok]    parity: {parity_pairs} prompt↔grok pairs consistent")
-        skills_dir = build_dir / "skills"
-        skill_count = (
-            len(list(skills_dir.glob("*/SKILL.md"))) if skills_dir.is_dir() else 0
-        )
-        print(f"  [ok]    skills: {skill_count} valid skill(s)")
-        print(
-            f"  [ok]    model refs: all agent models present in registry "
-            f"({DEFAULT_SNAPSHOT})"
-        )
-
-    if zen_checks and zen_present:
-        zen_agent_count = len(load_json(zen_path).get("agents", {}))
-        print(
-            f"  [ok]    opencode.zen.json: {zen_agent_count} agents, "
-            "free Zen allowlist (xai/* pass through by design), "
-            "parity with opencode.json"
-        )
-        if zen_schema_ran:
-            print(
-                "  [ok]    opencode.zen.json: conforms to "
-                "schemas/opencode.schema.json"
-            )
+    agent_count = len(load_json(build_dir / "opencode.json").get("agents", {}))
+    grok_count = len(list((build_dir / "grok" / "agents").glob("*.md")))
+    claude_count = len(list((build_dir / "claude" / "agents").glob("*.md")))
+    print(f"  [ok]    opencode.json: {agent_count} agents, all prompt refs resolved")
+    if schema_ran:
+        print("  [ok]    opencode.json: conforms to schemas/opencode.schema.json")
+    print(f"  [ok]    grok/agents: {grok_count} profiles with valid frontmatter")
+    print(f"  [ok]    claude/agents: {claude_count} subagents with valid frontmatter")
+    parity_pairs = sum(
+        len(GROK_MIRRORS[stem])
+        for stem in GROK_MIRRORS
+        if (build_dir / "prompts" / f"{stem}.md").is_file()
+    )
+    print(f"  [ok]    parity: {parity_pairs} prompt↔grok pairs consistent")
+    skills_dir = build_dir / "skills"
+    skill_count = (
+        len(list(skills_dir.glob("*/SKILL.md"))) if skills_dir.is_dir() else 0
+    )
+    print(f"  [ok]    skills: {skill_count} valid skill(s)")
+    print(
+        f"  [ok]    model refs: all agent models present in registry "
+        f"({DEFAULT_SNAPSHOT})"
+    )
+    print(f"  [ok]    paid census: all {agent_count} agent models are paid")
 
     if args.live_models:
         print_live_drift(DEFAULT_SNAPSHOT)

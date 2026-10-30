@@ -16,49 +16,53 @@ This repository provides a **base layer** of agent definitions designed to be br
 
 ## Prerequisites
 
-### Model Tiers — Zen (default) / Go (switch-up)
+### Single paid configuration (MDU-40)
 
-The OpenCode agents ship as **two tiers generated from the same `opencode.json` source**:
+The OpenCode agents ship as **one canonical `opencode.json`**, and every agent
+runs on a paid model:
 
-| Tier | Config file | Models | Use it |
-| --- | --- | --- | --- |
-| **Zen (default)** | `build/opencode.zen.json` (generated) | Free Zen (`opencode/*`) | Default. No subscription required. |
-| **Go (switch-up)** | `opencode.json` | OpenCode Go (`opencode-go/*`) | When the period's Zen usage is exhausted, or a premium slot needs a stronger model. |
+- OpenCode agents → `opencode-go/*` (requires an active
+  [OpenCode Go subscription](https://opencode.ai/docs/go), $10/month);
+- grok-named agents → `xai/*` on your xAI account.
 
-`./build.sh` generates the Zen file from `opencode.json` with `scripts/lib/gen_zen_config.py` and the mapping table `config/zen-model-map.json`, then validates that no `opencode-go/*` reference survives. The mapping collapses Go budget/mid/premium slots onto the two proven free generalists (`opencode/big-pickle` and `opencode/nemotron-3.5-lightning-free`); premium slots are a **documented capability regression** and the primary reason to switch up. See [docs/model-registry.md](docs/model-registry.md#zen-variant-mapping-mdu-33) for the table, alternates, and per-agent overrides.
+There is no free-tier variant, no generated second config, and no tier flag.
+`./build.sh` stages `build/` and validates it (prompt refs, model registry, and
+a paid census that fails closed on any non-paid model or `*-free` name), so a
+free row cannot ship.
 
-**Install the default (Zen) tier:**
-
-```bash
-./deploy.sh --force                # same as --tier=zen
-```
-
-**Switch up to Go when Zen usage for the period is exhausted:**
+**Install:**
 
 ```bash
-./deploy.sh --force --tier=go      # then start a new session
+./deploy.sh --force                # single config → ~/.config/opencode/opencode.json
+./deploy.sh --force --rebuild      # rebuild then install
 ```
 
-Deploy always installs both tier files: the selected tier becomes `~/.config/opencode/opencode.json` (active), the other is parked beside it as `~/.config/opencode/opencode.zen.json` or `opencode.go.json` (inert — config discovery only reads `opencode.json`). Switch back at any time with `./deploy.sh --force --tier=zen`.
+`--tier=paid` is the default; `--tier=go` is accepted as a synonym. `--tier=zen`
+exits 2: the Zen tier was retired in MDU-40.
 
-> **Probe gate (MDU-38):** deploys are gated on a fresh live model-health probe report — `opencode models` can list a model as `active` after it has died. In this base repo the gate is advisory; the private overlay runs it hard and aborts on a dead mapped target. Refresh with `python3 scripts/lib/probe_models.py --refresh --gate`; `--skip-probe` bypasses the check knowingly. Probing is local-only and never runs in CI. See [docs/model-registry.md](docs/model-registry.md#live-model-health-probe-mdu-38).
+> **Probe gate (MDU-38):** deploys are gated on a fresh live model-health probe
+> report — `opencode models` can list a model as `active` after it has died. In
+> this base repo the gate is advisory; the private overlay runs it hard and
+> aborts on a dead target. Refresh with
+> `python3 scripts/lib/probe_models.py --refresh --gate --config build/opencode.json`;
+> `--skip-probe` bypasses the check knowingly. Probing is local-only and never
+> runs in CI. See [docs/model-registry.md](docs/model-registry.md#live-model-health-probe-mdu-38).
 
-**Switch without the repo (manual one-liner):**
+**Rollback:** a tier swap is gone; roll back with git and redeploy:
 
 ```bash
-cp ~/.config/opencode/opencode.zen.json ~/.config/opencode/opencode.json   # back to Zen
-cp ~/.config/opencode/opencode.go.json  ~/.config/opencode/opencode.json   # up to Go
+git revert <mdu-40-commit> && ./build.sh && ./deploy.sh --force
 ```
 
-Config is read at session start, so **start a new session** (or `opencode service restart`) after a swap. Prompt/skill deploys are tier-independent — both configs reference the same `./prompts/` tree.
+Config is read at session start, so **start a new session** (or
+`opencode service restart`) after deploying.
 
-> **Go subscription:** Go models (`opencode-go/deepseek-v4.1-flash`, `opencode-go/kimi-k2.7-code`, `opencode-go/glm-5.2`, `opencode-go/mimo-v2.5`) require an active [OpenCode Go subscription](https://opencode.ai/docs/go) ($10/month). The Zen tier needs no subscription.
-
-> **Overlay users:** this two-tier setup is built by the base repo's `build.sh`. The private overlay constructs its own `opencode.json` and must add the equivalent `gen_zen_config.py` call to its own build — see the overlay repo.
+> **Overlay users:** the private overlay builds its own `opencode.json` and runs
+> the base validator; it does not consume any generated tier file.
 
 ### Grok Build / Claude Code
 
-The Grok Build profiles and Claude Code subagents use their own model backends and are not affected by the tier setup — they work as long as you have the respective CLI installed.
+The Grok Build profiles and Claude Code subagents use their own model backends and are not affected by the OpenCode model configuration — they work as long as you have the respective CLI installed.
 
 ## Using These Agents As-Is
 
@@ -82,7 +86,7 @@ The Grok Build profiles and Claude Code subagents use their own model backends a
    ```
 
 This installs:
-- **OpenCode**: the selected tier as `opencode.json` plus the other tier parked as `opencode.zen.json`/`opencode.go.json`, and `prompts/` → `~/.config/opencode/`
+- **OpenCode**: `opencode.json` → `~/.config/opencode/opencode.json`, and `prompts/` → `~/.config/opencode/`
 - **Grok Build**: `grok/agents/*.md` → `~/.grok/agents/`
 - **Claude Code**: `claude/agents/*.md` → `~/.claude/agents/` (user-level subagents)
 
@@ -120,36 +124,28 @@ claude --agent just-code -p "Implement a small feature..."
 
 The agent definitions follow a **model tier variant** pattern — each role has multiple clones configured with different models so the orchestrator can spread token cost and choose the cheapest reliable model for each subtask. See [docs/model-registry.md](docs/model-registry.md) for the full model allowlist and verification dates.
 
-Grok-named agents (`grok-*`, `grokestrator`, `grok-plan`) must resolve to `xai/*` models in every tier/harness — enforced by the validator, the deploy-time grok-xai gate, and the model-health probe (see [docs/model-registry.md](docs/model-registry.md)).
+Grok-named agents (`grok-*`, `grokestrator`, `grok-plan`) must resolve to `xai/*` models in every harness — enforced by the validator, the deploy-time grok-xai gate, and the model-health probe (see [docs/model-registry.md](docs/model-registry.md)).
 
 ### OpenCode agents (defined in [`opencode.json`](opencode.json) and [`prompts/`](prompts/))
 
 | Role group | Agent | Prompt | Notes |
 | --- | --- | --- | --- |
-| Orchestrator | [`orchestrator`](prompts/orchestrator.md) | [prompts/orchestrator.md](prompts/orchestrator.md) | Primary coordinator (free Zen: big-pickle). MDU lifecycle, gates, ledger. |
-| Research | [`research`](prompts/research.md) | [prompts/research.md](prompts/research.md) | Quick web lookups (free). |
-|  | [`deepseek-research`](prompts/research.md) | [prompts/research.md](prompts/research.md) | Coding patterns, library docs (free). |
-|  | [`nemotron-research`](prompts/research.md) | [prompts/research.md](prompts/research.md) | Thorough doc research (free). |
-|  | [`deep-research`](prompts/research.md) | [prompts/research.md](prompts/research.md) | Comprehensive multi-source research (Go budget). |
+| Orchestrator | [`orchestrator`](prompts/orchestrator.md) | [prompts/orchestrator.md](prompts/orchestrator.md) | Primary coordinator (Go mid: mimo-v2.6-flash). MDU lifecycle, gates, ledger. |
+| Research | [`deep-research`](prompts/research.md) | [prompts/research.md](prompts/research.md) | Quick lookups and comprehensive multi-source research (Go budget). |
 | Coding | [`just-code`](prompts/just-code.md) | [prompts/just-code.md](prompts/just-code.md) | Default coder (Go budget). |
 |  | [`just-code-mid`](prompts/just-code.md) | [prompts/just-code.md](prompts/just-code.md) | Complex features needing deeper reasoning (Go mid). |
 |  | [`just-code-pro`](prompts/just-code.md) | [prompts/just-code.md](prompts/just-code.md) | Architecture-sensitive code, refactoring (Go premium). |
-|  | [`just-code-free`](prompts/just-code.md) | [prompts/just-code.md](prompts/just-code.md) | Boilerplate, simple changes (free). |
 | Testing | [`test-agent`](prompts/test-agent.md) | [prompts/test-agent.md](prompts/test-agent.md) | Default test writer (Go budget). |
 |  | [`test-agent-mid`](prompts/test-agent.md) | [prompts/test-agent.md](prompts/test-agent.md) | Complex test suites, property-based tests (Go mid). |
 |  | [`test-agent-pro`](prompts/test-agent.md) | [prompts/test-agent.md](prompts/test-agent.md) | Security tests, deep coverage (Go premium). |
-|  | [`test-agent-free`](prompts/test-agent.md) | [prompts/test-agent.md](prompts/test-agent.md) | Simple unit tests (free). |
 | Code Review | [`code-reviewer`](prompts/code-reviewer.md) | [prompts/code-reviewer.md](prompts/code-reviewer.md) | Standard review (Go mid). |
 |  | [`code-reviewer-pro`](prompts/code-reviewer.md) | [prompts/code-reviewer.md](prompts/code-reviewer.md) | Deep security audit, architecture review (Go premium). |
-|  | [`code-reviewer-free`](prompts/code-reviewer.md) | [prompts/code-reviewer.md](prompts/code-reviewer.md) | Quick lint/style check (free). |
 | Architecture | [`architect`](prompts/architect.md) | [prompts/architect.md](prompts/architect.md) | Design docs, API specs (Go premium). |
 |  | [`architect-premium`](prompts/architect.md) | [prompts/architect.md](prompts/architect.md) | Complex system design, ADRs (Go premium). |
 | DevOps | [`devops`](prompts/devops.md) | [prompts/devops.md](prompts/devops.md) | Standard deploys, Docker, CI/CD (Go mid). |
 |  | [`devops-pro`](prompts/devops.md) | [prompts/devops.md](prompts/devops.md) | Complex multi-service deploys, IaC (Go premium). |
-|  | [`devops-free`](prompts/devops.md) | [prompts/devops.md](prompts/devops.md) | Simple config changes (free). |
 | QA | [`qa`](prompts/qa.md) | [prompts/qa.md](prompts/qa.md) | Standard validation (Go mid). |
 |  | [`qa-pro`](prompts/qa.md) | [prompts/qa.md](prompts/qa.md) | Thorough regression, edge case validation (Go premium). |
-|  | [`qa-free`](prompts/qa.md) | [prompts/qa.md](prompts/qa.md) | Basic smoke tests (free). |
 | UI/UX Design | [`ui-ux-designer`](prompts/ui-ux-designer.md) | [prompts/ui-ux-designer.md](prompts/ui-ux-designer.md) | Standard design work (Go mid). |
 |  | [`ui-ux-designer-pro`](prompts/ui-ux-designer.md) | [prompts/ui-ux-designer.md](prompts/ui-ux-designer.md) | Polished production UI, design systems (Go premium). |
 | Introspection | [`introspector`](prompts/introspector.md) | [prompts/introspector.md](prompts/introspector.md) | Post-MDU session introspection (Go mid). |
@@ -474,7 +470,7 @@ base_agents/                   # this public repo
 │   └── opencode.schema.json   # JSON Schema for opencode.json
 ├── config/
 │   └── model-registry.txt     # Model allowlist (pinned)
-├── opencode.json              # OpenCode agent registry (28 agents across model tiers)
+├── opencode.json              # OpenCode agent registry (20 agents, all paid)
 ├── prompts/                   # OpenCode prompt bodies (canonical system prompts) — 11 files
 │   ├── orchestrator.md
 │   ├── just-code.md

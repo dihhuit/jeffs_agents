@@ -28,7 +28,7 @@ def _write_snapshot(tmp_path: Path, *models: str) -> Path:
 def _minimal_build(
     tmp_path: Path,
     *,
-    agent_model: str = "model-a",
+    agent_model: str = "opencode-go/model-a",
     prompt: str = "You are a test agent.",
 ) -> Path:
     """Create a build dir that passes all validate.py checks."""
@@ -40,6 +40,7 @@ def _minimal_build(
     (build / "opencode.json").write_text(
         json.dumps(
             {
+                "default_agent": "test-agent",
                 "agents": {
                     "test-agent": {
                         "mode": "subagent",
@@ -80,14 +81,14 @@ def _minimal_build(
 # ---------------------------------------------------------------------------
 
 def test_validate_model_refs_all_valid(tmp_path: Path) -> None:
-    build = _minimal_build(tmp_path, agent_model="model-a")
-    snapshot = _write_snapshot(tmp_path, "model-a")
+    build = _minimal_build(tmp_path, agent_model="opencode-go/model-a")
+    snapshot = _write_snapshot(tmp_path, "opencode-go/model-a")
     assert validate.validate_model_refs(build, snapshot) == []
 
 
 def test_validate_model_refs_stale_model(tmp_path: Path) -> None:
-    build = _minimal_build(tmp_path, agent_model="model-ghost")
-    snapshot = _write_snapshot(tmp_path, "model-a")
+    build = _minimal_build(tmp_path, agent_model="opencode-go/model-ghost")
+    snapshot = _write_snapshot(tmp_path, "opencode-go/model-a")
     errors = validate.validate_model_refs(build, snapshot)
     assert len(errors) == 1
     assert "model-ghost" in errors[0]
@@ -97,13 +98,13 @@ def test_validate_model_refs_stale_model(tmp_path: Path) -> None:
 def test_validate_model_refs_missing_opencode_json(tmp_path: Path) -> None:
     build = tmp_path / "empty-build"
     build.mkdir()
-    snapshot = _write_snapshot(tmp_path, "model-a")
+    snapshot = _write_snapshot(tmp_path, "opencode-go/model-a")
     errors = validate.validate_model_refs(build, snapshot)
     assert errors == ["missing opencode.json for model registry check"]
 
 
 def test_validate_model_refs_missing_snapshot(tmp_path: Path) -> None:
-    build = _minimal_build(tmp_path, agent_model="model-a")
+    build = _minimal_build(tmp_path, agent_model="opencode-go/model-a")
     errors = validate.validate_model_refs(build, tmp_path / "missing-registry.txt")
     assert len(errors) == 1
     assert "model registry snapshot not found" in errors[0]
@@ -114,7 +115,7 @@ def test_validate_model_refs_missing_snapshot(tmp_path: Path) -> None:
 # ---------------------------------------------------------------------------
 
 def test_print_live_drift_cli_unavailable(tmp_path: Path, capsys: pytest.CaptureFixture, monkeypatch: pytest.MonkeyPatch) -> None:
-    snapshot = _write_snapshot(tmp_path, "model-a")
+    snapshot = _write_snapshot(tmp_path, "opencode-go/model-a")
     monkeypatch.setattr(model_registry.shutil, "which", lambda name: None)
     validate.print_live_drift(snapshot)
     out = capsys.readouterr().out
@@ -144,8 +145,8 @@ def test_print_live_drift_prints_drift(tmp_path: Path, capsys: pytest.CaptureFix
 def test_validate_main_live_models_passes(
     tmp_path: Path, capsys: pytest.CaptureFixture, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    build = _minimal_build(tmp_path, agent_model="model-a")
-    snapshot = _write_snapshot(tmp_path, "model-a")
+    build = _minimal_build(tmp_path, agent_model="opencode-go/model-a")
+    snapshot = _write_snapshot(tmp_path, "opencode-go/model-a")
     monkeypatch.setattr(validate, "DEFAULT_SNAPSHOT", snapshot)
     monkeypatch.setattr(model_registry.shutil, "which", lambda name: None)
 
@@ -160,8 +161,8 @@ def test_validate_main_live_models_passes(
 def test_validate_main_fails_on_stale_model(
     tmp_path: Path, capsys: pytest.CaptureFixture, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    build = _minimal_build(tmp_path, agent_model="model-ghost")
-    snapshot = _write_snapshot(tmp_path, "model-a")
+    build = _minimal_build(tmp_path, agent_model="opencode-go/model-ghost")
+    snapshot = _write_snapshot(tmp_path, "opencode-go/model-a")
     monkeypatch.setattr(validate, "DEFAULT_SNAPSHOT", snapshot)
 
     code = validate.main([str(build)])

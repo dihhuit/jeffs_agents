@@ -164,10 +164,8 @@ INTROSPECTOR_SHELL_RUN = (
 AGENT_SHELL_RUNS = {
     "code-reviewer": REVIEWER_SHELL_RUN,
     "code-reviewer-pro": REVIEWER_SHELL_RUN,
-    "code-reviewer-free": REVIEWER_SHELL_RUN,
     "qa": QA_SHELL_RUN,
     "qa-pro": QA_SHELL_RUN,
-    "qa-free": QA_SHELL_RUN,
     "introspector": INTROSPECTOR_SHELL_RUN,
 }
 
@@ -182,7 +180,7 @@ REVIEWER_NON_SHELL = [
     ("webfetch", "*", DENY),
     ("websearch", "*", DENY),
     ("todowrite", "*", DENY),
-    ("subagent", "research", ALLOW),
+    ("subagent", "deep-research", ALLOW),
     ("subagent", "*", DENY),
 ]
 
@@ -219,10 +217,8 @@ INTROSPECTOR_NON_SHELL = [
 AGENT_NON_SHELL = {
     "code-reviewer": REVIEWER_NON_SHELL,
     "code-reviewer-pro": REVIEWER_NON_SHELL,
-    "code-reviewer-free": REVIEWER_NON_SHELL,
     "qa": QA_NON_SHELL,
     "qa-pro": QA_NON_SHELL,
-    "qa-free": QA_NON_SHELL,
     "introspector": INTROSPECTOR_NON_SHELL,
 }
 
@@ -304,10 +300,8 @@ INTROSPECTOR_GREENS = [
 GREEN_MATRIX = {
     "qa": QA_GREENS,
     "qa-pro": QA_GREENS,
-    "qa-free": QA_GREENS,
     "code-reviewer": REVIEWER_GREENS,
     "code-reviewer-pro": REVIEWER_GREENS,
-    "code-reviewer-free": REVIEWER_GREENS,
     "introspector": INTROSPECTOR_GREENS,
 }
 
@@ -452,11 +446,11 @@ def test_non_shell_rules_unchanged(agent: str) -> None:
     assert _non_shell(_load_permissions()[agent]) == AGENT_NON_SHELL[agent]
 
 
-def test_subagent_research_allow_still_precedes_deny_star() -> None:
+def test_subagent_deep_research_allow_still_precedes_deny_star() -> None:
     perms = _load_permissions()
-    for agent in ("code-reviewer", "code-reviewer-pro", "code-reviewer-free"):
+    for agent in ("code-reviewer", "code-reviewer-pro"):
         pairs = [(r["resource"], r["effect"]) for r in perms[agent] if r["action"] == "subagent"]
-        assert pairs == [("research", ALLOW), ("*", DENY)]
+        assert pairs == [("deep-research", ALLOW), ("*", DENY)]
 
 
 # ---------------------------------------------------------------------------
@@ -503,7 +497,7 @@ def test_null_sink_exception_is_not_a_general_write_launderer(agent: str) -> Non
 
 @pytest.mark.parametrize(
     "agent",
-    ["qa", "qa-pro", "qa-free", "code-reviewer", "code-reviewer-pro", "code-reviewer-free"],
+    ["qa", "qa-pro", "code-reviewer", "code-reviewer-pro"],
 )
 def test_inline_python_guard_blocks_the_timeout_prefix(agent: str) -> None:
     """`*python* -c*` is only load-bearing under a broad allow.

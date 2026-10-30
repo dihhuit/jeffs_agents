@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 """MDU-38 tests: live model-health probe, report semantics, and gate wiring.
 
+Rebaselined for MDU-40: the config is the single source of truth (no map, no
+alternates), every model in ``opencode.json`` is a hard target, and the report
+carries ``config_sha256`` over the sorted ``agent=model`` pairs.
+
 Inference is stubbed through the injected ``runner`` (no subprocesses, no
 network), and the deploy wiring is asserted by reading the shell scripts — the
-same convention as ``test_mdu_30`` / ``test_mdu_33``.
+same convention as ``test_mdu_30``.
 """
 
 from __future__ import annotations
@@ -26,15 +30,18 @@ DOC = REPO / "docs" / "model-registry.md"
 README = REPO / "README.md"
 CI = REPO / ".github" / "workflows" / "ci.yml"
 
-#: Small map so refresh tests probe a handful of models (not the real seven).
-MAP = {
-    "version": 1,
-    "models": {"opencode-go/deepseek-v4.1-flash": "opencode/big-pickle"},
-    "overrides": {},
-    "alternates": ["opencode/beam-free"],
+#: Small config so refresh tests probe a handful of models (not the real set).
+CONFIG = {
+    "default_agent": "orchestrator",
+    "agents": {
+        "orchestrator": {"model": "opencode-go/mimo-v2.5"},
+        "research": {"model": "opencode-go/deep-research"},
+        "grok": {"model": "xai/grok-4.7"},
+    },
 }
-TARGET = "opencode/big-pickle"
-ALTERNATE = "opencode/beam-free"
+TARGET = "opencode-go/mimo-v2.5"
+SECOND = "opencode-go/deep-research"
+XAI = "xai/grok-4.7"
 
 
 @pytest.fixture(autouse=True)
@@ -48,9 +55,11 @@ def _opencode_on_path(monkeypatch: pytest.MonkeyPatch) -> None:
 # helpers
 # ---------------------------------------------------------------------------
 
-def _write_map(tmp_path: Path, mapping: dict | None = None, *, indent: int = 2) -> Path:
-    path = tmp_path / "zen-model-map.json"
-    path.write_text(json.dumps(mapping or MAP, indent=indent), encoding="utf-8")
+def _write_config(
+    tmp_path: Path, config: dict | None = None, *, indent: int = 2
+) -> Path:
+    path = tmp_path / "opencode.json"
+    path.write_text(json.dumps(config or CONFIG, indent=indent), encoding="utf-8")
     return path
 
 
@@ -70,36 +79,45 @@ def _entry(model: str, role: str, status: str, error: str | None = None) -> dict
     }
 
 
-def _entries(mapping: dict | None = None, statuses: dict | None = None) -> list[dict]:
+def _entries(config_path: Path, statuses: dict | None = None) -> list[dict]:
     statuses = statuses or {}
-    targets, alternates = probe_models.probe_set(mapping or MAP)
+    models = probe_models.collect_models(config_path).get("opencode-go", [])
     return [
-        _entry(model, "target", statuses.get(model, "ok")) for model in targets
-    ] + [_entry(model, "alternate", statuses.get(model, "ok")) for model in alternates]
+        _entry(model, "target", statuses.get(model, "ok")) for model in models
+    ]
+
+
+def _xai_entries(config_path: Path, statuses: dict | None = None) -> list[dict]:
+    statuses = statuses or {}
+    models = probe_models.collect_models(config_path).get("xai", [])
+    return [_entry(model, "xai", statuses.get(model, "ok")) for model in models]
 
 
 def _report(
-    mapping: dict | None = None,
+    config_path: Path,
     *,
     results: list[dict] | None = None,
+    xai_results: list[dict] | None = None,
     probed_at: str | None = None,
-    map_sha256: str | None = None,
+    config_sha: str | None = None,
     schema_version: int = probe_models.SCHEMA_VERSION,
 ) -> dict:
-    mapping = mapping or MAP
     return {
         "schema_version": schema_version,
         "probed_at": probed_at or _stamp(),
         "mode": "refresh",
         "cli": "opencode",
         "timeout_s": 90,
-        "map_path": "config/zen-model-map.json",
-        "map_sha256": (
-            map_sha256
-            if map_sha256 is not None
-            else probe_models.canonical_map_sha256(mapping)
+        "config_path": probe_models._portable_path(config_path),
+        "config_sha256": (
+            config_sha
+            if config_sha is not None
+            else probe_models.config_sha256(config_path)
         ),
-        "results": results if results is not None else _entries(mapping),
+        "results": results if results is not None else _entries(config_path),
+        "xai_results": (
+            xai_results if xai_results is not None else _xai_entries(config_path)
+        ),
     }
 
 
@@ -122,31 +140,34 @@ def _runner(
 
 def _gate(
     tmp_path: Path,
-    mapping: dict | None = None,
+    config_path: Path | None = None,
     *,
     report: dict | str | None = None,
     max_age_days: int = 7,
-    config: dict | None = None,
 ) -> int:
-    map_path = _write_map(tmp_path, mapping)
+    config_path = config_path or _write_config(tmp_path)
     report_path = tmp_path / "model-probe-report.json"
     if report is not None:
         text = report if isinstance(report, str) else json.dumps(report)
         report_path.write_text(text, encoding="utf-8")
-    argv = ["--gate", "--map", str(map_path), "--report", str(report_path)]
+    argv = [
+        "--gate",
+        "--config",
+        str(config_path),
+        "--report",
+        str(report_path),
+    ]
     if max_age_days != 7:
         argv += ["--max-age-days", str(max_age_days)]
-    if config is not None:
-        config_path = tmp_path / "opencode.json"
-        config_path.write_text(json.dumps(config), encoding="utf-8")
-        argv += ["--config", str(config_path)]
     return probe_models.main(argv)
 
 
-def _refresh(tmp_path: Path, runner, **kwargs) -> tuple[int, Path]:
-    map_path = _write_map(tmp_path)
+def _refresh(
+    tmp_path: Path, runner, config_path: Path | None = None, **kwargs
+) -> tuple[int, Path]:
+    config_path = config_path or _write_config(tmp_path)
     report_path = tmp_path / "model-probe-report.json"
-    argv = ["--refresh", "--map", str(map_path), "--report", str(report_path)]
+    argv = ["--refresh", "--config", str(config_path), "--report", str(report_path)]
     return probe_models.main(argv, runner=runner), report_path
 
 
@@ -256,14 +277,19 @@ def test_refresh_writes_the_documented_report_shape(tmp_path: Path) -> None:
         "mode",
         "cli",
         "timeout_s",
-        "map_path",
-        "map_sha256",
+        "config_path",
+        "config_sha256",
         "results",
+        "xai_results",
     }
     assert report["schema_version"] == probe_models.SCHEMA_VERSION
     assert re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", report["probed_at"])
-    assert report["map_sha256"] == probe_models.canonical_map_sha256(MAP)
-    assert [r["model"] for r in report["results"]] == [TARGET, ALTERNATE]
+    assert report["config_sha256"] == probe_models.config_sha256(
+        tmp_path / "opencode.json"
+    )
+    # collect_models sorts: deep-research < mimo-v2.5.
+    assert [r["model"] for r in report["results"]] == [SECOND, TARGET]
+    assert [r["model"] for r in report["xai_results"]] == [XAI]
     assert set(report["results"][0]) == {
         "model",
         "role",
@@ -292,19 +318,45 @@ def test_refresh_without_cli_exits_two_and_writes_no_report(
     assert not report_path.exists()
 
 
-def test_map_hash_is_indentation_and_key_order_insensitive(tmp_path: Path) -> None:
-    first = _write_map(tmp_path, indent=2)
+def test_config_hash_is_indentation_and_key_order_insensitive(tmp_path: Path) -> None:
+    first = _write_config(tmp_path, indent=2)
     reordered = {
-        "alternates": MAP["alternates"],
-        "overrides": {},
-        "models": MAP["models"],
-        "version": 1,
+        "agents": {
+            "grok": {"model": "xai/grok-4.7"},
+            "research": {"model": "opencode-go/deep-research"},
+            "orchestrator": {"model": "opencode-go/mimo-v2.5"},
+        },
+        "default_agent": "orchestrator",
     }
     second = tmp_path / "reindented.json"
     second.write_text(json.dumps(reordered, indent=8), encoding="utf-8")
-    assert probe_models.canonical_map_sha256(
-        probe_models.load_map(first)
-    ) == probe_models.canonical_map_sha256(probe_models.load_map(second))
+    assert probe_models.config_sha256(first) == probe_models.config_sha256(second)
+
+
+def test_config_hash_changes_when_a_model_is_remapped(tmp_path: Path) -> None:
+    first = _write_config(tmp_path)
+    remapped = json.loads(json.dumps(CONFIG))
+    remapped["agents"]["orchestrator"]["model"] = "opencode-go/glm-5.2"
+    second = tmp_path / "remapped.json"
+    second.write_text(json.dumps(remapped), encoding="utf-8")
+    assert probe_models.config_sha256(first) != probe_models.config_sha256(second)
+
+
+def test_collect_models_groups_by_provider_and_dedupes(tmp_path: Path) -> None:
+    config = {
+        "agents": {
+            "a": {"model": "opencode-go/mimo-v2.5"},
+            "b": {"model": "opencode-go/mimo-v2.5"},
+            "c": {"model": "xai/grok-4.7"},
+            "d": {"model": "no-slash"},
+        }
+    }
+    path = tmp_path / "opencode.json"
+    path.write_text(json.dumps(config), encoding="utf-8")
+    assert probe_models.collect_models(path) == {
+        "opencode-go": ["opencode-go/mimo-v2.5"],
+        "xai": ["xai/grok-4.7"],
+    }
 
 
 def test_max_runtime_exhaustion_marks_the_remainder_skipped() -> None:
@@ -328,18 +380,22 @@ def test_max_runtime_exhaustion_marks_the_remainder_skipped() -> None:
 # 3. --gate: green path, hard rules, warn-only rules, exit codes
 # ---------------------------------------------------------------------------
 
-def test_gate_is_green_with_all_targets_and_alternates_ok(
+def test_gate_is_green_with_every_target_ok(
     tmp_path: Path, capsys: pytest.CaptureFixture
 ) -> None:
-    assert _gate(tmp_path, report=_report()) == 0
+    config_path = _write_config(tmp_path)
+    assert _gate(tmp_path, config_path, report=_report(config_path)) == 0
     assert "gate green" in capsys.readouterr().out
 
 
 def test_gate_red_on_failed_target_and_names_it(
     tmp_path: Path, capsys: pytest.CaptureFixture
 ) -> None:
-    report = _report(results=_entries(statuses={TARGET: "fail"}))
-    assert _gate(tmp_path, report=report) == 1
+    config_path = _write_config(tmp_path)
+    report = _report(
+        config_path, results=_entries(config_path, statuses={TARGET: "fail"})
+    )
+    assert _gate(tmp_path, config_path, report=report) == 1
     assert TARGET in capsys.readouterr().err
 
 
@@ -347,26 +403,46 @@ def test_gate_red_on_failed_target_and_names_it(
 def test_gate_red_when_a_target_is_not_ok(
     tmp_path: Path, status: str, capsys: pytest.CaptureFixture
 ) -> None:
+    config_path = _write_config(tmp_path)
     if status == "missing":
-        results = [e for e in _entries() if e["model"] != TARGET]
+        results = [e for e in _entries(config_path) if e["model"] != TARGET]
     else:
-        results = _entries(statuses={TARGET: "skipped"})
-    assert _gate(tmp_path, report=_report(results=results)) == 1
+        results = _entries(config_path, statuses={TARGET: "skipped"})
+    report = _report(config_path, results=results)
+    assert _gate(tmp_path, config_path, report=report) == 1
     assert TARGET in capsys.readouterr().err
 
 
-def test_gate_alternate_failure_warns_only(
+def test_gate_red_when_an_xai_target_fails_or_is_missing(
     tmp_path: Path, capsys: pytest.CaptureFixture
 ) -> None:
-    report = _report(results=_entries(statuses={ALTERNATE: "fail"}))
-    assert _gate(tmp_path, report=report) == 0
-    assert ALTERNATE in capsys.readouterr().err
+    config_path = _write_config(tmp_path)
+    failed = _report(
+        config_path, xai_results=_xai_entries(config_path, statuses={XAI: "fail"})
+    )
+    assert _gate(tmp_path, config_path, report=failed) == 1
+    assert XAI in capsys.readouterr().err
+
+    missing = _report(config_path, xai_results=[])
+    assert _gate(tmp_path, config_path, report=missing) == 1
+    assert XAI in capsys.readouterr().err
+
+
+def test_gate_red_when_the_report_has_no_xai_results_section(
+    tmp_path: Path, capsys: pytest.CaptureFixture
+) -> None:
+    config_path = _write_config(tmp_path)
+    report = _report(config_path)
+    report.pop("xai_results")
+    assert _gate(tmp_path, config_path, report=report) == 1
+    assert "no xai_results section" in capsys.readouterr().err
 
 
 def test_gate_missing_report_is_red_with_the_bootstrap_hint(
     tmp_path: Path, capsys: pytest.CaptureFixture
 ) -> None:
-    assert _gate(tmp_path, report=None) == 1
+    config_path = _write_config(tmp_path)
+    assert _gate(tmp_path, config_path, report=None) == 1
     err = capsys.readouterr().err
     assert "report missing" in err
     assert "--refresh --gate" in err
@@ -375,18 +451,20 @@ def test_gate_missing_report_is_red_with_the_bootstrap_hint(
 def test_gate_stale_report_is_red_unless_age_rule_disabled(
     tmp_path: Path, capsys: pytest.CaptureFixture
 ) -> None:
-    report = _report(probed_at=_stamp(days=-8))
-    assert _gate(tmp_path, report=report) == 1
+    config_path = _write_config(tmp_path)
+    report = _report(config_path, probed_at=_stamp(days=-8))
+    assert _gate(tmp_path, config_path, report=report) == 1
     assert "stale" in capsys.readouterr().err
-    assert _gate(tmp_path, report=report, max_age_days=0) == 0
+    assert _gate(tmp_path, config_path, report=report, max_age_days=0) == 0
 
 
-def test_gate_red_when_the_map_changed_since_the_probe(
+def test_gate_red_when_the_config_changed_since_the_probe(
     tmp_path: Path, capsys: pytest.CaptureFixture
 ) -> None:
-    report = _report(map_sha256="0" * 64)
-    assert _gate(tmp_path, report=report) == 1
-    assert "map changed since last probe" in capsys.readouterr().err
+    config_path = _write_config(tmp_path)
+    report = _report(config_path, config_sha="0" * 64)
+    assert _gate(tmp_path, config_path, report=report) == 1
+    assert "config changed since last probe" in capsys.readouterr().err
 
 
 def test_max_runtime_budget_lands_in_the_report_as_skipped(
@@ -400,7 +478,7 @@ def test_max_runtime_budget_lands_in_the_report_as_skipped(
         clock[0] += 100.0  # burn more than the whole budget on the first model
         return SimpleNamespace(returncode=0, stdout="OK\n", stderr="")
 
-    map_path = _write_map(tmp_path)
+    config_path = _write_config(tmp_path)
     report_path = tmp_path / "model-probe-report.json"
     argv = [
         "--refresh",
@@ -409,46 +487,51 @@ def test_max_runtime_budget_lands_in_the_report_as_skipped(
         "5",
         "--max-workers",
         "1",
-        "--map",
-        str(map_path),
+        "--config",
+        str(config_path),
         "--report",
         str(report_path),
     ]
     exit_code = probe_models.main(argv, runner=slow)
     report = json.loads(report_path.read_text(encoding="utf-8"))
     by_model = {r["model"]: r for r in report["results"]}
-    assert by_model[TARGET]["status"] == "ok"
-    assert by_model[ALTERNATE]["status"] == "skipped"
-    assert by_model[ALTERNATE]["attempts"] == 0
-    # A skipped *alternate* warns only, so the refresh+gate stays green.
-    assert exit_code == 0
+    assert by_model[SECOND]["status"] == "ok"
+    assert by_model[TARGET]["status"] == "skipped"
+    assert by_model[TARGET]["attempts"] == 0
+    # A skipped target is a hard offence: the refresh+gate goes red.
+    assert exit_code == 1
     assert "skipped" in capsys.readouterr().err
 
 
 def test_gate_red_on_malformed_report(
     tmp_path: Path, capsys: pytest.CaptureFixture
 ) -> None:
-    assert _gate(tmp_path, report="{not json") == 1
+    config_path = _write_config(tmp_path)
+    assert _gate(tmp_path, config_path, report="{not json") == 1
     assert "report unreadable" in capsys.readouterr().err
 
 
 def test_gate_red_on_schema_version_mismatch(
     tmp_path: Path, capsys: pytest.CaptureFixture
 ) -> None:
-    report = _report(schema_version=probe_models.SCHEMA_VERSION + 1)
-    assert _gate(tmp_path, report=report) == 1
+    config_path = _write_config(tmp_path)
+    report = _report(
+        config_path, schema_version=probe_models.SCHEMA_VERSION + 1
+    )
+    assert _gate(tmp_path, config_path, report=report) == 1
     assert "schema_version" in capsys.readouterr().err
 
 
 def test_gate_red_when_a_target_has_duplicate_non_ok_results(
     tmp_path: Path, capsys: pytest.CaptureFixture
 ) -> None:
+    config_path = _write_config(tmp_path)
     results = [
         _entry(TARGET, "target", "fail", error="timeout after 90s"),
         _entry(TARGET, "target", "fail", error="Model is unavailable"),
-        _entry(ALTERNATE, "alternate", "ok"),
+        _entry(SECOND, "target", "ok"),
     ]
-    assert _gate(tmp_path, report=_report(results=results)) == 1
+    assert _gate(tmp_path, config_path, report=_report(config_path, results=results)) == 1
     err = capsys.readouterr().err
     assert "need exactly one ok" in err
     assert TARGET in err
@@ -457,20 +540,22 @@ def test_gate_red_when_a_target_has_duplicate_non_ok_results(
 def test_gate_red_on_future_probed_at(
     tmp_path: Path, capsys: pytest.CaptureFixture
 ) -> None:
-    report = _report(probed_at=_stamp(hours=2))
-    assert _gate(tmp_path, report=report) == 1
+    config_path = _write_config(tmp_path)
+    report = _report(config_path, probed_at=_stamp(hours=2))
+    assert _gate(tmp_path, config_path, report=report) == 1
     assert "future" in capsys.readouterr().err
 
 
 def test_gate_exits_two_without_a_cli(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
 ) -> None:
+    config_path = _write_config(tmp_path)
     monkeypatch.setattr(probe_models.shutil, "which", lambda _cli: None)
-    assert _gate(tmp_path, report=_report()) == 2
+    assert _gate(tmp_path, config_path, report=_report(config_path)) == 2
     assert "CLI not on PATH" in capsys.readouterr().err
 
 
-def test_gate_config_refs_outside_the_report_warn_only(
+def test_gate_config_refs_outside_the_paid_set_warn_only(
     tmp_path: Path, capsys: pytest.CaptureFixture
 ) -> None:
     config = {
@@ -479,7 +564,9 @@ def test_gate_config_refs_outside_the_report_warn_only(
             "paid": {"model": "opencode-go/glm-5.2"},
         }
     }
-    assert _gate(tmp_path, report=_report(), config=config) == 0
+    config_path = _write_config(tmp_path, config)
+    report = _report(config_path, xai_results=[])
+    assert _gate(tmp_path, config_path, report=report) == 0
     err = capsys.readouterr().err
     assert "opencode/flint-40b-free" in err
     assert "opencode-go/glm-5.2" not in err
@@ -490,14 +577,14 @@ def test_gate_config_refs_outside_the_report_warn_only(
 # ---------------------------------------------------------------------------
 
 def test_refresh_then_gate_fails_closed_on_a_dead_target(tmp_path: Path) -> None:
-    map_path = _write_map(tmp_path)
+    config_path = _write_config(tmp_path)
     report_path = tmp_path / "model-probe-report.json"
     exit_code = probe_models.main(
         [
             "--refresh",
             "--gate",
-            "--map",
-            str(map_path),
+            "--config",
+            str(config_path),
             "--report",
             str(report_path),
         ],
@@ -507,6 +594,66 @@ def test_refresh_then_gate_fails_closed_on_a_dead_target(tmp_path: Path) -> None
     report = json.loads(report_path.read_text(encoding="utf-8"))
     target = next(r for r in report["results"] if r["model"] == TARGET)
     assert target["status"] == "fail"
+
+
+# ---------------------------------------------------------------------------
+# 4b. MDU-40 fix-cycle regression pins
+# ---------------------------------------------------------------------------
+
+def test_main_rejects_the_retired_map_argument(capsys: pytest.CaptureFixture) -> None:
+    """The zen map is retired: --map is an unknown argument and exits 2."""
+    with pytest.raises(SystemExit) as exc:
+        probe_models.main(["--map", "x", "--refresh"])
+    assert exc.value.code == 2
+    assert "--map" in capsys.readouterr().err
+
+
+def test_include_xai_is_an_accepted_no_op(
+    tmp_path: Path, capsys: pytest.CaptureFixture
+) -> None:
+    """--include-xai survives for older callers, but xai is always probed."""
+    config_path = _write_config(tmp_path)
+    report_path = tmp_path / "model-probe-report.json"
+    report_path.write_text(json.dumps(_report(config_path)), encoding="utf-8")
+    exit_code = probe_models.main(
+        [
+            "--gate",
+            "--include-xai",
+            "--config",
+            str(config_path),
+            "--report",
+            str(report_path),
+        ]
+    )
+    assert exit_code == 0
+    captured = capsys.readouterr()
+    assert "gate green" in captured.out
+    assert "--include-xai" not in captured.err
+
+
+def test_xai_seeding_populates_results_and_is_graded(
+    tmp_path: Path, capsys: pytest.CaptureFixture
+) -> None:
+    """A config with an xai/* row refreshes xai_results and the gate grades it."""
+    config_path = _write_config(tmp_path)
+    report_path = tmp_path / "model-probe-report.json"
+    exit_code = probe_models.main(
+        [
+            "--refresh",
+            "--gate",
+            "--config",
+            str(config_path),
+            "--report",
+            str(report_path),
+        ],
+        runner=_runner(failing={XAI}),
+    )
+    assert exit_code == 1
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert [entry["model"] for entry in report["xai_results"]] == [XAI]
+    assert report["xai_results"][0]["role"] == "xai"
+    assert report["xai_results"][0]["status"] == "fail"
+    assert XAI in capsys.readouterr().err
 
 
 # ---------------------------------------------------------------------------
@@ -523,10 +670,8 @@ def test_overlay_deploy_orders_probe_then_grok_xai_gate_before_any_copy() -> Non
     assert "--skip-probe" in text
     assert "config/model-probe-report.json" in text
     # Hard gate, escaping only through --skip-probe; dry runs warn.
-    assert 'refusing to install' in text
+    assert "refusing to install" in text
     assert "dry run continues" in text
-    # Documented deploy order in main(): build → probe → grok-xai gate → copy
-    # (MDU-42 pins the grok-xai gate between the probe and the first copy).
     assert "run_probe_gate\n  run_grok_xai_gate\n  deploy_opencode_json" in text
 
 
@@ -539,7 +684,7 @@ def test_base_deploy_gate_is_advisory() -> None:
     assert "refusing to install" not in text
 
 
-def test_model_registry_doc_documents_probe_and_current_map() -> None:
+def test_model_registry_doc_documents_probe_and_paid_config() -> None:
     text = DOC.read_text(encoding="utf-8")
     assert "## Live model-health probe (MDU-38)" in text
     for needle in (
@@ -548,25 +693,24 @@ def test_model_registry_doc_documents_probe_and_current_map() -> None:
         "--max-age-days",
         "--skip-probe",
         "config/model-probe-report.json",
-        "opencode/big-pickle",
-        "opencode/nemotron-3.5-lightning-free",
+        "config_sha256",
+        "build/opencode.json",
     ):
         assert needle in text, needle
-    mapping = json.loads(
-        (REPO / "config" / "zen-model-map.json").read_text(encoding="utf-8")
-    )
-    for model in [*mapping["models"].values(), *mapping["alternates"]]:
-        assert model in text, model
-    # mdu-37 stale rows are gone (the incident narrative may still name it).
-    assert "| `opencode/nemotron-3-ultra-free` |" not in text
-    assert "| `deepseek-research`   | `opencode/nemotron-3.5-lightning-free` |" in text
+    # Every shipped model is named, because every one is a hard target.
+    config = json.loads((REPO / "opencode.json").read_text(encoding="utf-8"))
+    for definition in config["agents"].values():
+        assert definition["model"] in text, definition["model"]
+    # The Zen map is retired; no stale map reference survives.
+    assert "zen-model-map.json" not in text
 
 
 def test_readme_mentions_the_probe_gate() -> None:
-    text = README.read_text(encoding="utf-8")
+    text = " ".join(README.read_text(encoding="utf-8").split())
     assert "probe_models.py" in text
     assert "--skip-probe" in text
-    assert "never runs in CI" in text
+    assert "local-only and never" in text
+    assert "runs in CI" in text
 
 
 def test_ci_has_no_live_probe_invocation() -> None:

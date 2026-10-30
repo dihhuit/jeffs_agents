@@ -46,11 +46,12 @@ def _full_build(tmp_path: Path, *, skill_name: str | None = "test-skill") -> Pat
     (build / "opencode.json").write_text(
         json.dumps(
             {
+                "default_agent": "test-agent",
                 "agents": {
                     "test-agent": {
                         "mode": "subagent",
                         "description": "test",
-                        "model": "model-a",
+                        "model": "opencode-go/model-a",
                         "system": "You are a test agent.",
                     }
                 },
@@ -161,7 +162,7 @@ def test_validate_main_prints_ok_skills_line(
 ) -> None:
     build = _full_build(tmp_path, skill_name="test-skill")
     snapshot = tmp_path / "model-registry.txt"
-    snapshot.write_text("model-a\n", encoding="utf-8")
+    snapshot.write_text("opencode-go/model-a\n", encoding="utf-8")
     monkeypatch.setattr(validate, "DEFAULT_SNAPSHOT", snapshot)
 
     code = validate.main([str(build)])
@@ -176,7 +177,7 @@ def test_validate_main_fails_on_broken_skill(
     build = _full_build(tmp_path, skill_name=None)
     _write_skill(build, "bad_skill", body="---\nname: Bad_Name\n---\n")
     snapshot = tmp_path / "model-registry.txt"
-    snapshot.write_text("model-a\n", encoding="utf-8")
+    snapshot.write_text("opencode-go/model-a\n", encoding="utf-8")
     monkeypatch.setattr(validate, "DEFAULT_SNAPSHOT", snapshot)
 
     code = validate.main([str(build)])

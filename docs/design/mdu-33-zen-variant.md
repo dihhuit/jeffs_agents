@@ -1,3 +1,5 @@
+> **Superseded by MDU-40 (paid default, Zen retired).** This design is kept for history only; the Zen tier, its generator, and its map no longer exist.
+
 # MDU-33 Design — Zen Variant Set (two tiers: Zen default, Go switch-up)
 
 **Date:** 2026-10-24 · **Status:** design complete, ready for implement

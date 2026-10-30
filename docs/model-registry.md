@@ -1,7 +1,9 @@
 # Model Registry
 
-Every model referenced by agents in `opencode.json`, grouped by tier. All
-entries were verified against `opencode models` on **2026-10-08**.
+Every model referenced by agents in `opencode.json`, grouped by tier. Since
+MDU-40 there is one paid configuration: every agent runs on `opencode-go/*`
+(OpenCode Go subscription) and grok-named agents on `xai/*`. All entries were
+verified against `opencode models` on **2026-10-08**.
 
 To re-verify (and refresh the committed snapshot `config/model-registry.txt`):
 
@@ -17,16 +19,13 @@ reference is missing from the snapshot, so a stale reference cannot ship.
 
 | Agent            | Model                    |
 |------------------|--------------------------|
-| `orchestrator`   | `opencode/big-pickle` |
+| `orchestrator`   | `opencode-go/mimo-v2.6-flash` |
 
-## Research (free)
+## Research (paid)
 
 | Agent                 | Model                              |
 |-----------------------|------------------------------------|
-| `research`            | `opencode/mimo-v2.6-flash-free` |
-| `deepseek-research`   | `opencode/nemotron-3.5-lightning-free` |
-| `nemotron-research`   | `opencode/nemotron-3.5-lightning-free` |
-| `deep-research`       | `opencode-go/mimo-v2.5` (Go budget) |
+| `deep-research`       | `opencode-go/mimo-v2.6-flash` (Go budget) |
 
 ## Coding
 
@@ -35,24 +34,21 @@ reference is missing from the snapshot, so a stale reference cannot ship.
 | `just-code`       | `opencode-go/deepseek-v4.1-flash`    |
 | `just-code-mid`   | `opencode-go/kimi-k2.7-code`       |
 | `just-code-pro`   | `opencode-go/glm-5.2`      |
-| `just-code-free`  | `opencode/big-pickle`          |
 
 ## Testing
 
 | Agent             | Model                              |
 |-------------------|------------------------------------|
 | `test-agent`      | `opencode-go/deepseek-v4.1-flash`    |
-| `test-agent-mid`  | `opencode-go/mimo-v2.5`           |
+| `test-agent-mid`  | `opencode-go/mimo-v2.6-flash`           |
 | `test-agent-pro`  | `opencode-go/kimi-k2.7-code`       |
-| `test-agent-free` | `opencode/big-pickle`          |
 
 ## Review
 
 | Agent                 | Model                              |
 |-----------------------|------------------------------------|
-| `code-reviewer`       | `opencode-go/mimo-v2.5`           |
+| `code-reviewer`       | `opencode-go/mimo-v2.6-flash`           |
 | `code-reviewer-pro`   | `opencode-go/glm-5.2`      |
-| `code-reviewer-free`  | `opencode/big-pickle`          |
 
 ## Architecture
 
@@ -65,23 +61,21 @@ reference is missing from the snapshot, so a stale reference cannot ship.
 
 | Agent          | Model                              |
 |----------------|------------------------------------|
-| `devops`       | `opencode-go/mimo-v2.5`           |
+| `devops`       | `opencode-go/mimo-v2.6-flash`           |
 | `devops-pro`   | `opencode-go/glm-5.2`      |
-| `devops-free`  | `opencode/big-pickle`          |
 
 ## QA
 
 | Agent    | Model                              |
 |----------|------------------------------------|
-| `qa`     | `opencode-go/mimo-v2.5`           |
+| `qa`     | `opencode-go/mimo-v2.6-flash`           |
 | `qa-pro` | `opencode-go/kimi-k2.7-code`       |
-| `qa-free`| `opencode/big-pickle`          |
 
 ## UI/UX
 
 | Agent                  | Model                              |
 |------------------------|------------------------------------|
-| `ui-ux-designer`       | `opencode-go/mimo-v2.5`           |
+| `ui-ux-designer`       | `opencode-go/mimo-v2.6-flash`           |
 | `ui-ux-designer-pro`   | `opencode-go/kimi-k2.7-code`       |
 
 ## Inception
@@ -145,98 +139,13 @@ exactly why concentrating all five premium agents on it is unattractive.
 
 1. No cheaper candidate is established at premium reasoning tier. `opencode-go/kimi-k2.7-code` (0.95 / 4.00 / 0.19) is the cheapest model in the catalog that already carries pro-slot work in this repo and is cheaper than `opencode-go/glm-5.2` on both axes — 68% of its input price and 91% of its output price — but it is a code-specialised model already carrying the pro test/QA/UI slots (`test-agent-pro`, `qa-pro`, `ui-ux-designer-pro`), so it is not an available fallback for the reasoning- and security-heavy agents. Moving those five onto it would concentrate the whole pro tier on one model with no capability evidence at that tier, and its family upgrade `opencode-go/kimi-k3.1-pro` costs 143% input / 227% output of `opencode-go/glm-5.2`. `opencode-go/deepseek-v4-pro` (0.66 / 1.98) and `opencode-go/mimo-v2.6-pro` (0.435 / 0.87) are genuinely cheaper — 53–55% saved on `deepseek-v4-pro`, 69–80% on `mimo-v2.6-pro` — but have no capability evidence in this repo for ADR-grade design or security review. `docs/opencode-v2.md` records `opencode-go/deepseek-v4-pro` previously powering four of these five agents before the migration to `opencode-go/glm-5.2`, so the current assignment is a deliberate capability decision already made in this repo, not an unexamined default. The eval and prompt-regression suites grade prompt/contract conformance, not model quality, so a swap would trade unknown regressions for those savings on premium-tier calls only.
 2. `opencode-go/glm-5.3` is priced identically to `opencode-go/glm-5.2`; upgrading family is cost-neutral and out of scope for a cost audit. Record it as a candidate for a future capability MDU, not as a saving.
-3. Cheap-tier work is already off glm-5.2 (budget = `opencode-go/deepseek-v4.1-flash`, mid = `opencode-go/kimi-k2.7-code`, free = `opencode/big-pickle`), so glm-5.2 volume is bounded by the small number of premium escalations.
+3. Cheap-tier work is already off glm-5.2 (budget = `opencode-go/deepseek-v4.1-flash`, mid = `opencode-go/kimi-k2.7-code`), so glm-5.2 volume is bounded by the small number of premium escalations.
 
 ### Re-open conditions
 
 - (a) The OpenCode Console shows premium escalation share above ~30% of spend.
 - (b) A bake-off shows `opencode-go/deepseek-v4-pro` or `opencode-go/mimo-v2.6-pro` matching glm-5.2 on the golden eval suite.
 - (c) `opencode-go/glm-5.3` shows a capability gain over `opencode-go/glm-5.2` on the golden eval suite at identical cost — a capability consideration for a future MDU, not a saving.
-
-## Zen variant mapping (MDU-33)
-
-The Zen tier (`build/opencode.zen.json`, generated at build time from
-`opencode.json` + `config/zen-model-map.json`) replaces every paid
-`opencode-go/*` model with a free Zen model. The map was verified against
-`opencode models` on **2026-10-28**: `opencode/big-pickle` and
-`opencode/nemotron-3.5-lightning-free` were both present, and both are free Zen
-(`opencode/big-pickle` despite carrying no `-free` suffix). The free allowlist
-is derived from the committed snapshot by provider prefix — every
-`opencode/*` entry in `config/model-registry.txt`.
-
-Re-verify before changing the map:
-
-```bash
-opencode models | grep '^opencode/'
-```
-
-### Model-keyed mapping
-
-The free catalog preserves none of the Go budget/mid/premium distinction, so
-the four Go source models collapse onto the two free models with in-repo usage
-evidence. `big-pickle` takes every source except `opencode-go/mimo-v2.5`, which
-lands on `nemotron-3.5-lightning-free` — the two-model split keeps the free
-coding loop off a single model.
-
-| Source (`opencode-go/*`) | Agents (count) | Zen target | Rationale |
-| --- | --- | --- | --- |
-| `opencode-go/deepseek-v4.1-flash` | just-code, test-agent, inception (3) | `opencode/big-pickle` | Strongest proven free model; already carries these roles via the `-free` variants. |
-| `opencode-go/kimi-k2.7-code` | just-code-mid, test-agent-pro, qa-pro, ui-ux-designer-pro (4) | `opencode/big-pickle` | Free catalog has no code-specialised mid model; big-pickle is the proven generalist. |
-| `opencode-go/glm-5.2` | just-code-pro, code-reviewer-pro, architect, architect-premium, devops-pro (5) | `opencode/big-pickle` | **Documented capability regression** — nothing free matches glm-5.2's reasoning tier. These premium slots are the primary documented trigger to switch up to Go mid-period. |
-| `opencode-go/mimo-v2.5` | test-agent-mid, code-reviewer, devops, qa, deep-research, ui-ux-designer, introspector (7) | `opencode/nemotron-3.5-lightning-free` | Mid slots → the second free generalist, spreading load off big-pickle. |
-
-### Unchanged (already free, 9)
-
-| Agent | Model |
-| --- | --- |
-| orchestrator, just-code-free, test-agent-free, code-reviewer-free, devops-free, qa-free | `opencode/big-pickle` |
-| research | `opencode/mimo-v2.6-flash-free` |
-| deepseek-research | `opencode/nemotron-3.5-lightning-free` |
-| nemotron-research | `opencode/nemotron-3.5-lightning-free` |
-
-Resulting Zen distribution (28 agents): `opencode/big-pickle` 18 agents,
-`opencode/nemotron-3.5-lightning-free` 9 (the 7 `mimo-v2.5` slots plus
-`deepseek-research` and `nemotron-research`), and
-`opencode/mimo-v2.6-flash-free` 1 (`research`).
-Concentration on `big-pickle` is a known limitation, mitigated by the Go
-switch-up, the per-agent `overrides` knob in `config/zen-model-map.json`, and
-premium slots being low-volume (see the MDU-32 cost audit).
-
-### Alternates and overrides
-
-Alternates are catalogued in the map but **not placed on hot paths** (no
-bake-off evidence): `opencode/nemotron-3.5-super-vl-free`,
-`opencode/mimo-v2.6-flash-free`, `opencode/deepseek-v4.1-flash-free`,
-`opencode/flint-40b-free`, `opencode/beam-free`. They are probed by
-`probe_models.py` too, but a failing alternate only warns.
-
-`config/zen-model-map.json` also carries `overrides: { "<agent-name>": "<model>" }`,
-applied after the model-keyed rules. It is empty by default and is the tuning
-knob when live usage shows one slot rate-limiting; override targets must be in
-the free allowlist or the build fails.
-
-### Tier selection
-
-Zen is the **default deploy tier**; Go is the switch-up when Zen usage for the
-period is exhausted. `./deploy.sh --force` installs Zen;
-`./deploy.sh --force --tier=go` switches up. Both configs are always installed
-(active + parked). See the README "Model Tiers" section for the concrete
-commands and the manual `cp` one-liner.
-
-### Known limitations
-
-- **Premium capability regression:** `opencode-go/glm-5.2` slots (just-code-pro,
-  code-reviewer-pro, architect, architect-premium, devops-pro) run on
-  `opencode/big-pickle` in the Zen tier. This is by design and the documented
-  switch-up trigger.
-- **Variant names persist while models collapse:** e.g. just-code ≡
-  just-code-pro ≡ just-code-free (all `big-pickle`). Names, permissions, and
-  temperatures stay distinct, so the orchestrator's tier ledger remains
-  meaningful; only the model string collapses.
-- Zen per-model vs account-wide usage limits are not established; the primary
-  response to exhaustion is `--tier=go`.
-- The overlay repo builds its own `opencode.json` and does not consume this
-  generated file; adopting the Zen tier there is a follow-up in that repo.
 
 ## Live model-health probe (MDU-38)
 
@@ -247,7 +156,7 @@ that is exactly what caused the mdu-37 incident (12 agents routed to a dead
 on a real inference:
 
 ```bash
-timeout 90 opencode run -m opencode/big-pickle "Reply with exactly: OK"
+timeout 90 opencode run -m opencode-go/deepseek-v4.1-flash "Reply with exactly: OK"
 ```
 
 `scripts/lib/probe_models.py` runs that command once per model, records the
@@ -258,28 +167,30 @@ not proof the model answered.
 
 ```bash
 # Bootstrap and routine refresh (probe, then gate):
-python3 scripts/lib/probe_models.py --refresh --gate
+python3 scripts/lib/probe_models.py --refresh --gate --config build/opencode.json
 
 # Gate only (what deploy.sh runs):
-python3 scripts/lib/probe_models.py --gate
+python3 scripts/lib/probe_models.py --gate --config build/opencode.json
 ```
 
-### Probe set (7 models)
+### Probe set — the canonical config
 
-Targets are `zen-model-map.json` `models` values plus `overrides` values
-(deduped): `opencode/big-pickle` and `opencode/nemotron-3.5-lightning-free`.
-Alternates (warn-only): `opencode/nemotron-3.5-super-vl-free`,
-`opencode/mimo-v2.6-flash-free`, `opencode/deepseek-v4.1-flash-free`,
-`opencode/flint-40b-free`, `opencode/beam-free`. Only `opencode/*` free Zen is
-probed — Grok `xai/*` and paid `opencode-go/*` are out of scope by design.
+The config is the single source of truth (MDU-40): every distinct agent model
+is a hard target, grouped by provider. For the shipped config that is the
+`opencode-go/*` models plus the `xai/*` grok models; `--include-xai` is an
+accepted no-op because xai probing is always on. There are no alternates and
+no map to edit — a remap, add, or removal re-reds the gate through the hash.
 
 ### Report
 
 `config/model-probe-report.json`, schema version 1: one report-level
-`probed_at` (no per-model timestamps), `map_sha256` over the **canonicalised**
-map JSON (so the overlay's re-indented `build/zen-model-map.json` hashes
-identically), and one result per model with `status` `ok` / `fail` /
-`skipped`, `attempts`, `latency_s` and `error`. Each `--refresh` rewrites the
+`probed_at` (no per-model timestamps), `config_path`, `config_sha256` over the
+sorted `agent=model` pairs (so re-indenting hashes identically while any
+remap changes it), `results` for the `opencode-go/*` targets, `xai_results`
+for the `xai/*` targets, and one entry per model with `status` `ok` / `fail` /
+`skipped`, `attempts`, `latency_s` and `error`. Captured CLI output is
+ANSI-stripped before it is stored, so `error` is readable text (a bare colour
+reset never becomes the recorded error). Each `--refresh` rewrites the
 whole report: any merge union could keep an `ok` for a model that has since
 died. `--refresh` exits 0 whenever the report was written, even with failing
 models — the result is data; grading is `--gate`.
@@ -294,21 +205,25 @@ Evaluated in order; every offence is listed one per line.
 
 1. Report missing/unreadable/malformed, wrong `schema_version`, or an
    unparsable / more-than-1-hour-future `probed_at` → red.
-2. `map_sha256` differs from the current map → red (`map changed since last
-   probe`). Editing the map therefore forces a re-probe.
+2. `config_sha256` is absent (a cache written before the MDU-40 schema →
+   `report cache predates MDU-40 schema; run --refresh --gate --config <file>`)
+   or differs from the current config → red (`config changed since last
+   probe`). Remapping, adding, or removing an agent therefore forces a
+   re-probe.
 3. Older than `--max-age-days` (default **7**) → red. `--max-age-days 0`
    disables only the age rule; `ok` and the hash match are still required.
-4. Every map target needs exactly one `ok` result. Missing, `fail` and
-   `skipped` are all red — a skipped probe never satisfies freshness.
-5. Alternates that are failed, skipped or missing → `[warn]` only.
-6. With `--config <opencode.json>`, free `opencode/*` refs absent from the
-   report → `[warn]` only.
+4. Every `opencode-go/*` target needs exactly one `ok` result. Missing, `fail`
+   and `skipped` are all red — a skipped probe never satisfies freshness.
+5. Every `xai/*` target needs exactly one `ok` result in `xai_results`
+   (MDU-42); a missing section is red.
+6. Models outside the paid provider set → `[warn]` only (the validator rejects
+   them outright).
 
 | Exit | Meaning |
 | --- | --- |
-| 0 | green: every target ok, report fresh, map hash matches |
-| 1 | red: any rule 1–4 offence, offenders listed |
-| 2 | cannot evaluate: no `opencode` CLI, missing map, bad arguments |
+| 0 | green: every target ok, report fresh, config hash matches |
+| 1 | red: any rule 1–5 offence, offenders listed |
+| 2 | cannot evaluate: no `opencode` CLI, missing config, bad arguments |
 
 ### Where it runs
 
@@ -325,45 +240,43 @@ Documented order: **(1) build → (2) probe gate → (3) install →
 - Never in CI: no `opencode` CLI there by design, and the probe is a live,
   machine-local check.
 
-**Trust rule:** no model enters `zen-model-map.json` without a green probe.
-Probe answers "can it answer at all", not "is it good" — hence alternates are
-warn-only and auto-remap is out of scope; the operator edits the map using the
-report as evidence.
+**Trust rule:** every model in `opencode.json` must probe green to deploy.
+Probe answers "can it answer at all", not "is it good" — model choice stays a
+reviewed config edit, with the report as evidence.
 
 ## Grok-xai hard rule (MDU-42)
 
 Grok-named agents (any agent whose name starts with `grok-`, or is exactly
 `grokestrator` or `grok-plan`) run **only** on the user's xAI account models
-(`xai/*`, currently `xai/grok-4.7`) — in every tier (Go and Zen) and every
-harness. They are never delegated to a free (`opencode/*`) or Go-substituted
-(`opencode-go/*`) opencode model, and the Zen transform keeps their `xai/*`
-model identity untransformed (the former `xai/* → opencode/big-pickle` Zen
-fallback is removed).
+(`xai/*`, currently `xai/grok-4.7`) — in every harness. They are never
+delegated to a free (`opencode/*`) or Go-substituted (`opencode-go/*`) opencode
+model. MDU-40 removed the Zen transform that used to rewrite their model.
 
 Enforcement layers, in documented order:
 
 1. **Build validator** (`scripts/lib/validate.py`): every grok-named agent in
-   `opencode.json` and `opencode.zen.json` must resolve to an `xai/*` model;
-   violations are named errors (agent → model) and fail the build in both
-   normal and `--variant zen` mode.
-2. **Probe** (`scripts/lib/probe_models.py --include-xai`): the grok-named
-   agents' `xai/*` models are probed with the same exact-match OK rule as the
-   Zen targets, into the report's distinct `xai_results` section. Probing is
-   auto-enabled when the config under test resolves any grok-named agent to
-   `xai/*`; `--gate` goes red when an xai entry is red or missing from the
-   report.
-3. **Deploy gate** (`scripts/deploy.sh`): the active-tier config is checked
-   with `model_registry.py --grok-xai-check` before install; a named failure
-   exits non-zero and the deploy aborts.
+   `opencode.json` must resolve to an `xai/*` model; violations are named
+   errors (agent → model) and fail the build.
+2. **Probe** (`scripts/lib/probe_models.py`): the grok-named agents' `xai/*`
+   models are probed with the same exact-match OK rule as the Go targets, into
+   the report's distinct `xai_results` section. `--gate` goes red when an xai
+   entry is red or missing from the report. `--include-xai` is a deprecated
+   no-op — xai probing is always on (MDU-40).
+3. **Deploy gate** (`scripts/deploy.sh`): the single config is checked with
+   `model_registry.py --grok-xai-check` before install; a named failure exits
+   non-zero and the deploy aborts.
 
 **Refusal stance (D6):** there is no runtime fallback. If xAI credentials are
 missing or the account model is dead, the probe gate fails with a named
 (credential-naming) error and deploy refuses to install — the grok-named agent
 staying unavailable is the intended outcome, not silently running it on a
 substitute model. Refresh with
-`python3 scripts/lib/probe_models.py --refresh --gate --include-xai --config <opencode.json>`.
+`python3 scripts/lib/probe_models.py --refresh --gate --config build/opencode.json`.
 
 ## Free-tier caps (2026-10-29)
+
+Historical: free models are no longer used (MDU-40). Kept verbatim as the
+evidence that drove the decision.
 
 > Preface: the OpenCode free-tier cap is **undocumented in published docs as of 2026-10-29**. One official figure — "200 requests a day" — stood in the Go-page FAQ until 2026-10-22 and was then removed without replacement; treat it as retracted, not current. Maintainers describe the cap as per-account, server-enforced, daily-resetting with a per-user reset clock shown in the error; no cap size, fixed hour, or timezone is published. Community reports (~2026-10-22→25 tightening wave, aggregated in pinned GitHub thread #59387) say the limit is shared across all free models; that is community-observed, not official. All numbers below are labeled: **live probe** / **storage sweep** (68 `status:429` rows in the OpenCode DB) / **deploy evidence** (2026-10-29 probe gate) / **community-observed**. The quota is account-shared, so a model probing OK on a given day is not exemption evidence. **Standing statement: caps are undocumented/unstable as of 2026-10-29 — no official cap size since the 200/day figure was retracted 2026-10-22; numbers below are labeled by source (live probe / storage sweep / deploy evidence / community-observed).** 2026-10-30 ~02:57 UTC live probes — all four refused-until-now models returned exact-OK (`big-pickle`, `mimo-v2.6-flash-free`, `nemotron-3.5-lightning-free`, `deepseek-v4.1-flash-free`), i.e. the daily reset came back through for the whole free family at once; this live cycle confirms the reset is account-shared, not per-model.
 

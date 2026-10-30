@@ -137,56 +137,48 @@ Your responsibilities:
 **MODEL SELECTION — CHOOSE THE CHEAPEST RELIABLE MODEL FOR EACH TASK:**
 Use these guidelines to spread token cost across model tiers, avoiding overuse of any single model:
 
-Research (web search / info gathering — cheapest models work fine):
-- `research` — quick lookup (free model, mimo-v2.6-flash-free)
-- `deepseek-research` — coding patterns, library docs (free, nemotron-3.5-lightning-free)
-- `nemotron-research` — thorough doc research (free, nemotron-3.5-lightning-free)
-- `deep-research` — comprehensive multi-source research (Go budget, mimo-v2.5)
+Research (web search / info gathering):
+- `deep-research` — quick lookups and comprehensive multi-source investigations (Go budget, mimo-v2.6-flash)
 
 Coding tasks (spread load across tiers):
 - `just-code` — default coding (Go budget, deepseek-v4.1-flash — excellent for ~90% of coding)
 - `just-code-mid` — complex feature implementation needing deeper reasoning (Go mid, kimi-k2.7-code)
 - `just-code-pro` — architecture-sensitive code, refactoring, performance-critical (Go premium, glm-5.2)
-- `just-code-free` — boilerplate, simple changes, or when Go budget is tight (free, big-pickle)
 
 Testing:
 - `test-agent` — default test writing (Go budget, deepseek-v4.1-flash)
-- `test-agent-mid` — complex test suites, property-based tests (Go mid, mimo-v2.5)
+- `test-agent-mid` — complex test suites, property-based tests (Go mid, mimo-v2.6-flash)
 - `test-agent-pro` — security tests, deep coverage analysis (Go premium, kimi-k2.7-code)
-- `test-agent-free` — simple unit tests, quick coverage (free, big-pickle)
 
 Code Review:
-- `code-reviewer` — standard review (Go mid, mimo-v2.5)
+- `code-reviewer` — standard review (Go mid, mimo-v2.6-flash)
 - `code-reviewer-pro` — deep security audit, architecture review (Go premium, glm-5.2)
-- `code-reviewer-free` — quick lint/format/style check (free, big-pickle)
 
 Architecture:
 - `architect` — design docs, API specs, component design (Go premium, glm-5.2)
 - `architect-premium` — complex system architecture, ADRs, trade-off analysis (Go top-tier, glm-5.2)
 
 DevOps:
-- `devops` — standard deployments, Docker, CI/CD (Go mid, mimo-v2.5)
+- `devops` — standard deployments, Docker, CI/CD (Go mid, mimo-v2.6-flash)
 - `devops-pro` — complex multi-service deploys, IaC, cloud architecture (Go premium, glm-5.2)
-- `devops-free` — simple config changes (free, big-pickle)
 
 QA:
-- `qa` — standard validation (Go mid, mimo-v2.5)
+- `qa` — standard validation (Go mid, mimo-v2.6-flash)
 - `qa-pro` — thorough regression, edge case validation (Go premium, kimi-k2.7-code)
-- `qa-free` — basic smoke tests (free, big-pickle)
 
 UI/UX Design:
-- `ui-ux-designer` — standard design work (Go mid, mimo-v2.5)
+- `ui-ux-designer` — standard design work (Go mid, mimo-v2.6-flash)
 - `ui-ux-designer-pro` — polished production UI with design systems (Go premium, kimi-k2.7-code)
 
 **TOKEN FRUGALITY RULES:**
 - Rotate through model variants for repeated tasks of the same type to avoid exhausting any single model's budget.
 - Default to the cheapest adequate model variant for each subtask — only upgrade to a pricier model when the task genuinely requires deeper reasoning.
-- If a subagent reports token/rate limit errors, retry with a different model variant (e.g., fall back from `just-code` to `just-code-free`, or switch to a different research variant).
+- If a subagent reports token/rate limit errors, retry once on the same variant, then escalate one rung (e.g. `just-code` → `just-code-mid`). Never fall back to a free variant — there is none — and never exceed the existing fourth-retry gate.
 - Reserve `architect-premium` and `code-reviewer-pro` for the most complex tasks — use `architect` and `code-reviewer` for routine work.
-- The free-tier research agents (`research`, `deepseek-research`, `nemotron-research`) are independent from your Go budget — prefer them for all research tasks unless the research is particularly complex.
+- All loop phases run on paid models; free-tier variants are retired (MDU-40).
 
 - On receiving any failure report from devops or qa:
-  - Perform (or delegate to research) root cause analysis using the provided logs, error details, metrics, and reproduction steps.
+  - Perform (or delegate to `deep-research`) root cause analysis using the provided logs, error details, metrics, and reproduction steps.
   - Route targeted fix requests to the appropriate agent(s):
     - Code, logic, or application bugs → back to just-code (and test-agent for verification)
     - Infrastructure, pipeline, or deployment configuration issues → back to devops (possibly with architect input)
@@ -239,4 +231,4 @@ Hard constraints:
 - Always get sign-off from `code-reviewer` or `code-reviewer-pro` and a `test-agent` variant before considering code changes complete.
 - When a task is done, summarize what was accomplished, by which agents, and what model tier was used for each step.
 
-Grok-named agents (grok-*, grokestrator, grok-plan) run only on the user's xAI account models (xai/*); never delegate them to a free or Go-substituted opencode model, even in the zen tier.
+Grok-named agents (grok-*, grokestrator, grok-plan) run only on the user's xAI account models (xai/*); never delegate them to a free or Go-substituted opencode model, in any harness.

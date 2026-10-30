@@ -2,18 +2,19 @@
 # Deploy generic agent definitions to OpenCode, Grok Build, and/or Claude Code user config dirs.
 #
 # Usage:
-#   ./deploy.sh                          # dry run (zen tier)
-#   ./deploy.sh --force                  # install the default Zen tier
-#   ./deploy.sh --force --tier=go        # switch up to the Go tier
+#   ./deploy.sh                          # dry run (paid tier)
+#   ./deploy.sh --force                  # install the single paid config
 #   ./deploy.sh --force --rebuild        # rebuild then install
+#   ./deploy.sh --force --tier=paid      # same as the default (paid == go)
 #
-# Both tiers are always installed: the selected tier becomes
-# ~/.config/opencode/opencode.json (active) and the other is parked as
-# opencode.zen.json / opencode.go.json (inert by config discovery).
+# MDU-40 retired the Zen tier and the two-file parked layout: there is exactly
+# one config (opencode.json, every agent on a paid model) and it installs to
+# ~/.config/opencode/opencode.json. Rollback is a git operation:
+#   git revert <mdu-40-commit> && ./build.sh && ./deploy.sh --force
 #
-# A model-health probe gate (scripts/lib/probe_models.py --gate) runs before the
-# copy. In this public base repo it is ADVISORY: a missing report or no
-# `opencode` CLI only prints, never aborts. Overlays run the same gate hard.
+# A model-health probe gate (scripts/lib/probe_models.py --gate --config) runs
+# before the copy. In this public base repo it is ADVISORY: a missing report or
+# no `opencode` CLI only prints, never aborts. Overlays run the same gate hard.
 
 set -euo pipefail
 
@@ -25,7 +26,7 @@ source "${SCRIPT_DIR}/lib/common.sh"
 
 DO_COPY=false
 DO_REBUILD=false
-TIER="zen"
+TIER="paid"
 ARGS=("$@")
 for ((i = 0; i < ${#ARGS[@]}; i++)); do
   case "${ARGS[$i]}" in
@@ -40,9 +41,14 @@ for ((i = 0; i < ${#ARGS[@]}; i++)); do
   esac
 done
 case "$TIER" in
-  zen | go) ;;
+  paid | go) TIER="paid" ;;
+  zen)
+    log_error "zen tier retired in MDU-40; use paid (single config)"
+    log_error "rollback instead: git revert <mdu-40-commit> && ./build.sh && ./deploy.sh --force"
+    exit 2
+    ;;
   *)
-    log_error "--tier must be 'zen' or 'go' (got '${TIER}')"
+    log_error "--tier must be 'paid' (alias 'go'); got '${TIER}'"
     exit 2
     ;;
 esac
@@ -75,44 +81,27 @@ resolve_sources() {
   fi
 }
 
-ensure_tier_sources() {
-  [[ "$HAS_OPENCODE" == true ]] || return 0
-  [[ -f "${DEPLOY_ROOT}/opencode.zen.json" ]] && return 0
-  if [[ "$DO_COPY" == true || "$DO_REBUILD" == true ]]; then
-    log_info "opencode.zen.json missing; building deploy sources"
-    bash "${SCRIPT_DIR}/build.sh"
-    DEPLOY_ROOT="$BUILD_DIR"
-  else
-    log_warn "opencode.zen.json missing; run ./build.sh to generate the Zen tier"
-  fi
-}
-
-# Model-health probe gate (MDU-38), advisory in the public base repo. A stranger
-# with no probe report or no `opencode` CLI must still be able to deploy, so
-# every outcome prints and returns 0. The overlay deploy.sh runs this hard.
+# Model-health probe gate (MDU-38, single config per MDU-40), advisory in the
+# public base repo. A stranger with no probe report or no `opencode` CLI must
+# still be able to deploy, so every outcome prints and returns 0. The overlay
+# deploy.sh runs this hard.
 probe_gate_advisory() {
   local report="${REPO_ROOT}/config/model-probe-report.json"
-  # The gate also needs the ACTIVE tier config: --include-xai + --config make
-  # it probe/evaluate the grok-named agents' xai/* targets (MDU-42).
-  local active="${DEPLOY_ROOT}/opencode.zen.json"
-  if [[ "$TIER" == "go" && -f "${DEPLOY_ROOT}/opencode.json" ]]; then
-    active="${DEPLOY_ROOT}/opencode.json"
-  fi
+  local active="${DEPLOY_ROOT}/opencode.json"
   local output="" rc=0
   log_step "Model-health probe gate (advisory)"
   output="$(python3 "${SCRIPT_DIR}/lib/probe_models.py" --gate \
-    --map "${REPO_ROOT}/config/zen-model-map.json" \
     --report "$report" \
-    --include-xai --config "$active" 2>&1)" || rc=$?
+    --config "$active" 2>&1)" || rc=$?
   if [[ "$rc" -eq 0 ]]; then
     log_ok "model-health probe gate: green"
   elif [[ "$rc" -eq 2 ]]; then
-    log_info "[gate] model-health probe not evaluable here (no CLI, report, map or config); advisory only in the base repo"
-    log_info "  bootstrap: python3 scripts/lib/probe_models.py --refresh --gate --include-xai --config '$active'"
+    log_info "[gate] model-health probe not evaluable here (no CLI, report or config); advisory only in the base repo"
+    log_info "  bootstrap: python3 scripts/lib/probe_models.py --refresh --gate --config '$active'"
   else
     log_warn "[gate] model-health probe RED — advisory only in the base repo, deploy continues"
     printf '%s\n' "$output" >&2
-    log_warn "  bootstrap: python3 scripts/lib/probe_models.py --refresh --gate --include-xai --config '$active'"
+    log_warn "  bootstrap: python3 scripts/lib/probe_models.py --refresh --gate --config '$active'"
   fi
   return 0
 }
@@ -138,53 +127,28 @@ grok_xai_gate() {
 
 deploy_opencode_json() {
   [[ "$HAS_OPENCODE" == true ]] || return 0
-  local base="${DEPLOY_ROOT}/opencode.json"
-  [[ -f "$base" ]] || return 0
-
-  local active parked parked_name
-  if [[ "$TIER" == "zen" ]]; then
-    active="${DEPLOY_ROOT}/opencode.zen.json"
-    parked="$base"
-    parked_name="opencode.go.json"
-  else
-    active="$base"
-    parked="${DEPLOY_ROOT}/opencode.zen.json"
-    parked_name="opencode.zen.json"
-  fi
-
+  local active="${DEPLOY_ROOT}/opencode.json"
   if [[ ! -f "$active" ]]; then
     if [[ "$DO_COPY" == true ]]; then
-      log_error "selected ${TIER} tier config not found: ${active}"
+      log_error "paid config not found: ${active}"
       log_error "run ./build.sh first (or ./deploy.sh --force --rebuild)"
       return 1
     fi
-    log_warn "selected ${TIER} tier config not found: ${active} (run ./build.sh)"
+    log_warn "paid config not found: ${active} (run ./build.sh)"
     return 0
   fi
 
-  # MDU-42: the grok-xai hard rule runs before any copy. The probe gate earlier
-  # in main() now receives --config/--include-xai, so missing xai auth or a
-  # dead xai/* target surfaces there first — but only as an advisory in this
-  # repo; this gate is what actually aborts. Both installed tier files are
-  # checked — the hard rule applies in every tier.
-  if [[ -f "$parked" ]]; then
-    grok_xai_gate "$parked"
-  fi
+  # MDU-42: the grok-xai hard rule runs once, on the single active config,
+  # before any copy. The advisory probe gate in main() already measures the
+  # xai/* targets; this gate is what actually aborts on a downgrade.
   grok_xai_gate "$active"
 
   if [[ "$DO_COPY" == true ]]; then
     mkdir -p "$OPENCODE_CONFIG_DIR"
     cp "$active" "${OPENCODE_CONFIG_DIR}/opencode.json"
-    log_ok "opencode.json (${TIER} tier) → ${OPENCODE_CONFIG_DIR}/opencode.json"
-    if [[ -f "$parked" ]]; then
-      cp "$parked" "${OPENCODE_CONFIG_DIR}/${parked_name}"
-      log_ok "${parked_name} (inactive tier) → ${OPENCODE_CONFIG_DIR}/"
-    fi
+    log_ok "opencode.json (paid) → ${OPENCODE_CONFIG_DIR}/opencode.json"
   else
-    log_info "[dry-run] opencode.json (${TIER} tier) → ${OPENCODE_CONFIG_DIR}/opencode.json"
-    if [[ -f "$parked" ]]; then
-      log_info "[dry-run] ${parked_name} (inactive tier) → ${OPENCODE_CONFIG_DIR}/"
-    fi
+    log_info "[dry-run] opencode.json (paid) → ${OPENCODE_CONFIG_DIR}/opencode.json"
   fi
 }
 
@@ -284,11 +248,10 @@ validate_deployed_clis() {
 main() {
   require_at_least_one_cli
   resolve_sources
-  ensure_tier_sources
 
   log_step "Generic Agent Definitions Deployer"
   log_info "Source: ${DEPLOY_ROOT}"
-  log_info "Tier: ${TIER}"
+  log_info "Tier: ${TIER} (single config: opencode.json)"
   [[ "$HAS_OPENCODE" == true ]] && log_info "OpenCode target: ${OPENCODE_CONFIG_DIR}"
   [[ "$HAS_GROK" == true ]] && log_info "Grok target: ${GROK_AGENTS_DIR}"
   [[ "$HAS_CLAUDE" == true ]] && log_info "Claude target: ${CLAUDE_AGENTS_DIR}"

@@ -16,8 +16,8 @@
   "agents": {
     "orchestrator": {
       "mode": "primary",
-      "description": "Primary coordinator that decomposes tasks and delegates to specialized subagents",
-      "model": "opencode/big-pickle",
+      "description": "Primary coordinator that decomposes tasks and delegates to specialized subagents (Go mid, mimo-v2.6-flash)",
+      "model": "opencode-go/mimo-v2.6-flash",
       "color": "#a855f7",
       "system": "{file:./prompts/orchestrator.md}",
       "request": {
@@ -137,7 +137,7 @@
         },
         {
           "action": "subagent",
-          "resource": "research",
+          "resource": "deep-research",
           "effect": "allow"
         },
         {
@@ -206,7 +206,7 @@
         },
         {
           "action": "subagent",
-          "resource": "research",
+          "resource": "deep-research",
           "effect": "allow"
         },
         {
@@ -275,76 +275,7 @@
         },
         {
           "action": "subagent",
-          "resource": "research",
-          "effect": "allow"
-        },
-        {
-          "action": "subagent",
-          "resource": "*",
-          "effect": "deny"
-        }
-      ]
-    },
-    "just-code-free": {
-      "mode": "subagent",
-      "description": "Writes production code using free model. For simple changes, boilerplate, or when Go budget is tight",
-      "model": "opencode/big-pickle",
-      "color": "#86efac",
-      "system": "{file:./prompts/just-code.md}",
-      "request": {
-        "body": {
-          "temperature": 0.5
-        }
-      },
-      "permissions": [
-        {
-          "action": "edit",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "shell",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "read",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "glob",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "grep",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "list",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "webfetch",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "websearch",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "todowrite",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "subagent",
-          "resource": "research",
+          "resource": "deep-research",
           "effect": "allow"
         },
         {
@@ -408,7 +339,7 @@
         },
         {
           "action": "subagent",
-          "resource": "research",
+          "resource": "deep-research",
           "effect": "allow"
         },
         {
@@ -421,7 +352,7 @@
     "test-agent-mid": {
       "mode": "subagent",
       "description": "Writes tests using mid-tier Go model. For complex test suites, property-based tests, and integration coverage",
-      "model": "opencode-go/mimo-v2.5",
+      "model": "opencode-go/mimo-v2.6-flash",
       "color": "#dc2626",
       "system": "{file:./prompts/test-agent.md}",
       "permissions": [
@@ -472,7 +403,7 @@
         },
         {
           "action": "subagent",
-          "resource": "research",
+          "resource": "deep-research",
           "effect": "allow"
         },
         {
@@ -536,71 +467,7 @@
         },
         {
           "action": "subagent",
-          "resource": "research",
-          "effect": "allow"
-        },
-        {
-          "action": "subagent",
-          "resource": "*",
-          "effect": "deny"
-        }
-      ]
-    },
-    "test-agent-free": {
-      "mode": "subagent",
-      "description": "Writes tests using free model. For simple unit tests or when Go budget is tight",
-      "model": "opencode/big-pickle",
-      "color": "#fca5a5",
-      "system": "{file:./prompts/test-agent.md}",
-      "permissions": [
-        {
-          "action": "edit",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "shell",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "read",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "glob",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "grep",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "list",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "webfetch",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "websearch",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "todowrite",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "subagent",
-          "resource": "research",
+          "resource": "deep-research",
           "effect": "allow"
         },
         {
@@ -613,7 +480,7 @@
     "code-reviewer": {
       "mode": "subagent",
       "description": "Reviews code using mid-tier Go model. Signs off on changes for quality, security, and maintainability",
-      "model": "opencode-go/mimo-v2.5",
+      "model": "opencode-go/mimo-v2.6-flash",
       "color": "#3b82f6",
       "system": "{file:./prompts/code-reviewer.md}",
       "request": {
@@ -934,7 +801,7 @@
         },
         {
           "action": "subagent",
-          "resource": "research",
+          "resource": "deep-research",
           "effect": "allow"
         },
         {
@@ -1268,341 +1135,7 @@
         },
         {
           "action": "subagent",
-          "resource": "research",
-          "effect": "allow"
-        },
-        {
-          "action": "subagent",
-          "resource": "*",
-          "effect": "deny"
-        }
-      ]
-    },
-    "code-reviewer-free": {
-      "mode": "subagent",
-      "description": "Reviews code using free model. For quick lint/format checks and simple reviews",
-      "model": "opencode/big-pickle",
-      "color": "#93c5fd",
-      "system": "{file:./prompts/code-reviewer.md}",
-      "request": {
-        "body": {
-          "temperature": 0.1
-        }
-      },
-      "permissions": [
-        {
-          "action": "edit",
-          "resource": "*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "git diff*",
-          "effect": "allow"
-        },
-        {
-          "action": "shell",
-          "resource": "git log*",
-          "effect": "allow"
-        },
-        {
-          "action": "shell",
-          "resource": "git show*",
-          "effect": "allow"
-        },
-        {
-          "action": "shell",
-          "resource": "grep *",
-          "effect": "allow"
-        },
-        {
-          "action": "shell",
-          "resource": "rg *",
-          "effect": "allow"
-        },
-        {
-          "action": "shell",
-          "resource": "git status*",
-          "effect": "allow"
-        },
-        {
-          "action": "shell",
-          "resource": "ls*",
-          "effect": "allow"
-        },
-        {
-          "action": "shell",
-          "resource": "head*",
-          "effect": "allow"
-        },
-        {
-          "action": "shell",
-          "resource": "tail*",
-          "effect": "allow"
-        },
-        {
-          "action": "shell",
-          "resource": "wc*",
-          "effect": "allow"
-        },
-        {
-          "action": "shell",
-          "resource": "sort*",
-          "effect": "allow"
-        },
-        {
-          "action": "shell",
-          "resource": "timeout *",
-          "effect": "allow"
-        },
-        {
-          "action": "shell",
-          "resource": "*$(*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*`*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*> /*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*> ~/*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*> ../*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*>/*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*>~/*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*>../*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*2>/dev/null*",
-          "effect": "allow"
-        },
-        {
-          "action": "shell",
-          "resource": "*python* -c*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "rm *",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* rm *",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*xargs*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*sudo*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "cp *",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* cp *",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "mv *",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* mv *",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*curl*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*wget*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*sh -c*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git push*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git pull*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git reset*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git checkout*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git restore*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git switch*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git clean*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git stash*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git commit*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git rebase*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git merge*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git cherry-pick*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git apply*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git add*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git branch*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git tag*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git clone*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git worktree*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*sort -o*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*sort*-o*",
-          "effect": "deny"
-        },
-        {
-          "action": "read",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "glob",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "grep",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "list",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "webfetch",
-          "resource": "*",
-          "effect": "deny"
-        },
-        {
-          "action": "websearch",
-          "resource": "*",
-          "effect": "deny"
-        },
-        {
-          "action": "todowrite",
-          "resource": "*",
-          "effect": "deny"
-        },
-        {
-          "action": "subagent",
-          "resource": "research",
+          "resource": "deep-research",
           "effect": "allow"
         },
         {
@@ -1671,7 +1204,7 @@
         },
         {
           "action": "subagent",
-          "resource": "research",
+          "resource": "deep-research",
           "effect": "allow"
         },
         {
@@ -1740,7 +1273,7 @@
         },
         {
           "action": "subagent",
-          "resource": "research",
+          "resource": "deep-research",
           "effect": "allow"
         },
         {
@@ -1753,7 +1286,7 @@
     "devops": {
       "mode": "subagent",
       "description": "Builds and debugs infrastructure, deploys the stack using mid-tier Go model",
-      "model": "opencode-go/mimo-v2.5",
+      "model": "opencode-go/mimo-v2.6-flash",
       "color": "#6b7280",
       "system": "{file:./prompts/devops.md}",
       "request": {
@@ -1809,7 +1342,7 @@
         },
         {
           "action": "subagent",
-          "resource": "research",
+          "resource": "deep-research",
           "effect": "allow"
         },
         {
@@ -1878,76 +1411,7 @@
         },
         {
           "action": "subagent",
-          "resource": "research",
-          "effect": "allow"
-        },
-        {
-          "action": "subagent",
-          "resource": "*",
-          "effect": "deny"
-        }
-      ]
-    },
-    "devops-free": {
-      "mode": "subagent",
-      "description": "Infrastructure tasks using free model. For simple config changes and basic deployments",
-      "model": "opencode/big-pickle",
-      "color": "#9ca3af",
-      "system": "{file:./prompts/devops.md}",
-      "request": {
-        "body": {
-          "temperature": 0.1
-        }
-      },
-      "permissions": [
-        {
-          "action": "edit",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "shell",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "read",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "glob",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "grep",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "list",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "webfetch",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "websearch",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "todowrite",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "subagent",
-          "resource": "research",
+          "resource": "deep-research",
           "effect": "allow"
         },
         {
@@ -1960,7 +1424,7 @@
     "qa": {
       "mode": "subagent",
       "description": "Validates delivered functionality and produces bug reports using mid-tier Go model",
-      "model": "opencode-go/mimo-v2.5",
+      "model": "opencode-go/mimo-v2.6-flash",
       "system": "{file:./prompts/qa.md}",
       "permissions": [
         {
@@ -2633,540 +2097,10 @@
         }
       ]
     },
-    "qa-free": {
-      "mode": "subagent",
-      "description": "Validates delivered functionality using free model. For basic smoke tests and quick validations",
-      "model": "opencode/big-pickle",
-      "system": "{file:./prompts/qa.md}",
-      "permissions": [
-        {
-          "action": "edit",
-          "resource": "*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "git diff*",
-          "effect": "allow"
-        },
-        {
-          "action": "shell",
-          "resource": "git log*",
-          "effect": "allow"
-        },
-        {
-          "action": "shell",
-          "resource": "git show*",
-          "effect": "allow"
-        },
-        {
-          "action": "shell",
-          "resource": "grep *",
-          "effect": "allow"
-        },
-        {
-          "action": "shell",
-          "resource": "rg *",
-          "effect": "allow"
-        },
-        {
-          "action": "shell",
-          "resource": "git status*",
-          "effect": "allow"
-        },
-        {
-          "action": "shell",
-          "resource": "ls*",
-          "effect": "allow"
-        },
-        {
-          "action": "shell",
-          "resource": "head*",
-          "effect": "allow"
-        },
-        {
-          "action": "shell",
-          "resource": "tail*",
-          "effect": "allow"
-        },
-        {
-          "action": "shell",
-          "resource": "wc*",
-          "effect": "allow"
-        },
-        {
-          "action": "shell",
-          "resource": "sort*",
-          "effect": "allow"
-        },
-        {
-          "action": "shell",
-          "resource": "timeout *",
-          "effect": "allow"
-        },
-        {
-          "action": "shell",
-          "resource": "python3 -m pytest*",
-          "effect": "allow"
-        },
-        {
-          "action": "shell",
-          "resource": "pytest*",
-          "effect": "allow"
-        },
-        {
-          "action": "shell",
-          "resource": "./build.sh*",
-          "effect": "allow"
-        },
-        {
-          "action": "shell",
-          "resource": "*$(*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*`*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*> /*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*> ~/*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*> ../*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*>/*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*>~/*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*>../*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*2>/dev/null*",
-          "effect": "allow"
-        },
-        {
-          "action": "shell",
-          "resource": "*python* -c*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "rm *",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* rm *",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*xargs*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*sudo*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "cp *",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* cp *",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "mv *",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* mv *",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*curl*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*wget*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*sh -c*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git push*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git pull*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git reset*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git checkout*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git restore*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git switch*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git clean*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git stash*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git commit*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git rebase*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git merge*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git cherry-pick*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git apply*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git add*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git branch*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git tag*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git clone*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "* git worktree*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*sort -o*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*sort*-o*",
-          "effect": "deny"
-        },
-        {
-          "action": "read",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "glob",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "grep",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "list",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "webfetch",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "websearch",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "todowrite",
-          "resource": "*",
-          "effect": "deny"
-        },
-        {
-          "action": "subagent",
-          "resource": "*",
-          "effect": "deny"
-        }
-      ]
-    },
-    "research": {
-      "mode": "subagent",
-      "description": "Web research using free fast model. Quick lookups, doc searches, and info gathering",
-      "model": "opencode/mimo-v2.6-flash-free",
-      "color": "#06b6d4",
-      "system": "{file:./prompts/research.md}",
-      "request": {
-        "body": {
-          "temperature": 0.1
-        }
-      },
-      "permissions": [
-        {
-          "action": "websearch",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "webfetch",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "read",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "glob",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "grep",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "list",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "edit",
-          "resource": "*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*",
-          "effect": "ask"
-        },
-        {
-          "action": "todowrite",
-          "resource": "*",
-          "effect": "deny"
-        },
-        {
-          "action": "subagent",
-          "resource": "*",
-          "effect": "deny"
-        }
-      ]
-    },
-    "deepseek-research": {
-      "mode": "subagent",
-      "description": "Web research using free DeepSeek model. Capable multi-step research on coding patterns and libraries",
-      "model": "opencode/nemotron-3.5-lightning-free",
-      "color": "#0891b2",
-      "system": "{file:./prompts/research.md}",
-      "request": {
-        "body": {
-          "temperature": 0.1
-        }
-      },
-      "permissions": [
-        {
-          "action": "websearch",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "webfetch",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "read",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "glob",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "grep",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "list",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "edit",
-          "resource": "*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*",
-          "effect": "ask"
-        },
-        {
-          "action": "todowrite",
-          "resource": "*",
-          "effect": "deny"
-        },
-        {
-          "action": "subagent",
-          "resource": "*",
-          "effect": "deny"
-        }
-      ]
-    },
-    "nemotron-research": {
-      "mode": "subagent",
-      "description": "Web research using free Nemotron model. Good for thorough documentation and spec research",
-      "model": "opencode/nemotron-3.5-lightning-free",
-      "color": "#0e7490",
-      "system": "{file:./prompts/research.md}",
-      "request": {
-        "body": {
-          "temperature": 0.1
-        }
-      },
-      "permissions": [
-        {
-          "action": "websearch",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "webfetch",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "read",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "glob",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "grep",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "list",
-          "resource": "*",
-          "effect": "allow"
-        },
-        {
-          "action": "edit",
-          "resource": "*",
-          "effect": "deny"
-        },
-        {
-          "action": "shell",
-          "resource": "*",
-          "effect": "ask"
-        },
-        {
-          "action": "todowrite",
-          "resource": "*",
-          "effect": "deny"
-        },
-        {
-          "action": "subagent",
-          "resource": "*",
-          "effect": "deny"
-        }
-      ]
-    },
     "deep-research": {
       "mode": "subagent",
       "description": "In-depth multi-source research using Go budget model. For comprehensive investigations spanning many sources",
-      "model": "opencode-go/mimo-v2.5",
+      "model": "opencode-go/mimo-v2.6-flash",
       "color": "#155e75",
       "system": "{file:./prompts/research.md}",
       "request": {
@@ -3230,7 +2164,7 @@
     "ui-ux-designer": {
       "mode": "subagent",
       "description": "UI/UX design using mid-tier Go model. Generates mocks, wireframes, and UI flow diagrams",
-      "model": "opencode-go/mimo-v2.5",
+      "model": "opencode-go/mimo-v2.6-flash",
       "color": "#f8f9fa",
       "system": "{file:./prompts/ui-ux-designer.md}",
       "request": {
@@ -3296,7 +2230,7 @@
         },
         {
           "action": "subagent",
-          "resource": "research",
+          "resource": "deep-research",
           "effect": "allow"
         },
         {
@@ -3375,7 +2309,7 @@
         },
         {
           "action": "subagent",
-          "resource": "research",
+          "resource": "deep-research",
           "effect": "allow"
         },
         {
@@ -3388,7 +2322,7 @@
     "introspector": {
       "mode": "subagent",
       "description": "Reviews the current session logs after an MDU and writes durable agent-definition improvement suggestions for the orchestrator.",
-      "model": "opencode-go/mimo-v2.5",
+      "model": "opencode-go/mimo-v2.6-flash",
       "color": "#14b8a6",
       "system": "{file:./prompts/introspector.md}",
       "request": {

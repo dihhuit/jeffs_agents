@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
-"""Live model-health probe and deploy gate for the free Zen models (MDU-38).
+"""Live model-health probe and deploy gate for the paid model set (MDU-40).
 
 ``opencode models`` lists a model as ``active`` long after upstream has killed
 it (mdu-37: 12 agents on a dead ``opencode/nemotron-3-ultra-free``). This script
 runs one real inference per model and records the result, so a deploy can be
 gated on proof of life rather than on a listing.
 
+The canonical ``opencode.json`` is the single source of truth: every distinct
+model it declares is a hard probe target, grouped by provider
+(``opencode-go/*`` and ``xai/*``).
+
 Usage:
     probe_models.py --refresh | --gate | --refresh --gate
 
-    --refresh                 probe every target/alternate and rewrite the report
+    --refresh                 probe every model in the config and rewrite the report
     --gate                    evaluate the report; exit 1 when red
-    --map <file>              model map (default: <repo>/config/zen-model-map.json)
+    --config <file>           opencode.json under test
+                              (default: <repo>/build/opencode.json)
     --report <file>           report (default: <repo>/config/model-probe-report.json)
-    --config <file>           optional opencode.json; free refs absent from the
-                              report warn only (never fails)
-    --include-xai             also probe the grok-named agents' xai/* models
-                              (MDU-42). Auto-enabled when a grok-named agent's
-                              model resolves to xai/* in the config under test;
-                              --gate fails when an xai entry is red or missing.
+    --include-xai             accepted no-op; xai/* probing is always on
     --timeout 90              per-attempt timeout in seconds
     --attempts 2              total attempts per model (permanent errors: 1)
     --max-workers 2           models probed in parallel
@@ -30,7 +30,7 @@ Exit codes (same 0/1/2 convention as ``resume_block.py``):
 
     0  refresh: report written (even if models failed) · gate: green
     1  gate: red — report missing/stale/mismatched or a target is not ok
-    2  usage/environment error: no CLI, bad map, unwritable report, bad args
+    2  usage/environment error: no CLI, bad config, unwritable report, bad args
 """
 
 from __future__ import annotations
@@ -39,6 +39,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -47,17 +48,23 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from model_registry import is_grok_named
-
 REPO_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_MAP = REPO_ROOT / "config" / "zen-model-map.json"
+DEFAULT_CONFIG = REPO_ROOT / "build" / "opencode.json"
 DEFAULT_REPORT = REPO_ROOT / "config" / "model-probe-report.json"
 
 SCHEMA_VERSION = 1
 PROMPT = "Reply with exactly: OK"
-BOOTSTRAP = "python3 scripts/lib/probe_models.py --refresh --gate"
+BOOTSTRAP = (
+    "python3 scripts/lib/probe_models.py --refresh --gate "
+    "--config build/opencode.json"
+)
 RETRY_SLEEP_S = 1.0
 ERROR_MAX_CHARS = 200
+
+#: CSI/OSC ANSI escape sequences emitted by the CLI's colour output. Captured
+#: stderr like ``"\x1b[0m"`` is pure formatting and must never become the
+#: ``error`` recorded in the report.
+ANSI_RE = re.compile(r"\x1b(?:\[[0-9;?]*[ -/]*[@-~]|\][^\x07\x1b]*(?:\x07|\x1b\\)|[@-Z\\-_])")
 
 #: Failure text that will not change on a retry: one attempt, then report.
 PERMANENT_SIGNALS = (
@@ -74,82 +81,57 @@ class ProbeError(Exception):
 
 
 # ---------------------------------------------------------------------------
-# map + report helpers
+# config + report helpers
 # ---------------------------------------------------------------------------
 
-def load_map(path: Path) -> dict:
-    """Load the Zen model map; raise ``ProbeError`` for a missing/invalid map."""
+def load_config(path: Path) -> dict:
+    """Load the OpenCode config under test; raise ``ProbeError`` when unusable."""
     try:
-        mapping = json.loads(path.read_text(encoding="utf-8"))
+        config = json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError as exc:
-        raise ProbeError(f"model map not found: {path}") from exc
+        raise ProbeError(f"opencode config not found: {path}") from exc
     except (OSError, json.JSONDecodeError) as exc:
-        raise ProbeError(f"model map unreadable: {path} ({exc})") from exc
-    if not isinstance(mapping, dict):
-        raise ProbeError(f"model map is not a JSON object: {path}")
-    for key in ("models", "overrides"):
-        if key in mapping and not isinstance(mapping[key], dict):
-            raise ProbeError(f"model map '{key}' must be an object: {path}")
-    if "alternates" in mapping and not isinstance(mapping["alternates"], list):
-        raise ProbeError(f"model map 'alternates' must be a list: {path}")
-    return mapping
+        raise ProbeError(f"opencode config unreadable: {path} ({exc})") from exc
+    if not isinstance(config, dict):
+        raise ProbeError(f"opencode config is not a JSON object: {path}")
+    agents = config.get("agents")
+    if not isinstance(agents, dict):
+        raise ProbeError(f"opencode config has no agents object: {path}")
+    return config
 
 
-def canonical_map_sha256(mapping: dict) -> str:
-    """Hash the map's meaning, not its bytes.
+def collect_models(config_path: Path) -> dict[str, list[str]]:
+    """Group the config's agent models by provider prefix, deduped and sorted.
 
-    Canonicalisation is ``sort_keys`` plus compact separators, so the overlay's
-    re-serialized ``build/zen-model-map.json`` (different indentation) hashes
-    identically to the base map; otherwise every build would re-red the gate.
+    A paid config yields ``{"opencode-go": [...], "xai": [...]}``. The config
+    is the single source of truth (MDU-40): every distinct model is a hard
+    probe target, so any remap or agent add/remove re-reds a stale report.
     """
-    payload = json.dumps(mapping, sort_keys=True, separators=(",", ":"))
-    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
-
-
-def probe_set(mapping: dict) -> tuple[list[str], list[str]]:
-    """Return ``(targets, alternates)``, deduped and sorted.
-
-    Targets are ``models.values() | overrides.values()`` — the hot paths that
-    ``gen_zen_config.py`` emits. A model listed in both sets is a target.
-    """
-    targets: set[str] = set()
-    for key in ("models", "overrides"):
-        targets.update(
-            model
-            for model in (mapping.get(key) or {}).values()
-            if isinstance(model, str) and model
-        )
-    alternates = {
-        model
-        for model in (mapping.get("alternates") or [])
-        if isinstance(model, str) and model
-    }
-    return sorted(targets), sorted(alternates - targets)
-
-
-def collect_xai_models(config_path: Path | None) -> list[str]:
-    """Return the sorted xai/* models of grok-named agents in the config (MDU-42).
-
-    Grok-named agents (grok-*, grokestrator, grok-plan) must run on the user's
-    xAI account models; their ``xai/*`` targets are probed with the same
-    exact-match OK rule as the zen targets into the report's ``xai_results``
-    section. Probing is auto-enabled exactly when this returns a non-empty
-    list (``--include-xai`` requests the section even when the list is empty).
-    """
-    if config_path is None:
-        return []
-    try:
-        config = json.loads(config_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
-        raise ProbeError(f"opencode config unreadable: {config_path} ({exc})") from exc
-    models: set[str] = set()
-    for name, definition in (config.get("agents") or {}).items():
-        if not isinstance(definition, dict) or not is_grok_named(name):
+    groups: dict[str, set[str]] = {}
+    for definition in (load_config(config_path).get("agents") or {}).values():
+        if not isinstance(definition, dict):
             continue
         model = definition.get("model")
-        if isinstance(model, str) and model.startswith("xai/"):
-            models.add(model)
-    return sorted(models)
+        if not isinstance(model, str) or "/" not in model:
+            continue
+        provider = model.split("/", 1)[0]
+        groups.setdefault(provider, set()).add(model)
+    return {provider: sorted(models) for provider, models in sorted(groups.items())}
+
+
+def config_sha256(config_path: Path) -> str:
+    """Hash the config's meaning, not its bytes: sorted ``agent=model`` lines.
+
+    Re-indenting or re-ordering the config hashes identically; adding,
+    removing, or remapping an agent changes the hash and re-reds the gate.
+    """
+    agents = load_config(config_path).get("agents") or {}
+    pairs = sorted(
+        f"{name}={definition.get('model')}"
+        for name, definition in agents.items()
+        if isinstance(definition, dict) and isinstance(definition.get("model"), str)
+    )
+    return hashlib.sha256("\n".join(pairs).encode("utf-8")).hexdigest()
 
 
 def _portable_path(path: Path) -> str:
@@ -197,10 +179,15 @@ def write_report(path: Path, report: dict) -> None:
 # probing
 # ---------------------------------------------------------------------------
 
+def strip_ansi(text: str) -> str:
+    """Remove ANSI escape sequences so report errors carry readable text only."""
+    return ANSI_RE.sub("", text or "")
+
+
 def _first_error_line(returncode: int, stdout: str, stderr: str) -> str:
     """Return the most useful single-line error for a failed attempt."""
     for text in (stderr, stdout):
-        for line in (text or "").splitlines():
+        for line in strip_ansi(text).splitlines():
             line = line.strip()
             if line:
                 return line[:ERROR_MAX_CHARS]
@@ -248,8 +235,8 @@ def probe_one(
         except OSError as exc:  # binary vanished or cannot be executed
             last_error = f"runner error: {exc}"
         else:
-            stdout = proc.stdout or ""
-            stderr = proc.stderr or ""
+            stdout = strip_ansi(proc.stdout or "")
+            stderr = strip_ansi(proc.stderr or "")
             if proc.returncode == 0 and stdout.strip() == "OK":
                 return {
                     "status": "ok",
@@ -337,7 +324,7 @@ def _run_plan(
 
 
 def build_results(
-    mapping: dict,
+    models: list[str],
     *,
     cli: str,
     timeout: int,
@@ -346,13 +333,9 @@ def build_results(
     max_runtime_s: int,
     runner=subprocess.run,
 ) -> list[dict]:
-    """Probe every target and alternate; return results in stable order."""
-    targets, alternates = probe_set(mapping)
-    plan = [(model, "target") for model in targets] + [
-        (model, "alternate") for model in alternates
-    ]
-    results = _run_plan(
-        plan,
+    """Probe every ``opencode-go/*`` target; return results in stable order."""
+    return _run_plan(
+        [(model, "target") for model in models],
         cli=cli,
         timeout=timeout,
         attempts=attempts,
@@ -360,9 +343,6 @@ def build_results(
         max_runtime_s=max_runtime_s,
         runner=runner,
     )
-
-    role_order = {"target": 0, "alternate": 1}
-    return sorted(results, key=lambda r: (role_order.get(r["role"], 2), r["model"]))
 
 
 def build_xai_results(
@@ -375,10 +355,10 @@ def build_xai_results(
     max_runtime_s: int,
     runner=subprocess.run,
 ) -> list[dict]:
-    """Probe the grok-named agents' xai/* models (MDU-42).
+    """Probe the ``xai/*`` targets (MDU-42).
 
-    Same exact-match OK rule as the zen targets; entries carry ``role:
-    "xai"`` and land in the report's distinct ``xai_results`` section.
+    Same exact-match OK rule as the Go targets; entries carry ``role: "xai"``
+    and land in the report's distinct ``xai_results`` section.
     """
     return _run_plan(
         [(model, "xai") for model in xai_models],
@@ -391,62 +371,7 @@ def build_xai_results(
     )
 
 
-def refresh_report(
-    mapping: dict,
-    map_path: Path,
-    report_path: Path,
-    *,
-    cli: str,
-    timeout: int,
-    attempts: int,
-    max_workers: int,
-    max_runtime_s: int,
-    runner=subprocess.run,
-    xai_models: list[str] | None = None,
-    include_xai: bool = False,
-) -> int:
-    """Probe and rewrite the report; return 0 when it was written, 2 when not."""
-    results = build_results(
-        mapping,
-        cli=cli,
-        timeout=timeout,
-        attempts=attempts,
-        max_workers=max_workers,
-        max_runtime_s=max_runtime_s,
-        runner=runner,
-    )
-    # MDU-42: grok-named agents' xai/* probes into a distinct report section,
-    # written only when xai probing is enabled (explicit flag or any xai/*-
-    # resolving grok-named agent in the config under test).
-    xai_results = build_xai_results(
-        list(xai_models or []),
-        cli=cli,
-        timeout=timeout,
-        attempts=attempts,
-        max_workers=max_workers,
-        max_runtime_s=max_runtime_s,
-        runner=runner,
-    )
-    xai_enabled = bool(xai_models) or include_xai
-    report: dict = {
-        "schema_version": SCHEMA_VERSION,
-        "probed_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "mode": "refresh",
-        "cli": cli,
-        "timeout_s": timeout,
-        "map_path": _portable_path(map_path),
-        "map_sha256": canonical_map_sha256(mapping),
-        "results": results,
-    }
-    if xai_enabled:
-        report["xai_enabled"] = xai_enabled
-        report["xai_results"] = xai_results
-    try:
-        write_report(report_path, report)
-    except OSError as exc:
-        print(f"  [error] cannot write report {report_path}: {exc}", file=sys.stderr)
-        return 2
-
+def _print_results(results: list[dict]) -> None:
     for result in results:
         line = (
             f"{result['model']} ({result['role']}) "
@@ -459,22 +384,75 @@ def refresh_report(
         else:
             print(f"  [fail]  {line} — {result['error']}", file=sys.stderr)
 
-    counts = {"ok": 0, "fail": 0, "skipped": 0}
+
+def _counts(results: list[dict]) -> str:
+    tally = {"ok": 0, "fail": 0, "skipped": 0}
     for result in results:
-        counts[result["status"]] = counts.get(result["status"], 0) + 1
-    summary = (
-        f"{len(results)} model(s) probed: {counts['ok']} ok, "
-        f"{counts['fail']} fail, {counts['skipped']} skipped"
+        tally[result["status"]] = tally.get(result["status"], 0) + 1
+    return (
+        f"{tally['ok']} ok, {tally['fail']} fail, "
+        f"{tally['skipped']} skipped"
     )
-    if xai_results:
-        xai_counts = {"ok": 0, "fail": 0, "skipped": 0}
-        for result in xai_results:
-            xai_counts[result["status"]] = xai_counts.get(result["status"], 0) + 1
-        summary += (
-            f"; xai: {len(xai_results)} probed, {xai_counts['ok']} ok, "
-            f"{xai_counts['fail']} fail, {xai_counts['skipped']} skipped"
-        )
-    print(f"  [info]  {summary} → {report_path}")
+
+
+def refresh_report(
+    config_path: Path,
+    report_path: Path,
+    *,
+    cli: str,
+    timeout: int,
+    attempts: int,
+    max_workers: int,
+    max_runtime_s: int,
+    runner=subprocess.run,
+) -> int:
+    """Probe every model in the config and rewrite the report.
+
+    Returns 0 when the report was written, 2 when it could not be.
+    """
+    groups = collect_models(config_path)
+    results = build_results(
+        groups.get("opencode-go", []),
+        cli=cli,
+        timeout=timeout,
+        attempts=attempts,
+        max_workers=max_workers,
+        max_runtime_s=max_runtime_s,
+        runner=runner,
+    )
+    xai_results = build_xai_results(
+        groups.get("xai", []),
+        cli=cli,
+        timeout=timeout,
+        attempts=attempts,
+        max_workers=max_workers,
+        max_runtime_s=max_runtime_s,
+        runner=runner,
+    )
+    report: dict = {
+        "schema_version": SCHEMA_VERSION,
+        "probed_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "mode": "refresh",
+        "cli": cli,
+        "timeout_s": timeout,
+        "config_path": _portable_path(config_path),
+        "config_sha256": config_sha256(config_path),
+        "results": results,
+        "xai_results": xai_results,
+    }
+    try:
+        write_report(report_path, report)
+    except OSError as exc:
+        print(f"  [error] cannot write report {report_path}: {exc}", file=sys.stderr)
+        return 2
+
+    _print_results(results)
+    _print_results(xai_results)
+    print(
+        f"  [info]  opencode-go: {len(results)} probed ({_counts(results)}); "
+        f"xai: {len(xai_results)} probed ({_counts(xai_results)})"
+    )
+    print(f"  [info]  report → {report_path}")
     return 0
 
 
@@ -482,16 +460,29 @@ def refresh_report(
 # gate
 # ---------------------------------------------------------------------------
 
+def _target_offence(model: str, entries: list[dict], label: str) -> str | None:
+    """Grade one hard target: exactly one ``ok`` entry, else name the failure."""
+    if not entries:
+        return f"{label} '{model}' missing from the report"
+    ok_entries = [entry for entry in entries if entry.get("status") == "ok"]
+    if len(ok_entries) == 1:
+        return None
+    if len(entries) > 1:
+        return f"{label} '{model}' has {len(entries)} results, need exactly one ok"
+    status = entries[0].get("status")
+    error = entries[0].get("error")
+    detail = f" ({error})" if error else ""
+    return f"{label} '{model}' is {status}{detail}"
+
+
 def gate_offences(
     report_path: Path,
-    mapping: dict,
+    config_path: Path,
     *,
     max_age_days: int,
-    config_path: Path | None = None,
     now: datetime | None = None,
-    include_xai: bool = False,
 ) -> tuple[list[str], list[str]]:
-    """Evaluate the report against the map; return ``(offences, warnings)``.
+    """Evaluate the report against the config; return ``(offences, warnings)``.
 
     Offences are red (exit 1); warnings never fail the gate. Rule 1 returns
     immediately because no later rule can be trusted against an absent or
@@ -499,7 +490,7 @@ def gate_offences(
     """
     offences: list[str] = []
     warnings: list[str] = []
-    targets, alternates = probe_set(mapping)
+    groups = collect_models(config_path)
 
     # 1. report present, readable, right schema, sane probed_at.
     if not report_path.is_file():
@@ -524,12 +515,18 @@ def gate_offences(
     if probed_at - now > timedelta(hours=1):
         return [f"report probed_at is in the future: {report['probed_at']}"], warnings
 
-    # 2. the map the report describes is still the map in this tree.
-    expected_hash = canonical_map_sha256(mapping)
-    if report.get("map_sha256") != expected_hash:
+    # 2. the config the report describes is still the config in this tree.
+    expected_hash = config_sha256(config_path)
+    reported_hash = report.get("config_sha256")
+    if not reported_hash:
         offences.append(
-            "map changed since last probe "
-            f"(report {str(report.get('map_sha256'))[:12]}…, "
+            "report cache predates MDU-40 schema; run "
+            f"--refresh --gate --config {config_path}"
+        )
+    elif reported_hash != expected_hash:
+        offences.append(
+            "config changed since last probe "
+            f"(report {str(reported_hash)[:12]}…, "
             f"current {expected_hash[:12]}…)"
         )
 
@@ -541,101 +538,46 @@ def gate_offences(
             f"max {max_age_days} day(s)"
         )
 
-    # 4./5. targets must be ok; alternates only warn.
+    # 4. every opencode-go target needs exactly one ok result.
     by_model: dict[str, list[dict]] = {}
-    results = report.get("results")
-    if isinstance(results, list):
-        for entry in results:
-            if isinstance(entry, dict) and isinstance(entry.get("model"), str):
-                by_model.setdefault(entry["model"], []).append(entry)
+    for entry in report.get("results") or []:
+        if isinstance(entry, dict) and isinstance(entry.get("model"), str):
+            by_model.setdefault(entry["model"], []).append(entry)
+    for model in groups.get("opencode-go", []):
+        offence = _target_offence(model, by_model.get(model, []), "target")
+        if offence:
+            offences.append(offence)
 
-    for model in targets:
-        entries = by_model.get(model, [])
-        if not entries:
-            offences.append(f"target '{model}' missing from the report")
-            continue
-        ok_entries = [entry for entry in entries if entry.get("status") == "ok"]
-        if len(ok_entries) == 1:
-            continue
-        if len(entries) > 1 and len(ok_entries) != 1:
-            offences.append(
-                f"target '{model}' has {len(entries)} results, need exactly one ok"
-            )
-            continue
-        status = entries[0].get("status")
-        error = entries[0].get("error")
-        detail = f" ({error})" if error else ""
-        offences.append(f"target '{model}' is {status}{detail}")
-
-    for model in alternates:
-        entries = by_model.get(model, [])
-        if any(entry.get("status") == "ok" for entry in entries):
-            continue
-        status = entries[0].get("status") if entries else "missing from the report"
-        warnings.append(f"alternate '{model}' is {status}")
-
-    # 6.5 xai hard rule (MDU-42): grok-named agents' xai/* models must be
-    # probed and ok. Auto-enabled when the config under test resolves any
-    # grok-named agent to an xai/* model; --include-xai also requires the
-    # xai_results section to exist in the report at all.
-    try:
-        xai_models = collect_xai_models(config_path)
-    except ProbeError as exc:
-        return [f"xai gate rule cannot run: {exc}"], warnings
-    xai_enabled = bool(xai_models) or include_xai
-    if xai_enabled:
+    # 5. every xai target needs exactly one ok result too (MDU-42).
+    xai_models = groups.get("xai", [])
+    if xai_models:
         xai_results = report.get("xai_results")
-        if include_xai and not isinstance(xai_results, list):
+        if not isinstance(xai_results, list):
             offences.append(
                 "report has no xai_results section "
-                "(--include-xai requested; re-run probe_models.py --refresh --include-xai)"
+                "(re-run probe_models.py --refresh --config <opencode.json>)"
             )
             xai_results = []
         xai_by_model: dict[str, list[dict]] = {}
-        for entry in xai_results or []:
+        for entry in xai_results:
             if isinstance(entry, dict) and isinstance(entry.get("model"), str):
                 xai_by_model.setdefault(entry["model"], []).append(entry)
         for model in xai_models:
-            entries = xai_by_model.get(model, [])
-            if not entries:
-                offences.append(
-                    f"xai target '{model}' missing from the xai_results "
-                    "report section (grok-named agent)"
-                )
-                continue
-            # Mirrors the target rule above exactly: duplicates are tolerated
-            # when exactly one probe attempt is ok; only zero-ok duplicates
-            # name the duplicate count, and a single red entry names its own
-            # status (never a green-looking "is ok" offence).
-            ok_entries = [entry for entry in entries if entry.get("status") == "ok"]
-            if len(ok_entries) == 1:
-                continue
-            if len(entries) > 1 and len(ok_entries) != 1:
-                offences.append(
-                    f"xai target '{model}' has {len(entries)} results, "
-                    "need exactly one ok"
-                )
-                continue
-            status = entries[0].get("status")
-            error = entries[0].get("error")
-            detail = f" ({error})" if error else ""
-            offences.append(f"xai target '{model}' is {status}{detail}")
+            offence = _target_offence(
+                model, xai_by_model.get(model, []), "xai target"
+            )
+            if offence:
+                offences.append(offence)
 
-    # 6. free config refs beyond the reported set warn only.
-    if config_path is not None:
-        try:
-            config = json.loads(config_path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError) as exc:
-            raise ProbeError(f"opencode config unreadable: {config_path} ({exc})") from exc
-        refs: set[str] = set()
-        for definition in (config.get("agents") or {}).values():
-            if isinstance(definition, dict):
-                model = definition.get("model")
-                if isinstance(model, str) and model.startswith("opencode/"):
-                    refs.add(model)
-        for model in sorted(refs - set(by_model)):
+    # 6. models outside the paid provider set warn only (the validator fails
+    # closed on them; the probe gate reports what it did not measure).
+    for provider, models in groups.items():
+        if provider in ("opencode-go", "xai"):
+            continue
+        for model in models:
             warnings.append(
-                f"config ref '{model}' is absent from the probe report (probing not extended)"
+                f"config ref '{model}' is outside the paid probe set "
+                "(not probed; validator rejects it)"
             )
 
     return offences, warnings
@@ -665,25 +607,25 @@ def main(argv: list[str] | None = None, *, runner=subprocess.run) -> int:
     parser = argparse.ArgumentParser(
         prog="probe_models.py",
         description=(
-            "Probe free Zen models with a live inference and gate deploys on the "
-            "resulting report."
+            "Probe the paid model set of the canonical opencode.json with a live "
+            "inference and gate deploys on the resulting report."
         ),
     )
     parser.add_argument(
         "--refresh",
         action="store_true",
-        help="probe every target/alternate and rewrite the report (exit 0 when written)",
+        help="probe every model in the config and rewrite the report (exit 0 when written)",
     )
     parser.add_argument(
         "--gate",
         action="store_true",
-        help="evaluate the report against the map; exit 1 when red",
+        help="evaluate the report against the config; exit 1 when red",
     )
     parser.add_argument(
-        "--map",
+        "--config",
         metavar="file",
-        default=str(DEFAULT_MAP),
-        help=f"model map (default: {DEFAULT_MAP})",
+        default=str(DEFAULT_CONFIG),
+        help=f"opencode.json under test (default: {DEFAULT_CONFIG})",
     )
     parser.add_argument(
         "--report",
@@ -692,17 +634,11 @@ def main(argv: list[str] | None = None, *, runner=subprocess.run) -> int:
         help=f"probe report (default: {DEFAULT_REPORT})",
     )
     parser.add_argument(
-        "--config",
-        metavar="file",
-        default=None,
-        help="optional opencode.json; free refs absent from the report warn only",
-    )
-    parser.add_argument(
         "--include-xai",
         action="store_true",
         help=(
-            "probe/gate the grok-named agents' xai/* models too (MDU-42); "
-            "auto-enabled when the config resolves any grok-named agent to xai/*"
+            "deprecated no-op (MDU-40): xai/* targets are always probed and "
+            "graded; kept so existing scripts keep working"
         ),
     )
     parser.add_argument(
@@ -756,7 +692,7 @@ def main(argv: list[str] | None = None, *, runner=subprocess.run) -> int:
         return 2
 
     report_path = Path(args.report)
-    map_path = Path(args.map)
+    config_path = Path(args.config)
 
     if shutil.which(args.cli) is None:
         print(
@@ -767,17 +703,14 @@ def main(argv: list[str] | None = None, *, runner=subprocess.run) -> int:
         return 2
 
     try:
-        mapping = load_map(map_path)
-        config_path = Path(args.config) if args.config else None
-        xai_models = collect_xai_models(config_path)
+        collect_models(config_path)
     except ProbeError as exc:
         print(f"  [error] {exc}", file=sys.stderr)
         return 2
 
     if args.refresh:
         exit_code = refresh_report(
-            mapping,
-            map_path,
+            config_path,
             report_path,
             cli=args.cli,
             timeout=args.timeout,
@@ -785,8 +718,6 @@ def main(argv: list[str] | None = None, *, runner=subprocess.run) -> int:
             max_workers=args.max_workers,
             max_runtime_s=args.max_runtime_s,
             runner=runner,
-            xai_models=xai_models,
-            include_xai=args.include_xai,
         )
         if exit_code != 0:
             return exit_code
@@ -796,10 +727,8 @@ def main(argv: list[str] | None = None, *, runner=subprocess.run) -> int:
     try:
         offences, warnings = gate_offences(
             report_path,
-            mapping,
+            config_path,
             max_age_days=args.max_age_days,
-            config_path=config_path,
-            include_xai=args.include_xai,
         )
     except ProbeError as exc:
         print(f"  [error] {exc}", file=sys.stderr)

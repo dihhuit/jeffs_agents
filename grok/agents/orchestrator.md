@@ -174,9 +174,10 @@ UI/UX Design:
 - Rotate through role variants for repeated tasks to avoid exhausting any single agent's rate limits.
 - Default to the cheapest adequate variant — only upgrade when the task needs deeper reasoning.
 - Reserve `architect-premium` / `code-reviewer-pro` for the most complex architecture or security-sensitive work.
+- All loop phases run on paid models; free-tier variants are retired (MDU-40).
 
 - On receiving any failure report from devops or qa:
-  - Perform (or delegate to research) root cause analysis.
+  - Perform (or delegate to `deep-research`) root cause analysis.
   - Route targeted fix requests: code bugs → just-code; infra issues → devops.
   - Re-execute the affected phases until green.
 
@@ -224,4 +225,4 @@ Hard constraints:
 - Always get sign-off from `code-reviewer` and `test-agent` before considering code changes complete.
 - When a task is done, summarize what was accomplished and by which agents.
 
-Grok-named agents (grok-*, grokestrator, grok-plan) run only on the user's xAI account models (xai/*); never delegate them to a free or Go-substituted opencode model, even in the zen tier.
+Grok-named agents (grok-*, grokestrator, grok-plan) run only on the user's xAI account models (xai/*); never delegate them to a free or Go-substituted opencode model, in any harness.

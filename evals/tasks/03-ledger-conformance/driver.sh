@@ -18,10 +18,10 @@ VALIDATOR="$REPO_ROOT/scripts/lib/run_ledger.py"
 TASK_DOC="$SCRIPT_DIR/task.md"
 WORK_ROOT="/tmp/opencode/mdu-15"
 MANIFEST_REL="runs/mdu-ledger-check/manifest.json"
-# Explicit model for the opencode leg: the agent's default alias can resolve to
-# a free endpoint that is unavailable. Overridable from the environment; an
+# Explicit model for the opencode leg: run it on the paid Go budget model the
+# shipped config uses for `just-code`. Overridable from the environment; an
 # empty value falls back to the default.
-OPENCODE_MODEL="${OPENCODE_MODEL:-opencode/big-pickle}"
+OPENCODE_MODEL="${OPENCODE_MODEL:-opencode-go/deepseek-v4.1-flash}"
 
 if [ ! -f "$VALIDATOR" ]; then
   echo "[warn] missing base validator: $VALIDATOR"

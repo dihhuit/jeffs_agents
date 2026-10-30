@@ -36,19 +36,6 @@ def load_registry(path: Path) -> set[str]:
     }
 
 
-def free_zen_models(registry: set[str]) -> set[str]:
-    """Return the free Zen models in a registry snapshot.
-
-    Free Zen models use the ``opencode/`` provider prefix; ``opencode-go/*`` is
-    the paid Go subscription, ``opencode-zen/*`` is a legacy alias, and
-    ``xai/*`` is Grok Build. Filtering on the provider prefix therefore
-    excludes all paid/other backends by construction. ``opencode/big-pickle``
-    is free Zen despite carrying no ``-free`` suffix, which is why this filters
-    on the prefix rather than the suffix (MDU-33, design D4.1).
-    """
-    return {model for model in registry if model.startswith("opencode/")}
-
-
 # ---------------------------------------------------------------------------
 # MDU-42: grok-named agents must run on xAI account models
 # ---------------------------------------------------------------------------
