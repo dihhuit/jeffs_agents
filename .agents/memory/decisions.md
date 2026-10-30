@@ -1,7 +1,7 @@
 ---
 type: decisions
 created: 2026-10-27T13:24:20Z
-updated: 2026-10-29T15:05:00Z
+updated: 2026-10-30T12:20:00Z
 ---
 
 # Decision log
@@ -44,3 +44,8 @@ updated: 2026-10-29T15:05:00Z
 - Context: user hard rule after the mmo cap burn; mdu-36's 'xai-only big-pickle fallback' marked superseded (that entry stays appended, never rewritten).
 - Decision: enforce in four layers — validator clauses in both variants, deploy gates in both repos (base hard both tiers; overlay hard on --force over active+parked before install), probe_models.py --include-xai gate, and the mirrors delegation sentence; overlay build xai/* identity pass-through ends the big-pickle fallback.
 - Consequences: xAI account is the billing surface for all grok-family spawns; missing xai auth refuses via the named gates (no runtime fallback); live deploy verified 20/20 grok-named agents on xai/* in both installed tiers with xai/grok-4.7 and grok-build-0.1 both probing OK; free zen targets still cap-fail so the documented --skip-probe escape carried the deploy until MDU-40 makes the paid tier default.
+
+## 2026-10-30 — Single paid config; zen tier retired; free models removed everywhere (mdu-40)
+- Context: MDU-39's cap forensics (daily account-shared cap, 18-agent big-pickle concentration) + user strategy (paid over free pain). Design forks put to the user: default-tier strictness → "Remove them"; zen exempt list → "None at all"; both answered 2026-10-30.
+- Decision: canonical opencode.json = the only tier (20 agents, all opencode-go/*, orchestrator on mimo-v2.6-flash after mimo-v2.5 proved dead upstream). Zen machinery (gen_zen_config, zen-model-map, two-file deploys, parked tier) deleted in BOTH repos; --tier=zen exit 2; probe/gate config-driven (config_sha256); validator paid census fail-closed; three orchestrator mirrors paid-only with two byte-identical parity sentences pinned by tests.
+- Consequences: MDU-41 becomes cap-error/fallback policy for paid spawns (no in-config free usage remains). The mdu-36 "overlay zen map synthesis" and mdu-38 "probe targets = zen map" decisions are superseded (older entries stay). New apply-now: design-time live probes (20261030-1); pass --session-id to introspector runs.

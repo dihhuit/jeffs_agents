@@ -1,7 +1,7 @@
 ---
 type: project
 created: 2026-10-27T13:24:20Z
-updated: 2026-10-30T03:31:48Z
+updated: 2026-10-30T12:22:00Z
 ---
 
 # Project facts — open-agent-definitions (base agent-team repo)
@@ -38,3 +38,11 @@ updated: 2026-10-30T03:31:48Z
 - Live-measured (2026-10-30 ~02:57 UTC): all four refused-while-capped free models (big-pickle, deepseek-v4.1-flash-free, mimo-v2.6-flash-free, nemotron-3.5-super-vl-free) probe exact-OK simultaneously after the 10-29→30 boundary — the free cap is account-shared DAILY (reset confirmed live), never per-model; a probe-OK model is not quota-exempt. Cap size remains undocumented (official 200/day figure retracted 2026-10-22).
 - Free-cap refusal error shape in the DB: inline part `error = {"type":"provider.quota","status":429,"message":"<refusal>","response.body":"{\"error\":...FreeUsageLimitError...}"}` on assistant rows with `finish:"error"`; legacy `part`/`message` tables have 0 cap rows.
 - Known high-entropy scanner trap (next fix): `mdu-42-deploy-evidence.md` "(text refs remain)" phrasing ok; but 40-char `/tmp/...` lexemes in committed docs trip the split rule — always split at the directory slash as docs/design does on its own line 5.
+
+## 2026-10-30 (mdu-40)
+- POST-MDU-40 REALITY: single paid config — zen tier machinery deleted from both repos; canonical opencode.json is 20 agents, ALL opencode-go/* (no free opencode/* rows; 5 *-free agents + 3 free research agents deleted; research delegation = deep-research). Validator paid census is fail-closed (rejects any non opencode-go|xai prefix, big-pickle/free tokens, missing default_agent). Deploy default TIER=paid; --tier=zen exits 2 (retired); paid|go synonyms.
+- Live model gotcha confirmed again: opencode-go/mimo-v2.5 deprecated upstream (registry listed it anyway) — paid rotation now deepseek-v4.1-flash, glm-5.2, glm-5.3, glm-5.3-flash, kimi-k2.7-code, mimo-v2.6-flash, mimo-v2.6-pro, xai/grok-4.7, xai/grok-build-0.1 (all exact-OK probed 2026-10-30). Run a live probe on EVERY model id chosen by design, before implementation (introspection 20261030-1).
+- probe_models.py is config-driven now (no --map; alternates retired; map_sha256 → config_sha256; --include-xai accepted no-op; ANSI stripped from captured errors). Pre-deploy routine: `--refresh --gate --config build/opencode.json`.
+- Commit-stage gotcha: `git add -A` in the overlay sweeps long-standing untracked dirs (.rollback-20260916-054427/, untracked personal skill files, gitignored runs) into the commit — stage the intended file list explicitly; restore build/ via a fresh `./build.sh` after any HEAD checkout.
+- Dispatch note: per-dispatch paid override (opencode-go/glm-5.3-flash) is NO LONGER required — the paid default deployed mid-MDU-40 (20261029-2 closed). If a spawn still dies on a free-cap refusal, suspect a stale deployed config, not the repo.
+- Introspector: always pass `--session-id <root session id>` in the brief — a bare run silently returns a stale session tree (20261021-4 recurred twice).
