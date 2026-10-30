@@ -248,7 +248,8 @@ reviewed config edit, with the report as evidence.
 
 Grok-named agents (any agent whose name starts with `grok-`, or is exactly
 `grokestrator` or `grok-plan`) run **only** on the user's xAI account models
-(`xai/*`, currently `xai/grok-4.7`) — in every harness. They are never
+(`xai/*`, currently `xai/grok-4.7` for reasoning roles and
+`xai/grok-build-0.1` for build roles) — in every harness. They are never
 delegated to a free (`opencode/*`) or Go-substituted (`opencode-go/*`) opencode
 model. MDU-40 removed the Zen transform that used to rewrite their model.
 

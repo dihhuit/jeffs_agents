@@ -114,11 +114,11 @@ playwright + filesystem + github is in
 
 | Agent role | MCP servers | Rationale |
 | --- | --- | --- |
-| `qa`, `qa-pro`, `qa-free` | **playwright** (browser verification) | The `webapp-verification` skill's browser tool |
-| `devops`, `devops-pro`, `devops-free` | **github** | PR/issue/release operations against the git host |
-| `just-code`, `just-code-mid`, `just-code-pro`, `just-code-free` | **filesystem** (read) | Scoped read access to workspace dirs when needed; no write outside the allowlist |
-| `code-reviewer`, `code-reviewer-pro`, `code-reviewer-free` | **none** | Review-only role; MCP tools add context and attack surface without adding review value |
-| `orchestrator`, `research`, `architect`, `test-agent*`, `ui-ux-designer*` | **none by default** | Keep context lean; add per-task if a concrete need appears |
+| `qa`, `qa-pro` | **playwright** (browser verification) | The `webapp-verification` skill's browser tool |
+| `devops`, `devops-pro` | **github** | PR/issue/release operations against the git host |
+| `just-code`, `just-code-mid`, `just-code-pro` | **filesystem** (read) | Scoped read access to workspace dirs when needed; no write outside the allowlist |
+| `code-reviewer`, `code-reviewer-pro` | **none** | Review-only role; MCP tools add context and attack surface without adding review value |
+| `orchestrator`, `deep-research`, `architect`, `test-agent*`, `ui-ux-designer*` | **none by default** | Keep context lean; add per-task if a concrete need appears |
 
 In OpenCode V2, scope MCP servers with the `disabled` flag and client-side
 server/tool enablement (no global `tools` map). Keep unused servers disabled.
