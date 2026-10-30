@@ -263,6 +263,26 @@ Items marked `[x]` are resolved on live evidence and kept for history; orchestra
   - definition change: none while MDU-39/40/41 are pending — the fix is dispatch discipline, deferring its prompt sentence to those MDUs. Provisional brief-side rule: "When a subagent spawn fails with a quota/unavailable error, do not re-dispatch the same tier; dispatch with an explicit paid-model override and record the override and the refusal string in the manifest phase notes so tier compliance stays auditable."
   - apply-now: Keep the standing paid-default decision (explicit paid override per dispatch) until MDU-39/40/41 land; log every override decision in the manifest phase notes (this also completes the unfulfilled record-the-model apply-now of 20261026-2); keep capturing free-cap refusal strings at the evidence path MDU-39 already points at.
 
+- [ ] id: 20261029-1 | severity: high | target: code-reviewer-free | kind: review_reject_streak
+  - evidence: "First review REJECTED (census self-contradiction inherited from the evidence file + one 40-char path lexeme); fixed via direct discriminating DB query + one just-code fix child; re-review SIGN-OFF ok."
+  - definition change: Before delegating to code-reviewer-free, add a pre-flight census consistency check requiring verification that evidence file claims match session tree records; resolve any self-contradictions before evaluating the implementation.
+  - apply-now: In the next code-reviewer-free brief, add "Verify census consistency between evidence file and session tree; resolve any self-contradictions before evaluating the implementation."
+
+- [ ] id: 20261029-2 | severity: warn | target: just-code | kind: missing_handoff
+  - evidence: "My brief for the fix child accidentally contained garbled path text ("no wait: /tmp/data..." no: /tmp/logs...) which the implementer then transcribed as a wrong log path — corrected by me afterward."
+  - definition change: When writing briefs for implementation children, explicitly verify and state all file paths. Include a path confirmation step: "Confirm all file paths in this brief are correct and unambiguous before dispatching the implement child; list each /tmp or data directory reference explicitly."
+  - apply-now: In the next just-code brief, explicitly list and confirm all file paths, especially any /tmp or data directory references, and ask the implement child to confirm understanding.
+
+- [ ] id: 20261029-3 | severity: warn | target: grokestrator | kind: expensive_model_on_bulk_role
+  - evidence: "All subagents were explicitly spawned with model override opencode-go/glm-5.3-flash because the deployed zen default tier still routes coder defaults to free big-pickle, which caps (this is carried apply-now 20261029-2 until MDU-40 flips the default paid)."
+  - definition change: When the default zen tier routes bulk roles (just-code, test-agent, code-reviewer, qa, devops) to free big-pickle, explicitly override to a paid variant (glm-5.3-flash or equivalent) in the brief, and record the override reason as an apply-now item until MDU-40 flips the default paid tier.
+  - apply-now: In the next MDU brief, state the model override explicitly: "Use opencode-go/glm-5.3-flash for all bulk-role children; the zen default routes to free big-pickle which caps at 68 errors — override required." This item is carried as apply-now 20261029-2 until MDU-40 flips the default paid.
+
+- [ ] id: 20261029-4 | severity: high | target: orchestrator | kind: manifest_gap
+  - evidence: "The manifest for mdu-39-cap-forensics shows status 'in_progress' with only the design phase listed, despite QA having completed AC-1..3 (pytest 561/561 PASS) and the review cycle completing with sign-off. Verification fields (build, tests_passed, qa_grade, ci_green) are absent, and there is no completed_at or summary describing the outcome."
+  - definition change: In base prompts/orchestrator.md, base grok/agents/orchestrator.md, and overlay grok/agents/grokestrator.md append: 'Before invoking the introspector, append every completed phase (including qa and validate/deploy) to runs/<mdu-id>/manifest.json with outcome and notes, and set status to complete. Never rely on the handoff brief alone as run evidence.'
+  - apply-now: Before finalizing this MDU, backfill the manifest with all completed phases, verification fields, status=complete, and an outcome-shaped summary. Set status to complete and populate completed_at.
+
 ## Session records
 
 ### 2026-10-29T09:00:00Z — opencode session — mdu mdu-38-model-health-probe

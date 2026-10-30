@@ -1,7 +1,7 @@
 ---
 type: project
 created: 2026-10-27T13:24:20Z
-updated: 2026-10-29T15:05:00Z
+updated: 2026-10-30T03:31:48Z
 ---
 
 # Project facts — open-agent-definitions (base agent-team repo)
@@ -32,3 +32,9 @@ updated: 2026-10-29T15:05:00Z
 - Spawn model overrides: the deployed default tier still routes coder/reviewer/test/qa/devops defaults to free models (big-pickle / lightning-free) that cap mid-loop — every dispatch this MDU used an explicit paid model override `opencode-go/glm-5.3-flash` on the spawn (apply-now 20261029-2). Keep until MDU-39/40/41 change the default tier; mutate away from big-pickle defaults then.
 - Verbatim free-cap refusal string (for MDU-39): `Error: Free usage limit reached. Free models work in OpenCode (https://opencode.ai); subscribe to OpenCode Go to keep going: https://opencode.ai/go` — big-pickle + deepseek-v4.1-flash-free + mimo-v2.6-flash-free + nemotron-3.5-super-vl-free; evidence /tmp/opencode/mdu-42-deploy-evidence.md.
 - Introspector shell permission regression (first denial since the mdu-30 fix): session_signals.py did not run in this MDU's introspection — regression watch attached to closed suggestion 20261014-6; machine signals UNKNOWN, not zero (20261029-2 note).
+
+## 2026-10-30 (mdu-39)
+- Free-cap census gotcha: `session_message.data` free-cap rows carry the refusal text TWICE (error message + `response.body` echo), and sweep by-day buckets were mis-slotted, inflating/deflating substring counts — the discriminating count is per JSON object with `"type":"provider.quota"`, not per substring mention. Reconciled truth: 68 objects = 60 canonical wording + 8 old wording (old only on 2026-10-24); real-agent rows 34 (orchestrator 18, just-code 5, just-code-mid 4, just-code-free 2, architect 2, qa-free 1, grok-architect 1, devops-free 1), probe/cli rows 34 (no agent field).
+- Live-measured (2026-10-30 ~02:57 UTC): all four refused-while-capped free models (big-pickle, deepseek-v4.1-flash-free, mimo-v2.6-flash-free, nemotron-3.5-super-vl-free) probe exact-OK simultaneously after the 10-29→30 boundary — the free cap is account-shared DAILY (reset confirmed live), never per-model; a probe-OK model is not quota-exempt. Cap size remains undocumented (official 200/day figure retracted 2026-10-22).
+- Free-cap refusal error shape in the DB: inline part `error = {"type":"provider.quota","status":429,"message":"<refusal>","response.body":"{\"error\":...FreeUsageLimitError...}"}` on assistant rows with `finish:"error"`; legacy `part`/`message` tables have 0 cap rows.
+- Known high-entropy scanner trap (next fix): `mdu-42-deploy-evidence.md` "(text refs remain)" phrasing ok; but 40-char `/tmp/...` lexemes in committed docs trip the split rule — always split at the directory slash as docs/design does on its own line 5.

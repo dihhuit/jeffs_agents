@@ -354,6 +354,7 @@ Each MDU above is sized for the repo's own orchestrator to complete in one close
   3. If the caps are undocumented/unstable, the doc says so explicitly and marks which measurements are from live probing.
 - **Suggested agents:** explore/devops (evidence sweep, probes), architect (cap table + attribution), qa (grading from evidence files).
 - **Dependencies:** none.
+- **Status:** Done — 2026-10-30 (cap table in docs/model-registry.md with documented-undocumented finding + retracted 200/day figure; design doc additionally gives the pinned mmo attribution — grok-architect died 2026-10-29 13:12:49Z on opencode/big-pickle, respawned on xai/grok-4.7 ran clean; 68 `provider.quota` rows = 60 canonical + 8 old refusals; 2026-10-30 reset probes OK; QA PASS)
 
 ### MDU-40 · Go/xAI-paid default tier — kill zen as default
 
