@@ -1,7 +1,7 @@
 ---
 type: project
 created: 2026-10-27T13:24:20Z
-updated: 2026-10-30T15:55:00Z
+updated: 2026-10-30T20:50:00Z
 ---
 
 # Project facts — open-agent-definitions (base agent-team repo)
@@ -52,3 +52,5 @@ updated: 2026-10-30T15:55:00Z
 - Scanner path-lexeme trap hit twice more (new design doc + new overlay test file): works reliably = split the path at a directory slash across lines, or build the path from an existing constant; lexemes as short as 32 chars trip it. Also: grepping a staged diff for that pattern innocent hits diff file headers (`b/build/claude/agents/…`) — restrict manual scans to `^\+` lines.
 - Overlay repo has NO local scripts/lib/secret_scan.py but its pre-commit hook runs the base scanner anyway — overlay commits are gated, plan 2 free minutes for a text-only fix cycle.
 - Child-subagent sandbox regression this loop: code-reviewer AND qa ran with shell hard-denied in the same MDU (reviewer correctly refused to fake gate runs). Reactive fix: orchestrator runs the 4 gates itself and re-issues the verdict. Durable fix waiting on introspection apply-now 20261030-2: briefs must state "shell denied by design / static-trace scope + gate outputs attached" BEFORE dispatch.
+- The overlay repo has NO `scripts/lib/secret_scan.py`; only the base scanner exists (and the overlay prompt wrappers re-exec only validate.py). Overlay commits therefore run the secret gate as the manual `secret-scrub` checklist on the staged diff (applied mdu-43, clean).
+- `timeout 60 opencode models` catalog output still lists deprecated/dead IDs (e.g. mimo-v2.5, commented out of config/model-registry.txt in mdu-43); the catalog is NOT a liveness oracle — probe_models.py live probes are.
