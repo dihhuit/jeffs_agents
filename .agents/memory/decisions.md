@@ -1,7 +1,7 @@
 ---
 type: decisions
 created: 2026-10-27T13:24:20Z
-updated: 2026-10-30T12:20:00Z
+updated: 2026-10-30T15:55:00Z
 ---
 
 # Decision log
@@ -49,3 +49,8 @@ updated: 2026-10-30T12:20:00Z
 - Context: MDU-39's cap forensics (daily account-shared cap, 18-agent big-pickle concentration) + user strategy (paid over free pain). Design forks put to the user: default-tier strictness → "Remove them"; zen exempt list → "None at all"; both answered 2026-10-30.
 - Decision: canonical opencode.json = the only tier (20 agents, all opencode-go/*, orchestrator on mimo-v2.6-flash after mimo-v2.5 proved dead upstream). Zen machinery (gen_zen_config, zen-model-map, two-file deploys, parked tier) deleted in BOTH repos; --tier=zen exit 2; probe/gate config-driven (config_sha256); validator paid census fail-closed; three orchestrator mirrors paid-only with two byte-identical parity sentences pinned by tests.
 - Consequences: MDU-41 becomes cap-error/fallback policy for paid spawns (no in-config free usage remains). The mdu-36 "overlay zen map synthesis" and mdu-38 "probe targets = zen map" decisions are superseded (older entries stay). New apply-now: design-time live probes (20261030-1); pass --session-id to introspector runs.
+
+## 2026-10-30 — Paid-spawn failure ladder across all three orchestrator mirrors (mdu-41)
+- Context: post-MDU-40 the old free-quota-budgeting MDU-41 entry was moot (zero free usage remains); user answered two design forks 2026-10-30: ladder = one retry → exactly one rotation (verified 7-model list; a role-rung escalation counts as the rotation) → stop+escalate for `opencode-go/*` spawns, and xai/* gets NO ladder (auto-top-up ⇒ errors are auth-shaped; direct escalation with evidence).
+- Decision: byte-identical 7-line block in base prompts/orchestrator.md (replacing the old one-up-escalation bullet), base grok/agents/orchestrator.md and overlay-root grok/agents/grokestrator.md (additive column-0 bullets); same wording copied into skills/mdu-lifecycle/SKILL.md (third policy copy); "never substitute a free model" guard stated explicitly as drift armor. Architect mirrors gained the design-time live-probe clause (apply-now 20261030-1) + a research→deep-research delegation fix; all three orchestrator mirrors gained the introspector `--session-id` sentence (20261021-4). docs/fallback-ladder.md documents the ladder; evals/tasks/05-fallback-ladder/ six-case offline driver demo replaces the impossible "live cap-error spawn" AC.
+- Consequences: parity/tests — base 541 + overlay 148 rows green (test_mdu_40's free-model check narrowed to tolerate the sanctioned prohibition); rotation-list maintenance = 3 mirrors + docs + skill + driver in one commit (D4). Left as MINOR/followups: overlay grokestrator lacks the base free-model-span helper; config/model-registry.txt still lists dead opencode-go/mimo-v2.5; devops/code-reviewer mirrors have stale `research` delegation wording (D5 out-of-scope). New apply-now 20261030-2: reviewer briefs must scope static-only + attach gate outputs and never REJECT on a tool denial.
