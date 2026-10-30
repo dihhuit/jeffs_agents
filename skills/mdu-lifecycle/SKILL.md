@@ -40,7 +40,7 @@ Rules:
 
 - Default to the cheapest adequate variant; upgrade only when the task genuinely requires deeper reasoning.
 - All loop phases run on paid models; free-tier variants are retired (MDU-40).
-- On token or rate-limit errors, retry once on the same variant, then escalate one rung (e.g. `just-code` → `just-code-mid`); never to a free variant, and never past the fourth-retry gate.
+- On a cap/provider error, quota refusal, or credit exhaustion from a paid `opencode-go/*` spawn: one retry, then exactly one rotation to a different live `opencode-go/*` model, then stop and escalate with evidence. `xai/*` spawns: no ladder — escalate directly. Never substitute a free model (MDU-41).
 - Reserve `architect-premium` and `code-reviewer-pro` for the most complex tasks.
 
 ## Failure routing

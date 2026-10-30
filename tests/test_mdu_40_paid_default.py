@@ -45,6 +45,25 @@ MIRRORS = (
     REPO / "grok" / "agents" / "orchestrator.md",
 )
 
+#: The single sanctioned "free model" context: the MDU-41 ladder's *negative*
+#: prohibition ("never substitute a free model — free variants no longer
+#: exist"). Free-model *usage/assignment* wording stays forbidden; only this
+#: explicit never-substitute guard may name one.
+SANCTIONED_FREE_PREFIX = "never substitute a "
+
+
+def _unsanctioned_free_model_spans(text: str) -> list[str]:
+    """Return every "free model" occurrence not preceded by the guard phrase."""
+    lowered = text.lower()
+    spans = []
+    index = lowered.find("free model")
+    while index != -1:
+        prefix = lowered[max(0, index - len(SANCTIONED_FREE_PREFIX)):index]
+        if prefix != SANCTIONED_FREE_PREFIX:
+            spans.append(lowered[max(0, index - 60):index + len("free model")])
+        index = lowered.find("free model", index + 1)
+    return spans
+
 
 def _config() -> dict:
     return json.loads(OPENCODE_JSON.read_text(encoding="utf-8"))
@@ -105,7 +124,11 @@ def test_orchestrator_mirrors_carry_the_paid_sentence() -> None:
         assert CANONICAL_SENTENCE in text, path
         assert "big-pickle" not in text, path
         assert re.search(r"\b[\w.]*-free\b", text) is None, path
-        assert "free model" not in text.lower(), path
+        # Only the MDU-41 "never substitute a free model" guard may name one.
+        assert not _unsanctioned_free_model_spans(text), (
+            path,
+            _unsanctioned_free_model_spans(text),
+        )
 
 
 # ---------------------------------------------------------------------------

@@ -125,7 +125,7 @@ Your responsibilities:
   4. Test (via a test-agent variant — see model selection below) — must pass all tests
   5. Deploy (via devops or devops-pro for complex deploys) — must succeed without errors
   6. Validate (via qa or qa-pro for thorough validation) — must receive PASS grade
-  7. Introspect (via `introspector` in **loop mode** only) — after QA PASS (or when a non-MDU task is done), before commit. Pass MDU id, harness, cwd, and `runs/<mdu-id>/manifest.json`. It writes `agent-improvements.md` and reports back. Fold apply-now items into the next loop by changing the next brief, model tier/variant, and/or MDU slice. Do not edit agent definition files. Never invoke review mode, including when paused, blocked, or completed. If introspector cannot run, note the skip; do not block the commit. Include `agent-improvements.md` in the commit if it changed.
+  7. Introspect (via `introspector` in **loop mode** only) — after QA PASS (or when a non-MDU task is done), before commit. Pass MDU id, harness, cwd, and `runs/<mdu-id>/manifest.json`. It writes `agent-improvements.md` and reports back. Fold apply-now items into the next loop by changing the next brief, model tier/variant, and/or MDU slice. Do not edit agent definition files. Never invoke review mode, including when paused, blocked, or completed. If introspector cannot run, note the skip; do not block the commit. Include `agent-improvements.md` in the commit if it changed. Include the root session id when introspecting (`--session-id`, e.g. `OPENCODE_SESSION_ID`); without it the introspector reads a stale session tree.
   8. Commit and push — after any task or MDU is fully validated, you MUST commit and push your changes (assuming there's a configured remote), BEFORE moving on to the next task or MDU
      - **Secret gate (before every commit):** first check whether the repo has `scripts/lib/secret_scan.py`.
      - If it has none (non-base projects such as the personal overlay repo), apply the `secret-scrub` skill checklist to the staged diff manually. This is the fallback, **not** an escalation — do not report exit 2 for a repo that simply has no scanner, and never skip this check silently.
@@ -173,7 +173,13 @@ UI/UX Design:
 **TOKEN FRUGALITY RULES:**
 - Rotate through model variants for repeated tasks of the same type to avoid exhausting any single model's budget.
 - Default to the cheapest adequate model variant for each subtask — only upgrade to a pricier model when the task genuinely requires deeper reasoning.
-- If a subagent reports token/rate limit errors, retry once on the same variant, then escalate one rung (e.g. `just-code` → `just-code-mid`). Never fall back to a free variant — there is none — and never exceed the existing fourth-retry gate.
+- **PAID-SPAWN FAILURE LADDER — ONE RETRY, ONE ROTATION, THEN STOP:**
+  When a paid `opencode-go/*` spawn dies on a cap/provider error, quota refusal, or credit exhaustion (e.g. a child reporting `provider.quota`, a 429, or a spent-credit refusal):
+  1. Retry the same failure once — same model, in the same or a fresh spawn. One retry only; it exists to absorb transient blips.
+  2. If the failure repeats, make exactly ONE rotation to a different `opencode-go/*` model from the verified live rotation list: deepseek-v4.1-flash, glm-5.2, glm-5.3, glm-5.3-flash, kimi-k2.7-code, mimo-v2.6-flash, mimo-v2.6-pro. A role-rung escalation (`just-code` → `just-code-mid`) counts as the one rotation. Never rotate to an unverified model, and never substitute a free model — free variants no longer exist; fallback drift must not reintroduce them.
+  3. If the rotated spawn also fails, STOP. Escalate to the user with the failure evidence: both error reports and both model ids. Never a second silent rotation.
+  This ladder specializes the retry guardrail for this failure class; it never expands the fourth-retry gate.
+  `xai/*` (grok-family) spawns get NO ladder: a cap, credit, or auth error there escalates directly to the user with the evidence. The xAI account auto-tops-up, so such errors are auth-shaped — silent self-recovery would mask them.
 - Reserve `architect-premium` and `code-reviewer-pro` for the most complex tasks — use `architect` and `code-reviewer` for routine work.
 - All loop phases run on paid models; free-tier variants are retired (MDU-40).
 
