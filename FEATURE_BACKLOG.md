@@ -356,7 +356,7 @@ Each MDU above is sized for the repo's own orchestrator to complete in one close
 - **Dependencies:** none.
 - **Status:** Done — 2026-10-30 (cap table in docs/model-registry.md with documented-undocumented finding + retracted 200/day figure; design doc additionally gives the pinned mmo attribution — grok-architect died 2026-10-29 13:12:49Z on opencode/big-pickle, respawned on xai/grok-4.7 ran clean; 68 `provider.quota` rows = 60 canonical + 8 old refusals; 2026-10-30 reset probes OK; QA PASS)
 
-### MDU-40 · Go/xAI-paid default tier — kill zen as default
+### MDU-40 · Go/xAI-paid default tier — kill zen as default (retitle: single paid config, zen retired)
 
 - **Why:** Strategy decision (user): stop using free-tier models entirely for the working loop — paid Go models for OpenCode-native agents and `xai/grok-4.7` (direct API key with auto-top-up) for the grok-family agents — because the free cap breakage is worse than paid cost.
 - **Description:** Introduce a new `paid` tier and make it the ACTIVE default everywhere (base build, overlay build, overlay deploy): OpenCode agents keep their true `opencode-go/*`+`xai/*` models (identity mapping, no zen remap); grok-family agents route to `xai/grok-4.7` (paid, API-key-authenticated); verify xAI auth works through opencode (`opencode models` shows the xai models; run the md-38 probe against xai endpoints — extend `probe_models.py` to probe xai models too). Keep zen available as an explicit emergency tier (`--tier=zen`) with a **hard tightened scope**: free models only for the small set that genuinely hurts cost (assign in design: candidates = `deep-research`/`research`/`qa-free` or none at all — decide from MDU-39's cap table). Validate the map_sha256 / gen_zen_config path keeps working so the emergency tier stays buildable.
@@ -366,6 +366,7 @@ Each MDU above is sized for the repo's own orchestrator to complete in one close
   3. Live deploy with the new default tier; `opencode run` against the head/one agent probed ok; mdu-38 gate updated to cover the new tier's model set.
   4. Free-tier agents list shrunk or removed per design decision; both builds exit 0; tests + docs updated; README + model-registry docs updated.
 - **Suggested agents:** architect (tier design, paid/free split), just-code (maps + probe extension + deploy wiring), devops (deploy + live verification), qa (validation), test-agent (tests).
+- **Status:** Done — 2026-10-30 (single paid config in both repos; zen tier machinery RETIRED per user decision superseding this AC's "emergency tier stays buildable": gen_zen map deleted, deploy default TIER=paid, --tier=zen exit 2; 8 free-model agents removed 28→20; live-dead opencode-go/mimo-v2.5 caught by test-phase live probe → 8 agents repointed to mimo-v2.6-flash; probe config-driven with config_sha256; paid census fail-closed in validator; live deploy 42 agents 0 free rows 20/20 grok-on-xai, smokes OK; base 9d77510 + a9a8da4, overlay 33f5b47; QA PASS; 640 tests green)
 - **Dependencies:** MDU-39 (cap economics to inform the free-exempt list).
 
 ### MDU-41 · Free-tier budgeting policy in agent definitions (while any free models remain)
