@@ -39,6 +39,7 @@ GROK_MIRRORS: dict[str, list[str]] = {
     "orchestrator": ["orchestrator.md"],
     "introspector": ["introspector.md"],
     "inception": ["inception.md"],
+    "grok-review": ["grok-review.md"],
 }
 
 # Role-specific contract keywords per stem. Each clause is a tuple of
@@ -61,6 +62,7 @@ ROLE_KEYWORDS: dict[str, list[tuple[str, ...]]] = {
         ("git clean",),
     ],
     "code-reviewer": [("read-only",), ("security",)],
+    "grok-review": [("read-only",), ("security",)],
     "devops": [("roll back",), ("immutable infrastructure", "infrastructure-as-code")],
     "qa": [("pass grade", "pass or fail grade"), ("fail grade", "pass or fail grade")],
     "architect": [("never write production code",)],
@@ -231,6 +233,54 @@ def validate_grok_agents(build_dir: Path) -> list[str]:
                 f"{sorted(GROK_MODEL_ALLOWLIST)}: {profile.name}"
             )
 
+    return errors
+
+
+#: grok/agents profiles deliberately NOT registered in opencode.json, each
+#: with a dated reason. This is a standing decision list, not a permanent
+#: exemption: remove an entry when its profile is registered or retired.
+GROK_CENSUS_ALLOWLIST: dict[str, str] = {
+    # 2026-10-31 (MDU-45): MDU-40 removed the bare `research` agent from
+    # opencode.json (deep-research replaced it); prompts/research.md and
+    # grok/agents/research.md remain until an explicit retire-or-register
+    # decision. Registering the agent or deleting both files retires this
+    # entry.
+    "research": "2026-10-31 (MDU-45): MDU-40 removed the opencode.json agent; files retained pending retire-or-register",
+}
+
+
+def validate_grok_registry_census(build_dir: Path) -> list[str]:
+    """Every grok/agents profile needs a same-name opencode.json agent (MDU-45).
+
+    One direction only: a Grok profile with no registry entry is a profile no
+    OpenCode orchestrator can spawn, so it fails closed. opencode.json-only
+    entries (deep-research, test-agent-mid) are legal and not checked. The
+    check runs on the build tree in hand — the overlay build passes its
+    MERGED config, so overlay-only profiles (grok-architect, grokestrator,
+    grok-plan, ...) resolve against the merged registry and pass; the base
+    tree is validated in isolation. Names come from frontmatter ``name``
+    (falling back to the file stem).
+    """
+    errors: list[str] = []
+    agents_dir = build_dir / "grok" / "agents"
+    config_path = build_dir / "opencode.json"
+    if not agents_dir.is_dir() or not config_path.is_file():
+        return []  # already reported by validate_grok_agents / validate_opencode
+    try:
+        agents = load_json(config_path).get("agents") or {}
+    except json.JSONDecodeError:
+        return []  # already reported by validate_opencode
+    for profile in sorted(agents_dir.glob("*.md")):
+        meta = parse_frontmatter(profile.read_text(encoding="utf-8"))
+        name = meta.get("name") or profile.stem
+        if name in GROK_CENSUS_ALLOWLIST or name in agents:
+            continue
+        errors.append(
+            f"grok registry census: profile '{name}' (grok/agents/{profile.name}) "
+            "has no same-name agent in opencode.json — register it or add a "
+            "GROK_CENSUS_ALLOWLIST entry with a dated reason "
+            f"(current allowlist: {sorted(GROK_CENSUS_ALLOWLIST)})"
+        )
     return errors
 
 
@@ -571,6 +621,7 @@ def main(argv: list[str] | None = None) -> int:
 
     errors.extend(validate_opencode(build_dir))
     errors.extend(validate_grok_agents(build_dir))
+    errors.extend(validate_grok_registry_census(build_dir))
     errors.extend(validate_claude_agents(build_dir))
     errors.extend(validate_skills(build_dir))
     errors.extend(validate_parity(build_dir))
@@ -592,6 +643,17 @@ def main(argv: list[str] | None = None) -> int:
     if schema_ran:
         print("  [ok]    opencode.json: conforms to schemas/opencode.schema.json")
     print(f"  [ok]    grok/agents: {grok_count} profiles with valid frontmatter")
+    census_profiles = list((build_dir / "grok" / "agents").glob("*.md"))
+    census_total = len(census_profiles)
+    census_allowlisted = 0
+    for p in census_profiles:
+        meta = parse_frontmatter(p.read_text(encoding="utf-8"))
+        name = meta.get("name") or p.stem
+        if name in GROK_CENSUS_ALLOWLIST:
+            census_allowlisted += 1
+    census_registered = census_total - census_allowlisted
+    print(f"  [ok]    grok census: {census_registered}/{census_total} profiles registered "
+          f"({census_allowlisted} allowlisted)")
     print(f"  [ok]    claude/agents: {claude_count} subagents with valid frontmatter")
     parity_pairs = sum(
         len(GROK_MIRRORS[stem])

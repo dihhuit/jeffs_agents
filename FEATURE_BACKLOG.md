@@ -26,6 +26,8 @@ This backlog is written so the repo's **current** agent definitions can build th
 
 ### MDU-01 · Live model-registry drift check (critical — proven broken)
 
+- **Status:** Done — shipped 2026-09/10 (Status line backfilled 2026-10-31 during the MDU-45 docs sweep; verified via in-repo tests and artifacts)
+
 - **Why:** Two research agents currently fail at runtime: `opencode/deepseek-v4-flash-free` and `opencode/north-mini-code-free` no longer exist. Nothing catches this.
 - **Description:** Extend `scripts/lib/validate.py` (or add a companion script) so the build validates every `model:` reference in `opencode.json` and every Grok frontmatter model against a **live model registry**. For OpenCode: query the configured API/registry for available models (or maintain a pinned, dated allowlist file with a freshness check). For Grok: keep the existing allowlist but emit a warning when a configured model is untested. Add a `--check-live` flag, and make the normal `./build.sh` fail on **stale** references found via a bundled registry snapshot, warning (not failing) when offline.
 - **Acceptance criteria:**
@@ -38,6 +40,8 @@ This backlog is written so the repo's **current** agent definitions can build th
 
 ### MDU-02 · CI pipeline for agent definitions
 
+- **Status:** Done — shipped 2026-09/10 (Status line backfilled 2026-10-31 during the MDU-45 docs sweep; verified via in-repo tests and artifacts)
+
 - **Why:** There is no `.github/` at all; validation only runs locally. Recruiters and users must see automated checks.
 - **Description:** Add a GitHub Actions workflow that runs on push/PR: `build.sh` → `validate.py` (including live-model check) → markdown lint of `prompts/` → JSON schema check of `opencode.json` against the pinned OpenCode config schema → YAML frontmatter check on `grok/agents/*` → a smoke test that attempts to spawn each agent type dry-run. Add status badges to the README.
 - **Acceptance criteria:**
@@ -49,6 +53,8 @@ This backlog is written so the repo's **current** agent definitions can build th
 - **Dependencies:** MDU-01.
 
 ### MDU-03 · Definition hygiene & config normalization
+
+- **Status:** Done — shipped 2026-09/10 (Status line backfilled 2026-10-31 during the MDU-45 docs sweep; verified via in-repo tests and artifacts)
 
 - **Why:** `qa`, `qa-pro`, `qa-free` still use the legacy `tools` block while all other agents use `permission`; inconsistent tooling hints; stray untracked `deepseek_error.png` in repo root.
 - **Description:** Migrate the three QA agents to the `permission` style, matching sibling agents (read/grep/glob/webfetch/websearch allowed; edit/write denied or allow-only-in-scratch; bash restricted). Remove the stray PNG (or move to `docs/` if it illustrates a real incident). Normalize descriptions to a consistent tense/format. Add a JSON Schema file for `opencode.json` (documenting the config contract) in `docs/` or `schemas/`.
@@ -85,6 +91,8 @@ This backlog is written so the repo's **current** agent definitions can build th
 
 ### MDU-05 · Seed a real skills library
 
+- **Status:** Done — shipped 2026-09/10 (Status line backfilled 2026-10-31 during the MDU-45 docs sweep; verified via in-repo tests and artifacts)
+
 - **Why:** `skills/` is empty while "Agent Skills" is a 30+ tool open standard (SKILL.md + progressive disclosure).
 - **Description:** Author 4–6 high-value skills in the open Agent Skills format (dir + `SKILL.md` with `name`/`description` frontmatter and focused markdown body + optional `scripts/`/`references/`):
   1. `mdu-lifecycle` — the MDU closed-loop checklist (used by just-code/qa).
@@ -104,6 +112,8 @@ This backlog is written so the repo's **current** agent definitions can build th
 
 ### MDU-06 · MCP reference configuration & browser verification path
 
+- **Status:** Done — shipped 2026-09/10 (Status line backfilled 2026-10-31 during the MDU-45 docs sweep; verified via in-repo tests and artifacts)
+
 - **Why:** QA prefers Playwright MCP but nothing configures or documents MCP; the browser verification path is unsupported.
 - **Description:** Ship a reference `.mcp.json` (or `docs/mcp.md` + config snippets per CLI) covering: Playwright MCP (browser verification), filesystem MCP (scoped), GitHub MCP (PR operations), and optionally a memory server. Document per-agent scoping (which servers each agent may use). Update `qa` prompt to specify exact server names and a concrete fallback chain (Playwright MCP → browser-os MCP → CLI + screenshots → BLOCKED report). Document remote MCP via SSE for shared servers.
 - **Acceptance criteria:**
@@ -115,6 +125,8 @@ This backlog is written so the repo's **current** agent definitions can build th
 - **Dependencies:** none.
 
 ### MDU-07 · Run ledger & observability hooks
+
+- **Status:** Done — shipped 2026-09/10 (Status line backfilled 2026-10-31 during the MDU-45 docs sweep; verified via in-repo tests and artifacts)
 
 - **Why:** Zero telemetry; autonomy claims can't be evidenced; token spend unknowable.
 - **Description:** Add a machine-readable run ledger:
@@ -135,6 +147,8 @@ This backlog is written so the repo's **current** agent definitions can build th
 ## P2 — Make It Provable & Safe (evals, security, polish)
 
 ### MDU-08 · Golden evaluation suite
+
+- **Status:** Done — shipped 2026-09/10 (Status line backfilled 2026-10-31 during the MDU-45 docs sweep; verified via in-repo tests and artifacts)
 
 - **Why:** Nothing evaluates the agent definitions themselves; regression is invisible.
 - **Description:** Create `evals/` with a golden task set (5–10 realistic tasks across domains: REST API, CLI tool, UI page, config change, bugfix) each with: task statement, acceptance criteria, and expected artifacts. Add a `run-evals` skill (or script) that runs the tasks against the current definitions in a scratch workspace and records PASS/FAIL per task. Wire a smoke subset into CI (MDU-02) so every PR to `prompts/` re-runs the golden suite.
@@ -292,6 +306,8 @@ Each MDU above is sized for the repo's own orchestrator to complete in one close
 
 ### MDU-34 · Canonical resume-block format (emit-strict, read-permissive)
 
+- **Status:** Done — shipped 2026-09/10 (Status line backfilled 2026-10-31 during the MDU-45 docs sweep; verified via in-repo tests and artifacts)
+
 - **Why:** Resume blocks are emitted in three different shapes today — a JSON object, a flat `key: value` list, and a prose paragraph. All three work because the session-boundary gate recognizes a resume block *by purpose, not by header or exact phrasing*, but the variance costs the next session time (hunting for the commit SHA, branch, and artifact paths), makes resume blocks unvalidatable, and is the same cross-CLI drift problem MDU-14 and MDU-15 fixed for prompts and run manifests.
 - **Description:** Define one canonical machine-readable block and a validator, without narrowing what the gate accepts as input:
   - Canonical shape: a fenced `json` object carrying the gate's own key list — `mdu_id`, `branch`, `commit_sha`, `harness`, `status`, `done[]`, `next[]`, `blocked_on[]`, `design`, `backlog`, `artifacts[]`, plus optional `notes`.
@@ -384,3 +400,24 @@ Each MDU above is sized for the repo's own orchestrator to complete in one close
 - **Dependencies:** MDU-40.
 - **Suggested agents:** architect (policy wording), just-code (mirror edits), test-agent, qa.
 - **Status:** Done — 2026-10-30 (superseded to PAID-spawn policy by the MDU-40 outcome: no free usage remains, so "free-quota budgeting" became the cap-error/fallback ladder — one retry → exactly one rotation from the verified live list → stop+escalate for `opencode-go/*` spawns; `xai/*` gets no ladder, direct escalation; "never substitute a free model" guard stated explicitly). Ladder block byte-identical in all three orchestrator mirrors; architect mirrors gained the design-time live-probe clause (apply-now 20261030-1) + research→deep-research delegation fix; introspector `--session-id` sentence (20261021-4) in all three mirrors; `docs/fallback-ladder.md` (D7); `evals/tasks/05-fallback-ladder/` scripted six-case driver demo (replaces the impossible live-cap-error AC); `skills/mdu-lifecycle/SKILL.md` ladder line; MDU-40 test freed-model check narrowed with sanctioned-prefix helper; base 541 tests + overlay 148 tests green; prompt-regression gate 7/7; live deploy (20 opencode / 41 grok / 42 claude) with installed-copy verification. QA PASS.
+
+### MDU-45 · Register base `grok-review` + grok-registry census + docs staleness sweep
+
+- **Why:** Base `grok/agents/grok-review.md` (read-only Grok code-review rung, MDU-25 bulk tier) was the only base Grok profile with no same-name agent in `opencode.json`. User decision (2026-10-31): register it in base `opencode.json` with a `prompts/` body per family convention; retirement is out of scope. The same user decision bundled the docs-staleness sweep (README progress line, stale Grok-model claim, `docs/model-registry.md` refresh caveat, backlog Status backfill) into this MDU.
+- **Description:** Add `grok-review` to base `opencode.json` as a subagent on `xai/grok-build-0.1` with `system: {file:./prompts/grok-review.md}`, temperature 0.1, and permissions byte-identical to `code-reviewer`. Author `prompts/grok-review.md` as the canonical OpenCode body (minimal reviewer contract, no new policy text). Align `grok/agents/grok-review.md` section heading `Rules:` → `Hard constraints:` with no other behavior change. Add `validate_grok_registry_census` to `scripts/lib/validate.py`: every `grok/agents/*.md` profile must have a same-name agent in the build tree's `opencode.json`; fail closed with a dated `GROK_CENSUS_ALLOWLIST = {"research": ...}` for the MDU-40 retired-but-files-retained bare `research` agent. Update README (roster row, 21-agent/12-prompt counts, two-rung Grok wording, re-derived progress line with last-verified 2026-10-31). Backfill Status lines for MDU-01/02/03/05/06/07/08/34. Add dated safe-refresh caveat to `docs/model-registry.md`; leave `config/model-registry.txt` untouched.
+- **Acceptance criteria:**
+  1. Base `opencode.json` registers `grok-review` per D2 and `./build.sh` is green end-to-end.
+  2. Design-time live probes (2026-10-31) recorded: both `xai/grok-build-0.1` and `xai/grok-4.7` answered exactly `OK`; chosen model is `xai/grok-build-0.1`.
+  3. `prompts/grok-review.md` exists with the D3 body; prompt ref resolves; parity pair pinned in `GROK_MIRRORS` and `ROLE_KEYWORDS`.
+  4. `grok/agents/grok-review.md` carries only the D4 heading alignment edit.
+  5. `validate_grok_registry_census` ships wired after `validate_grok_agents`, with dated allowlist (`research` only); base and overlay merged builds both pass.
+  6. Negative-fail: synthetic orphan profile fails `validate.main` with the named census error; allowlist pass and key-set pinned.
+  7. README (D7): roster row, layout counts 21/12, stale wording replaced, progress line re-derived with last-verified 2026-10-31.
+  8. `FEATURE_BACKLOG.md` (D8): MDU-45 entry with both user decisions; Status backfilled for MDU-01/02/03/05/06/07/08/34; no entry unresolved.
+  9. `docs/model-registry.md` carries dated safe-refresh caveat; snapshot untouched.
+  10. Tests (D10): `tests/test_mdu_45_grok_review_registry.py` green (~20 tests); `test_mdu_40_paid_default.py` count pin updated to 21; full suites green.
+  11. Prompt-regression gate exits 0 with baseline unchanged.
+  12. Deploy (D11): both builds green; overlay `deploy.sh --force` installs 43 OpenCode agents (from 42) with 21/21 grok-named entries on `xai/*`; evidence file written; run manifest created and validated.
+- **Suggested agents:** architect (design — done), just-code-mid (implement), code-reviewer (review), test-agent-mid (tests), devops (deploy + probes), qa (validate), orchestrator (commit).
+- **Dependencies:** MDU-42 (grok-xai hard rule), MDU-25 (build rung), MDU-40 (paid census), MDU-44 (overlay dead-copy pins).
+- **Status:** Done — 2026-10-31 — QA PASS 13/13 ACs (base `opencode.json` 20→21 agents; `prompts/` 11→12 files; parity pairs 19→20; `validate_grok_registry_census` ships with `GROK_CENSUS_ALLOWLIST={"research"}`; base build 21 agents/20 grok profiles passes; overlay merged build 43 agents/41 grok profiles passes; base 594 + overlay 192 tests green; prompt-regression gate 7/7 green; base and overlay probe gates refreshed green; live deploy installs 43 agents with 21/21 grok-named entries on `xai/*`; evidence file written to `/tmp/opencode/mdu-45-deploy-evidence.md`; run manifest finalized pre-QA per 20261027-3 and validated).

@@ -140,6 +140,7 @@ Grok-named agents (`grok-*`, `grokestrator`, `grok-plan`) must resolve to `xai/*
 |  | [`test-agent-pro`](prompts/test-agent.md) | [prompts/test-agent.md](prompts/test-agent.md) | Security tests, deep coverage (Go premium). |
 | Code Review | [`code-reviewer`](prompts/code-reviewer.md) | [prompts/code-reviewer.md](prompts/code-reviewer.md) | Standard review (Go mid). |
 |  | [`code-reviewer-pro`](prompts/code-reviewer.md) | [prompts/code-reviewer.md](prompts/code-reviewer.md) | Deep security audit, architecture review (Go premium). |
+|  | [`grok-review`](prompts/grok-review.md) | [prompts/grok-review.md](prompts/grok-review.md) | Read-only review rung on the xAI Grok build model (xai/grok-build-0.1). |
 | Architecture | [`architect`](prompts/architect.md) | [prompts/architect.md](prompts/architect.md) | Design docs, API specs (Go premium). |
 |  | [`architect-premium`](prompts/architect.md) | [prompts/architect.md](prompts/architect.md) | Complex system design, ADRs (Go premium). |
 | DevOps | [`devops`](prompts/devops.md) | [prompts/devops.md](prompts/devops.md) | Standard deploys, Docker, CI/CD (Go mid). |
@@ -153,7 +154,7 @@ Grok-named agents (`grok-*`, `grokestrator`, `grok-plan`) must resolve to `xai/*
 
 ### Grok Build profiles (in [`grok/agents/`](grok/agents/))
 
-All profiles currently use **grok-4.7** (grok-4.6 and grok-4.5 remain available). Invoke with `grok --agent <name>`.
+Flagship roles run **grok-4.7**; bulk roles (just-code, test-agent, code-reviewer, qa, devops, research, ui-ux-designer, grok-review) run **grok-build-0.1** (MDU-25 split). grok-4.6 and grok-4.5 remain allowlisted. Invoke with `grok --agent <name>`.
 
 | Role group | Agent | Profile | Notes |
 | --- | --- | --- | --- |
@@ -470,12 +471,13 @@ base_agents/                   # this public repo
 │   └── opencode.schema.json   # JSON Schema for opencode.json
 ├── config/
 │   └── model-registry.txt     # Model allowlist (pinned)
-├── opencode.json              # OpenCode agent registry (20 agents, all paid)
-├── prompts/                   # OpenCode prompt bodies (canonical system prompts) — 11 files
+├── opencode.json              # OpenCode agent registry (21 agents, all paid)
+├── prompts/                   # OpenCode prompt bodies (canonical system prompts) — 12 files
 │   ├── orchestrator.md
 │   ├── just-code.md
 │   ├── test-agent.md
 │   ├── code-reviewer.md
+│   ├── grok-review.md
 │   ├── architect.md
 │   ├── devops.md
 │   ├── qa.md
@@ -526,7 +528,7 @@ This repo is actively being upgraded to the bleeding edge of autonomous agentic 
 - **[GAP_ANALYSIS.md](GAP_ANALYSIS.md)** — a full gap analysis against mid-2026 best practice (memory, skills, MCP, observability, evals, CI, security), including a live demonstration of model drift in the research agent configs.
 - **[FEATURE_BACKLOG.md](FEATURE_BACKLOG.md)** — a prioritized, MDU-sized implementation backlog consumable by this repo's own orchestrator. The agent team builds its own upgrade.
 
-(last verified 2026-10-23) **Progress:** **14/15** backlog items complete (MDU-01, 02, 03, 05, 06, 07, 08, 09, 11, 12, 13, 14, 15) — see [examples/upgrade-story.md](examples/upgrade-story.md) and [examples/gallery/](examples/gallery/) for worked examples.
+(last verified 2026-10-31) **Progress:** the original 15-item backlog is fully resolved — 14 complete (MDU-01–09, 11–15), MDU-10 superseded by MDU-28; later backlog entries MDU-32, 34, 35, 39–42 complete (MDU-33 superseded by MDU-40); post-backlog MDUs 16–31, 36–38, 43–45 complete per `git log`. Derived from FEATURE_BACKLOG.md Status fields (MDU-13 D6) — see [examples/upgrade-story.md](examples/upgrade-story.md) and [examples/gallery/](examples/gallery/) for worked examples.
 
 ## How This Repo Was Upgraded by Its Own Agents
 

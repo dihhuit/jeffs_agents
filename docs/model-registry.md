@@ -12,6 +12,8 @@ opencode models
 opencode models > config/model-registry.txt
 ```
 
+> **Safe-refresh caveat (2026-10-31, MDU-45):** `opencode models` can still list upstream-dead models as `active` — the deprecated `opencode-go/mimo-v2.5`(-pro) rows are the current example (killed per the MDU-40 live probe; see the dated `#` kill-comments in the snapshot). A blind `opencode models > config/model-registry.txt` would **resurrect** those rows and silently re-allow dead models. Safe procedure: (1) diff the new snapshot against the old before committing; (2) re-add a dated `# <model>` kill-comment for every previously commented row that the catalog still lists; (3) remember a listing is not proof of life — only the exact-OK probe (below) is. The build's model-refs check fails closed on any referenced model missing from the snapshot.
+
 The build pipeline (`scripts/lib/validate.py`) fails if any agent model
 reference is missing from the snapshot, so a stale reference cannot ship.
 

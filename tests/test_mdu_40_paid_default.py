@@ -76,7 +76,7 @@ def _config() -> dict:
 def test_canonical_config_is_paid_only() -> None:
     config = _config()
     agents = config["agents"]
-    assert len(agents) == 20
+    assert len(agents) == 21
     for name, definition in agents.items():
         assert not name.endswith("-free"), name
         assert definition["model"].startswith(PAID_PREFIXES), (name, definition)

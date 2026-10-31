@@ -1145,6 +1145,340 @@
         }
       ]
     },
+    "grok-review": {
+      "mode": "subagent",
+      "description": "Read-only code review rung on the xAI Grok build model (MDU-25 bulk tier). Reviews diffs for quality, security, and maintainability; never edits code",
+      "model": "xai/grok-build-0.1",
+      "color": "#60a5fa",
+      "system": "{file:./prompts/grok-review.md}",
+      "request": {
+        "body": {
+          "temperature": 0.1
+        }
+      },
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "git diff*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "git log*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "git show*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "grep *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "rg *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "git status*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "ls*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "head*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "tail*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "wc*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "sort*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "timeout *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "*$(*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*`*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*> /*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*> ~/*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*> ../*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*>/*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*>~/*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*>../*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*2>/dev/null*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "*python* -c*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "rm *",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "* rm *",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*xargs*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*sudo*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "cp *",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "* cp *",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "mv *",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "* mv *",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*curl*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*wget*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*sh -c*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "* git push*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "* git pull*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "* git reset*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "* git checkout*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "* git restore*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "* git switch*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "* git clean*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "* git stash*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "* git commit*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "* git rebase*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "* git merge*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "* git cherry-pick*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "* git apply*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "* git add*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "* git branch*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "* git tag*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "* git clone*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "* git worktree*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*sort -o*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*sort*-o*",
+          "effect": "deny"
+        },
+        {
+          "action": "read",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "glob",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "grep",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "list",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "webfetch",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "websearch",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "todowrite",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "subagent",
+          "resource": "deep-research",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ]
+    },
     "architect": {
       "mode": "subagent",
       "description": "Produces design docs and architecture using premium Go model. Generates blueprints for other agents",
