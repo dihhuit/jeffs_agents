@@ -4,11 +4,6 @@ created: 2026-10-27T13:24:20Z
 updated: 2026-10-31T03:45:00Z
 ---
 
-## 2026-10-31 — Run-ledger gains an OPTIONAL `model` field; attestation protocol proven end-to-end (mdu-46)
-- Context: 20261026-2's orchestrator-model audit trail missing 7 consecutive runs; QA final-manifest attestation (20261014-5 narrowed bar) one step from closure.
-- Decision: run-ledger `model` is optional (validated non-empty string when present; REQUIRED_FIELDS untouched so the user-gated inlined prompt schema in prompts/orchestrator.md needs no synchronized edit until a user-gated inline-schema MDU); manifests record the orchestrator model live-queried from the session store; QA briefs now require a verbatim ATTEST line on the exact final manifest path.
-- Consequences: 20261014-5 CLOSED on live evidence (mdu-46: post-last-append `[ok]` + QA attestation); docs/brief-checklist.md (commit 7381c5f) is the brief-template source; FILING GATED upstream draft staged locally for a possible future OpenCode fork (user ruling, filing still per-action gated). New learning: orchestrator manifest edits are the corruption-prone class — write manifest files whole, not edit-anchored.
-
 # Decision log
 
 ## 2026-10-27 — Question-tool failures: harness 60-min pending-question hard-kill; agent-definition mitigation (mdu-35)
@@ -79,3 +74,14 @@ updated: 2026-10-31T03:45:00Z
 - Context: 20261030-4 (QA F2, mdu-44) — grok/agents/grok-review.md was the only base Grok profile with no opencode.json agent; introspector suggested register-or-retire plus a census clause.
 - Decision: user ruled REGISTER 2026-10-31 (xai/grok-build-0.1 after live-OK probes of both candidates; prompts/grok-review.md canonical body, permissions byte-identical to code-reviewer; Grok mirror gets only the Rules:/Hard constraints: heading edit). validate.py gains one-directional validate_grok_registry_census: every grok/agents/*.md must have a same-name agent in the MERGED build-tree opencode.json, dated GROK_CENSUS_ALLOWLIST = {"research"}.
 - Consequences: census runs in base + overlay merged builds (40/41 + 1 allowlisted); base 21 agents / 20 profiles, live deploy 43/43/41; README progress line re-derived (last verified 2026-10-31), model-registry.md safe-refresh caveat shipped.	Field rule learned: validate.main error assertions in tests must capture stdout, not just rc==1 (vacuous when an unrelated validator error also fires).
+
+
+## 2026-10-31 — Run-ledger gains an OPTIONAL `model` field; attestation protocol proven end-to-end (mdu-46)
+- Context: 20261026-2's orchestrator-model audit trail missing 7 consecutive runs; QA final-manifest attestation (20261014-5 narrowed bar) one step from closure.
+- Decision: run-ledger `model` is optional (validated non-empty string when present; REQUIRED_FIELDS untouched so the user-gated inlined prompt schema in prompts/orchestrator.md needs no synchronized edit until a user-gated inline-schema MDU); manifests record the orchestrator model live-queried from the session store; QA briefs now require a verbatim ATTEST line on the exact final manifest path.
+- Consequences: 20261014-5 CLOSED on live evidence (mdu-46: post-last-append `[ok]` + QA attestation); docs/brief-checklist.md (commit 7381c5f) is the brief-template source; FILING GATED upstream draft staged locally for a possible future OpenCode fork (user ruling, filing still per-action gated). New learning: orchestrator manifest edits are the corruption-prone class — write manifest files whole, not edit-anchored.
+
+## 2026-10-31 — Environment gaps that make MCP agents stall: chrome channel, blender launcher vs addon (mdu-48)
+- Context: a sprite_generator review QA child stalled on three "environment" failures; forensics (commit c3b2d48) reproduced two of them in the orchestrator harness.
+- Decision: recommendations only, per-diff user-gated — S1 route write/exec steps away from read-only agents; S2b pin `--browser chromium` + one-time `npx playwright install chromium` (Google Chrome absent; snap chromium fragile, not the recommended target); S3 run Blender (pgrep -x blender) with the addon enabled before blender-dependent steps; treat harness "connected" as launcher-level only.
+- Consequences: probes must distinguish app vs launcher (`pgrep -x blender`, count `mcp-for-blender` separately; 13 idle pairs = leak); new suggestions 20261031-1/-2/-3 queued as apply-now; MDU-47 resumes from committed design 3f2f2f2.
