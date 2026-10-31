@@ -1,7 +1,7 @@
 ---
 type: decisions
 created: 2026-10-27T13:24:20Z
-updated: 2026-10-30T15:55:00Z
+updated: 2026-10-31T02:50:00Z
 ---
 
 # Decision log
@@ -69,3 +69,8 @@ updated: 2026-10-30T15:55:00Z
 - Context: mdu-43's dead-vs-live rule of thumb needed an execution MDU; build-source evidence classified all 39 overlay-root files (17 base-owned shadows, 3 overlays-full-file shadows, 6 orphans incl. the grokestrate.md typo; 18 LIVE grok profiles + root prompts/grok-plan.md untouched).
 - Decision: deleted the 20 dead/orphan files (educator.md deletion user-approved; builder diff pinned to exactly the 6 orphan build outputs) and removed the untracked .rollback-2026… dir only after a verified tar snapshot. Grokestrator/grok-plan mirrors explicitly protected.
 - Consequences: overlay root prompts/ = {grok-plan.md} only; regression pin tests/test_mdu_44_dead_copy_hygiene.py (44 pins, both shadow sources); live deploy pruned the 6 orphans. Open follow-up: base grok/agents/grok-review.md is registered in no opencode.json (QA F2, 20261030-4) — register-or-retire in a future registry MDU.
+
+## 2026-10-31 — grok-review registered by user decision; counterpart census ships (mdu-45)
+- Context: 20261030-4 (QA F2, mdu-44) — grok/agents/grok-review.md was the only base Grok profile with no opencode.json agent; introspector suggested register-or-retire plus a census clause.
+- Decision: user ruled REGISTER 2026-10-31 (xai/grok-build-0.1 after live-OK probes of both candidates; prompts/grok-review.md canonical body, permissions byte-identical to code-reviewer; Grok mirror gets only the Rules:/Hard constraints: heading edit). validate.py gains one-directional validate_grok_registry_census: every grok/agents/*.md must have a same-name agent in the MERGED build-tree opencode.json, dated GROK_CENSUS_ALLOWLIST = {"research"}.
+- Consequences: census runs in base + overlay merged builds (40/41 + 1 allowlisted); base 21 agents / 20 profiles, live deploy 43/43/41; README progress line re-derived (last verified 2026-10-31), model-registry.md safe-refresh caveat shipped.	Field rule learned: validate.main error assertions in tests must capture stdout, not just rc==1 (vacuous when an unrelated validator error also fires).

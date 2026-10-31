@@ -1,7 +1,7 @@
 ---
 type: project
 created: 2026-10-27T13:24:20Z
-updated: 2026-10-30T20:50:00Z
+updated: 2026-10-31T02:50:00Z
 ---
 
 # Project facts — open-agent-definitions (base agent-team repo)
@@ -59,3 +59,8 @@ updated: 2026-10-30T20:50:00Z
 - Design docs must write repo paths WITHOUT the absolute workspace prefix — use a `$WORKSPACE`-style variable (20261030-5); the secret-scan high-entropy rule flags 32+ char [A-Za-z0-9+/] runs regardless of credential content, and the fixed rule costs a fix cycle (base scanner runs it), so write it clean the first time (20261024-1 style: also survey-proof design docs to the read-file range).
 - Post-mdu-44 overlay layout: overlay root prompts/ contains exactly grok-plan.md; root grok/agents/ = 18 LIVE grok profiles; dead copies no longer exist — do not recreate shadow copies at overlay root.
 - process slip to watch: mdu-44 finalized the manifest AFTER QA again (20261027-3 regression facet #2); apply-before-QA is the rule and QA/introspector should be dispatched against the finalized file.
+
+## 2026-10-31 (mdu-45)
+- Registry convention: every grok/agents/*.md needs a same-name agent in the merged build-tree opencode.json (census in validate.py, allowlist research only, dated). grok-review was REGISTERED (user ruling) on xai/grok-build-0.1; base 21 agents / 12 prompts / 20 grok profiles; merged overlay 43 agents / 41 profiles.
+- probe_models.py config_sha256: ANY opencode.json agent addition invalidates the committed probe report — mandatory --refresh --gate from both repos follows every registry change (D11 runbook step; caught live in mdu-45).
+- Test-writing rule (review-derived): a validator-wiring test pinning rc==1 alone is vacuous if an unrelated validator error also fires — assert the emitted error text in captured stdout (capsys) as well as rc.
