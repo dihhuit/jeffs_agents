@@ -213,6 +213,9 @@ overlay regenerated `build/` committed only per user policy.
 
 ## Appendix A — Upstream-issue DRAFT (text only — DO NOT FILE without explicit per-action user approval)
 
+> Standalone staging copy (maintained; this appendix is the frozen record):
+> `docs/upstream-drafts/opencode-question-60min-kill.md`.
+
 **Title:** Pending `question` tool call hard-killed at ~60 min with no re-prompt: turn ends `finish:"error"`, session idle `interrupted`, user must manually retry
 
 **Minimal repro:** (1) OpenCode v2.0.31 (Linux): in a long-running turn, emit a `question` tool call near the end of the turn; (2) leave it unanswered > 60 min (session idle); (3) observe: tool part → `{"type":"aborted","message":"Tool execution interrupted"}`, `executed:false`, `state.status:"error"`; assistant message `finish:"error"` + `"Step interrupted"`; `idle` row `outcome:"interrupted"` at the same epoch second; TUI shows red "Asked N questions" with no visible prompt; no forward progress until the user manually messages.

@@ -12,6 +12,9 @@ each phase. This module provides:
   phase usage, and QA results. Prints a text summary, or ``--json`` for machine
   use.
 
+The optional top-level ``model`` field records the orchestrator model id (free
+form, non-empty string when present; absent stays valid).
+
 The schema constants are module-level so tests and other tooling can import
 them without re-declaring the enum sets.
 
@@ -90,6 +93,10 @@ def validate_manifest(data: dict) -> list[str]:
         errors.append(
             f"harness must be one of opencode|grok|claude (got '{data['harness']}')"
         )
+
+    if "model" in data:
+        if not isinstance(data["model"], str) or not data["model"]:
+            errors.append("'model' must be a non-empty string")
 
     for field in ("started_at", "completed_at"):
         if field not in data:
@@ -251,6 +258,7 @@ def summarize(manifests: list[dict]) -> dict:
         "manifests": len(manifests),
         "by_status": {status: 0 for status in sorted(STATUSES)},
         "by_harness": {harness: 0 for harness in sorted(HARNESSES)},
+        "by_model": {},
         "phases_total": 0,
         "phases_by_phase": {phase: 0 for phase in sorted(PHASES)},
         "phases_by_tier": {tier: 0 for tier in sorted(MODEL_TIERS)},
@@ -268,6 +276,10 @@ def summarize(manifests: list[dict]) -> dict:
         harness = data.get("harness")
         if harness in stats["by_harness"]:
             stats["by_harness"][harness] += 1
+
+        model = data.get("model")
+        if isinstance(model, str) and model:
+            stats["by_model"][model] = stats["by_model"].get(model, 0) + 1
 
         fix_iterations = data.get("fix_iterations")
         if isinstance(fix_iterations, int):
@@ -320,6 +332,14 @@ def format_summary(stats: dict) -> str:
         if count:
             lines.append(f"  {harness:<12} {count}")
     if not any(stats["by_harness"].values()):
+        lines.append("  (none)")
+
+    lines.append("")
+    lines.append("by model:")
+    for model, count in stats["by_model"].items():
+        if count:
+            lines.append(f"  {model:<12} {count}")
+    if not any(stats["by_model"].values()):
         lines.append("  (none)")
 
     lines.append("")

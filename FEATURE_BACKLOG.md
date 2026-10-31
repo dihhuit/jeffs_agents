@@ -421,3 +421,29 @@ Each MDU above is sized for the repo's own orchestrator to complete in one close
 - **Suggested agents:** architect (design — done), just-code-mid (implement), code-reviewer (review), test-agent-mid (tests), devops (deploy + probes), qa (validate), orchestrator (commit).
 - **Dependencies:** MDU-42 (grok-xai hard rule), MDU-25 (build rung), MDU-40 (paid census), MDU-44 (overlay dead-copy pins).
 - **Status:** Done — 2026-10-31 — QA PASS 13/13 ACs (base `opencode.json` 20→21 agents; `prompts/` 11→12 files; parity pairs 19→20; `validate_grok_registry_census` ships with `GROK_CENSUS_ALLOWLIST={"research"}`; base build 21 agents/20 grok profiles passes; overlay merged build 43 agents/41 grok profiles passes; base 594 + overlay 192 tests green; prompt-regression gate 7/7 green; base and overlay probe gates refreshed green; live deploy installs 43 agents with 21/21 grok-named entries on `xai/*`; evidence file written to `/tmp/opencode/mdu-45-deploy-evidence.md`; run manifest finalized pre-QA per 20261027-3 and validated).
+
+### MDU-46 · Apply-now tooling — run-ledger `model` field, brief checklist, local upstream draft
+
+- **Why:** apply-now 20261026-2 (record the orchestrator model in the run manifest) went uncarried for 7 runs because the manifest schema had no field for it; the highest-value apply-now clauses live only as prose inside `agent-improvements.md`; and the MDU-35 upstream draft is buried in a design appendix. Promote all three into durable, test-pinned tooling/docs.
+- **Description:** (D1) add the OPTIONAL top-level `model` field to `scripts/lib/run_ledger.py` — validated only when present (non-empty string, no enum/allowlist), never added to `REQUIRED_FIELDS`; `summarize()` gains additive `by_model` and `format_summary()` a `by model:` block. (D2) new `docs/brief-checklist.md`: an Every-brief block plus seven role templates (architect, just-code/fix child, code-reviewer, test-agent, devops, qa, introspector), each clause a one-liner carrying its `[id]`. (D3) new `docs/upstream-drafts/opencode-question-60min-kill.md`: FILING GATED banner, masked evidence pointers, zero submission mechanics, status = local staging for a possible someday fork; one pointer line under the MDU-35 appendix. (D5) backlog and tests README updates.
+- **Acceptance criteria:**
+  1. `validate` exits 0 with a valid `model`, exits 1 with `'model' must be a non-empty string` on empty/non-string, absent stays valid.
+  2. `model` stays out of `REQUIRED_FIELDS`; full suite green including every untouched test_mdu_15 parity test.
+  3. `by_model` appears additively in text and `--json`; no existing key changes.
+  4. `docs/brief-checklist.md` exists with all seven role templates, the nine pinned ids on one line each with their clause, and the "DOC, not a prompt/definition file" statement.
+  5. The upstream draft opens with the FILING GATED banner, cites only `runs/mdu-35-question-tool/evidence.md` sections, and contains no submission mechanics.
+  6. `tests/test_mdu_46_apply_now_tooling.py` is green and hermetic (tmp_path only, no network, no git state).
+  7. Tests README gains its row; backlog gains this entry and the prep-fork follow-up.
+  8. Both builds exit 0; secret scan clean; zero changes under `prompts/` and `grok/agents/`.
+- **Suggested agents:** architect (design — done), just-code-budget (code + docs), code-reviewer-mid (static trace), test-agent (pins), devops (builds + scan), qa (final validation).
+- **Dependencies:** MDU-35 (draft source), MDU-45 (preceding chore MDU). Deferred to MDU-47: turning `model` into a required field and applying the checklist clauses to the definitions.
+- **Status:** Done — 2026-10-31 (run_ledger gains the optional `model` field + `by_model`; REQUIRED_FIELDS untouched so the MDU-15 inline parity pins still bind; brief checklist carries 9 pinned clauses across 7 role templates; upstream draft staged locally with no filing mechanics; 44 new tests)
+
+#### Follow-up · Upstream draft staging — 60-min question kill (prep-fork)
+
+- **Why:** The MDU-35 evidence for the ~60-min `question`-call kill is a real upstream bug, but filing anything upstream is gated: the base rule requires an explicit per-action user instruction naming the repository and the action, and the 2026-10-31 ruling is local staging only.
+- **Description:** Keep `docs/upstream-drafts/opencode-question-60min-kill.md` as the maintained standalone copy (the appendix in `docs/design/mdu-35-question-tool.md` stays the frozen record with a pointer). If a future OpenCode fork or an explicit user instruction arrives, this file is the ready text. Nothing here is to be submitted as a routine MDU step.
+- **Acceptance criteria:** the draft exists, is gated by its banner, keeps masked evidence pointers only, and stays free of submission mechanics (pinned by the MDU-46 test file). Unblocking requires a user instruction that names the repository and the action.
+- **Suggested agents:** orchestrator (hold), user (ruling).
+- **Dependencies:** MDU-46 (staged it). Fork itself: someday, unplanned.
+- **Follow-up status:** Staged — 2026-10-31 (filing gated; fork unplanned per the 2026-10-31 user ruling; MDU-46 test pins keep the draft clean)
