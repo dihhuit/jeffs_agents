@@ -341,12 +341,27 @@ Each MDU above is sized for the repo's own orchestrator to complete in one close
 - **Suggested agents:** explore (session-storage forensics, quick), deep-research or research (known OpenCode issues), architect (classification + fix design), just-code (prompt/config fix), test-agent (gates), qa (validation).
 - **Dependencies:** none in this repo; evidence lives in the user's sprite_generator session storage.
 
+## Queue — operational incident foreground (2026-10-31)
+
+### MDU-48 · Harness-reported MCP/shell connectivity vs agent reality mismatch (sprite_generator debugging incident) (queue head)
+
+- **Status:** Done — 2026-10-31 (diagnosis + recommendations delivered; live transparency in the mdu-48 manifest; exact config fixes await per-diff user approval)
+- **Why:** The user's `sprite_generator` session got stuck: the harness reported MCP servers connected, yet the agent could not use any of them, and its `shell` was denied 3/3. Paraphrased from the stuck session's question tool (`ses_e6d1ac9c…`): every write path was blocked, so the child could not write its `answers_qa` JSON files. The three symptom strings it reported were "Permission denied: shell" (x3), "Chromium distribution 'chrome' is not found at /opt/google/chrome/chrome", and "Could not connect to Blender".
+- **Symptoms to root-cause (each independently):**
+  1. `shell` "Permission denied: shell" ×3 — same denial class the mdu-45/mdu-46 QA children hit by design; which agent/allowlist was the sprite session running, and was the denial by-design or a config defect?
+  2. Playwright MCP: "Chromium distribution 'chrome' is not found at /opt/google/chrome/chrome" — a pinned browser distribution/path that does not exist on this machine; find where the chrome channel/path is pinned (MCP server args, env, config) and what the correct playwright-mode/bundled-chromium fix is.
+  3. Blender MCP: harness says connected, addon says "Could not connect to Blender" — the status check apparently verifies the server process, not the addon socket; find what "connected" actually probes.
+- **Description:** DB forensics on the sprite session(s) (session store, tool call/error parts) + inspection of the live config the sprite session ran under (deployed opencode.json agent block incl. its shell permissions, MCP entries, playwright/blender server args). Reproduce each failure with a minimal probe. Deliverable: per-symptom root cause + a RECOMMENDED fix per symptom (config-level; no config change committed without user approval — the fix goes to the user for a ruling first, then is approved into a follow-up or folded into this MDU with approval).
+- **Acceptance criteria:** each of the three symptoms has a named root cause with evidence (session store + config lines + probe reproduction); a written recommendation per symptom with the exact config diff it would apply; unit-of-work confined to diagnosis + recommendation unless the user approves the fix in-loop.
+- **Suggested agents:** deep-research or architect (forensics design), devops or just-code (probes), orchestrator (synthesis + user report).
+- **Dependencies:** none.
+
 ## P0bis — Free-tier quota crisis (new strategy, 2026-10-29)
 
 **Context (user-confirmed, live-diagnosed):** OpenCode drastically tightened free-tier (Zen) model usage caps — Zen models are heavily capped even when a Go subscription is purchased. In the user's `mmo` project session, the `grok-architect` spawn died with an opencode free-tier limit: the deployed zen default tier maps ~40 of 50 agents (all `opencode-go/*` AND both `xai/*` agents, via the mdu-36 overlay fallback) onto `opencode/big-pickle`, so all loop traffic crowds one free model until it caps out. The xAI API key + auto-top-up were not involved (the agent ran through OpenCode, which never calls xAI for those agents in the zen tier). New strategy direction set by the user: **stop using free-tier models entirely (Go tier + xAI via API key), or reduce free usage to a tiny explicit set**.
 
 
-### MDU-42 · HARD RULE — Grok-named agents must use XAI account models (queue head)
+### MDU-42 · HARD RULE — Grok-named agents must use XAI account models
 
 - **Status:** Done — 2026-10-29 (validator+deploy gates+probe+m one-sentence mirrors landed; live deploy verified 20/20 grok-named agents on `xai/*`; QA PASS)
 - **Why:** The mdu-36 overlay zen fallback routed all `xai/grok-*` agents to `opencode/big-pickle` (free) — the direct cause of the mmo free-cap burn. The user's standing rule, effective immediately: **every agent whose name starts with `grok-` (and `grokestrator`, `grok-plan`) must run on `xai/*` models billed to the user's xAI account (paid, auto-top-up) in every tier, every harness — never an opencode free/Go-substituted model.** The xAI account is the billing surface for anything grok.
