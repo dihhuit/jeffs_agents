@@ -1,8 +1,13 @@
 ---
 type: decisions
 created: 2026-10-27T13:24:20Z
-updated: 2026-10-31T02:50:00Z
+updated: 2026-10-31T03:45:00Z
 ---
+
+## 2026-10-31 — Run-ledger gains an OPTIONAL `model` field; attestation protocol proven end-to-end (mdu-46)
+- Context: 20261026-2's orchestrator-model audit trail missing 7 consecutive runs; QA final-manifest attestation (20261014-5 narrowed bar) one step from closure.
+- Decision: run-ledger `model` is optional (validated non-empty string when present; REQUIRED_FIELDS untouched so the user-gated inlined prompt schema in prompts/orchestrator.md needs no synchronized edit until a user-gated inline-schema MDU); manifests record the orchestrator model live-queried from the session store; QA briefs now require a verbatim ATTEST line on the exact final manifest path.
+- Consequences: 20261014-5 CLOSED on live evidence (mdu-46: post-last-append `[ok]` + QA attestation); docs/brief-checklist.md (commit 7381c5f) is the brief-template source; FILING GATED upstream draft staged locally for a possible future OpenCode fork (user ruling, filing still per-action gated). New learning: orchestrator manifest edits are the corruption-prone class — write manifest files whole, not edit-anchored.
 
 # Decision log
 
