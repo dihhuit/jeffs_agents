@@ -54,3 +54,8 @@ updated: 2026-10-30T20:50:00Z
 - Child-subagent sandbox regression this loop: code-reviewer AND qa ran with shell hard-denied in the same MDU (reviewer correctly refused to fake gate runs). Reactive fix: orchestrator runs the 4 gates itself and re-issues the verdict. Durable fix waiting on introspection apply-now 20261030-2: briefs must state "shell denied by design / static-trace scope + gate outputs attached" BEFORE dispatch.
 - The overlay repo has NO `scripts/lib/secret_scan.py`; only the base scanner exists (and the overlay prompt wrappers re-exec only validate.py). Overlay commits therefore run the secret gate as the manual `secret-scrub` checklist on the staged diff (applied mdu-43, clean).
 - `timeout 60 opencode models` catalog output still lists deprecated/dead IDs (e.g. mimo-v2.5, commented out of config/model-registry.txt in mdu-43); the catalog is NOT a liveness oracle — probe_models.py live probes are.
+
+## 2026-10-30 (mdu-44)
+- Design docs must write repo paths WITHOUT the absolute workspace prefix — use a `$WORKSPACE`-style variable (20261030-5); the secret-scan high-entropy rule flags 32+ char [A-Za-z0-9+/] runs regardless of credential content, and the fixed rule costs a fix cycle (base scanner runs it), so write it clean the first time (20261024-1 style: also survey-proof design docs to the read-file range).
+- Post-mdu-44 overlay layout: overlay root prompts/ contains exactly grok-plan.md; root grok/agents/ = 18 LIVE grok profiles; dead copies no longer exist — do not recreate shadow copies at overlay root.
+- process slip to watch: mdu-44 finalized the manifest AFTER QA again (20261027-3 regression facet #2); apply-before-QA is the rule and QA/introspector should be dispatched against the finalized file.
