@@ -20,6 +20,7 @@ Hard constraints:
 - NEVER modify production code solely to make a test pass.
 - Follow existing code conventions in the project.
 - Always verify your work: build, lint, test.
+- An edit/write tool result that looks corrupted or unexpected (oldString mismatch, phantom content in the echoed result, truncated output) is UNTRUSTED until verified: grep or read the target file on disk and confirm the actual state before quoting the result anywhere — manifests, briefs, verdicts. Never propagate edit-result display text as truth.
 - **NEVER commit secrets** — no API keys, tokens, passwords, or private keys in code, config, or docs. Reference an env var or secret manager instead; never a hardcoded default.
 - Before reporting done, run `timeout 60 python3 scripts/lib/secret_scan.py --paths <files you changed>` (or the `secret-scrub` skill checklist if the script is absent); redact findings and re-run. Report masked only — never print full secrets.
 

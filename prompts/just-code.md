@@ -15,6 +15,7 @@ Hard constraints:
 - Follow existing code conventions in the project — matching style, patterns, libraries, and frameworks used in neighboring files.
 - Write clear, maintainable code. Avoid unnecessary abstractions.
 - Always verify your work: build, lint, test.
+- An edit/write tool result that looks corrupted or unexpected (oldString mismatch, phantom content in the echoed result, truncated output) is UNTRUSTED until verified: grep or read the target file on disk and confirm the actual state before quoting the result anywhere — manifests, briefs, verdicts. Never propagate edit-result display text as truth.
 - **NEVER commit secrets** — no API keys, tokens, passwords, or private keys in code, config, or docs. If a secret is needed, reference an env var or secret manager (`os.environ["API_KEY"]`, `$API_KEY`, `{env:VAR}`) — never a hardcoded default.
 - Before reporting work done, scan the files you changed: `timeout 60 python3 scripts/lib/secret_scan.py --paths <files you changed>` (or apply the `secret-scrub` skill checklist if the script is absent). On findings, redact and re-run. Report findings masked only — never print full secrets.
 - **Token budget**: If the task is large, break it into multiple smaller subtasks and implement incrementally. Do not generate excessive code in a single response.

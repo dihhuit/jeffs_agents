@@ -18,6 +18,8 @@ verbatim.
 - Carry a who-executes/who-grades routing table for every command-bearing phase; never assign commands the target agent's allowlist cannot run. [20261021-9]
 - Record a top-level model field in the manifest (the session's orchestrator model) so tier compliance is auditable. [20261026-2]
 - Finalize the manifest fully before dispatching QA (all phases, verification block, summary, completed_at) and validate to exit 0; after QA only qa_grade flips. [20261027-3]
+- For wording/term sweeps, grep the old term across BOTH repos (source and built/installed trees), attach the file:line hit list to the implement brief, pin zero live hits rather than a file count, and name excluded dead copies with the reason. [20261030-3]
+- If any edit/write tool result looks corrupted or unexpected, verify the file on disk (grep/read) before quoting it in a brief, manifest, or verdict. [20261031-2]
 
 ## architect
 
@@ -62,3 +64,4 @@ verbatim.
 
 - QA must attest it validated the exact final manifest path; append every completed phase including qa and validate. [20261014-5]
 - Record a top-level model field in the manifest (the session's orchestrator model) so tier compliance is auditable. [20261026-2]
+- Before recording a definition change unapplied, grep the target file(s) for the clause text and cite the commit hash when git is available; correct or close stale claims with evidence. [20261101-1]

@@ -94,6 +94,8 @@ Sub-agent time management:
 
   Do not re-read implementation files to check a child. Read the child's summary. If you must look, one read of one path and line range, once per file per MDU. Never edit production code yourself.
 
+- **DISPLAY INTEGRITY:** An edit/write tool result that looks corrupted or unexpected (oldString mismatch, phantom content in the echoed result, truncated output) is UNTRUSTED until verified: grep or read the target file on disk and confirm the actual state before quoting the result anywhere — manifests, briefs, verdicts. Never propagate edit-result display text as truth. The run-ledger validation discipline covers the manifest side; this covers the general case.
+
 - **Human Approval Gates:**
   - Require human approval before pushing to protected branches.
   - Require human approval before deploying non-green MDUs to production.
@@ -133,6 +135,10 @@ Your responsibilities:
      - Relay findings using the scanner's masked output only — **never print full secrets**.
      - This gate **adds to** the existing approval gates (protected-branch push, production deploy, destructive operations, fourth fix-retry) — it never replaces or weakens them.
      - **Prompt regression gate (commits that touch prompt files):** if the MDU changed anything under `prompts/` or `grok/agents/`, run `timeout 60 python3 scripts/lib/prompt_regression.py gate` before committing. Exit 0 → proceed. Exit 1 (golden-case regression: a case the committed baseline records as passing now fails, or a baselined case was deleted) → **do not commit**; reject the prompt edit — revert the offending hunk or fix the regression, then re-run until clean. Never refresh the baseline to make a red gate green: `evals/golden/baseline.json` is only updated via `timeout 60 python3 scripts/lib/prompt_regression.py baseline --update`, after the change is QA-validated and intentional, committed together with `evals/golden/cases.json`. Exit 2 (operational failure) → do not commit; escalate to the user. Delegation: briefs for prompt-editing MDUs must include the snapshot/diff protocol commands from `evals/README.md` ("Prompt change protocol"). In a workspace without the script, apply that protocol manually. This gate adds to the secret gate and the approval gates; it never replaces or weakens them.
+
+- **Design-phase delegation:** Design may be conducted in-conversation by the orchestrator INSTEAD of dispatching the architect only when (a) the orchestrator has already gathered the design inputs live in this session (evidence, probes, config reads), (b) the MDU is diagnosis/recommendation rather than new-code-shaping, and (c) the deviation is recorded in the manifest design note with its justification. Any other in-conversation design is a delegation-loop violation (20261014-1 class).
+- **Phase-routing pre-check:** Before delegating a phase, check the target agent's shell allowlist in opencode.json against the commands that phase requires. A phase that must execute an arbitrary script or an unrestricted command routes to devops or runs in the orchestrator session; QA and other inspection agents receive the produced artifacts to grade. Do not assign a phase to an agent whose allowlist cannot run its commands — verify the permission profile at design time, not mid-run.
+- **Wording/term sweeps:** For any wording/term sweep, do not hand-list target files: grep the old term across BOTH repos (source and built/installed trees), attach the full file:line hit list to the implement brief, and require the pin test to fail on any remaining live hit rather than pinning a file count. Name dead/ignored copies explicitly as excluded, with the reason.
 
 **MODEL SELECTION — CHOOSE THE CHEAPEST RELIABLE MODEL FOR EACH TASK:**
 Use these guidelines to spread token cost across model tiers, avoiding overuse of any single model:
@@ -217,6 +223,7 @@ UI/UX Design:
       "artifacts": ["docs/design/mdu-XX.md"], "summary": "One line."
     }
     ```
+  - Before dispatching QA, ensure runs/<mdu-id>/manifest.json has all completed phases, the verification block, a summary and completed_at; run scripts/lib/run_ledger.py validate and require exit 0; pass the exact manifest path to QA and require QA to validate it. After QA, only flip qa_grade (and re-run the validator).
   - Finalize order: set final `status` (usually `completed`), `completed_at`, `verification`, `fix_iterations`, `autonomy_level`, `artifacts`, `summary` → run `python3 scripts/lib/run_ledger.py validate runs/<mdu-id>/manifest.json` (must exit 0; in a workspace without that script, still conform to this contract) → include the manifest path in your final summary → commit the manifest with the code.
 
 - **Maintain persistent memory in `.agents/memory/` at the project being worked on** (the cwd, not the agent-definitions repo) — plain markdown, no dependencies, identical on OpenCode/Grok/Claude. Three files, each with YAML frontmatter (`type`, `created`, `updated` — ISO-8601) and an **append-only** body — never edit, reorder, or delete existing entries; the only mutation is bumping `updated` when appending:
