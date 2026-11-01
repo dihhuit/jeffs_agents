@@ -19,7 +19,11 @@ updated: 2026-11-01T17:05:00Z
 ## 2026-11-01T17:05:00Z — mdu-complete (mdu-47-definition-guards-batch)
 - mdu_id: mdu-47-definition-guards-batch
 - branch: main
-- commit: (fill post-commit)
+- commit: base 8c1b41a (dihhuit/jeffs_agents) + overlay c2f2416 (dihhuit/opencode_agents); both pushed to main behind secret+prompt gates
 - summary: four definition clauses landed byte-identical across 11 base prompt bodies + overlay qa fold; orchestrator repointed to opencode-go/glm-5.3-flash; pins 33+5 rows; deployed and attested PASS.
 - key_decisions: 20261017-1 landed verify-only (fulfilled by MDU-24's broader guard; pins added); architect-premium included for path notation (tier-independent); overlay-root personal grok-* parity deferred via backlog follow-up; FEATURE_BACKLOG L60 pre-existing scanner FP reworded in-commit (reviewer-approved, declared in the message).
 - manifest: runs/mdu-47-definition-guards-batch/manifest.json
+## 2026-11-01T17:20:00Z — checkpoint (mdu-47)
+- completed: mdu-47 committed and pushed — base 8c1b41a, overlay c2f2416; manifest validated [ok] status completed qa_grade PASS; deployed and cmp-verified.
+- next: none in-loop. New session items: introspector apply-now 20261101-1 (definition change, review mode only), carry the 4 test-agent coverage gaps into the next brief, 20261021-8 denial-string record kept for one more recurrence test.
+- blockers: none.
