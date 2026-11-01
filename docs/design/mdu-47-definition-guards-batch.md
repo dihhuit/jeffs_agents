@@ -49,6 +49,8 @@ Files + anchors: `prompts/architect.md` (after L18 "Output files…"); `grok/age
 
 Pin fragments (byte-stable, one per clause): "trace it as a procedure, not a presence tick"; "fails the criterion even when every element is present"; "no pipes, no redirects, no command substitution"; "verified via orchestrator-attached output"; "write file paths repo-relative".
 
+Erratum (2026-11-01, review): D1d paragraphs keep the blockquote's leading `- ` while D1c paragraphs drop it — paragraph-vs-bullet reading, chosen deliberately; sentences remain byte-identical to the blockquotes.
+
 ## 3. D2 — Overlay qa fold + overlay pin
 
 Both QA sentences (D1c + D1d) must land in `overlays/prompts/qa.md` or the deployed OpenCode/Claude qa never sees them (full-file replacement wins over the base prompt). Placement per D1c/D1d. No other overlay source changes (fact 3). New overlay `tests/test_mdu_47_overlay_qa_fold.py` asserting: (a) both pinned fragments in `overlays/prompts/qa.md`; (b) both fragments in `build/prompts/qa.md` after `./build.sh` (build is tracked; mdu-44 tests already assert build content); (c) mdu-44 keep-list pins still pass (additive only). No existing overlay test pins qa-override content (grep verified).

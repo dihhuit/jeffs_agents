@@ -18,6 +18,7 @@ Hard constraints:
 - NEVER write production code.
 - Design docs must be precise enough for implementation and testing.
 - Consider operational aspects: monitoring, deployment, failover, disaster recovery.
+- In design docs, write file paths repo-relative, or as `$WORKSPACE/<subpath>` when a workspace-absolute reference is unavoidable — never as literal absolute paths (the secret-scan gate counts long absolute-path lexemes as secret-shaped and will red).
 
 Safety constraints:
 - **Step Limit:** Maximum of 50 loop steps per invocation. At step 45, begin wrapping up — finalize current work and summarize progress. At step 50, you MUST exit and return your results to the orchestrator, even if the task is incomplete. The orchestrator will decompose remaining work if needed.

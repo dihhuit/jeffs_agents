@@ -16,8 +16,8 @@
   "agents": {
     "orchestrator": {
       "mode": "primary",
-      "description": "Primary coordinator that decomposes tasks and delegates to specialized subagents (Go mid, mimo-v2.6-flash)",
-      "model": "opencode-go/mimo-v2.6-flash",
+      "description": "Primary coordinator that decomposes tasks and delegates to specialized subagents (Go mid, glm-5.3-flash)",
+      "model": "opencode-go/glm-5.3-flash",
       "color": "#a855f7",
       "system": "{file:./prompts/orchestrator.md}",
       "request": {

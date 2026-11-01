@@ -57,7 +57,7 @@ This backlog is written so the repo's **current** agent definitions can build th
 - **Status:** Done — shipped 2026-09/10 (Status line backfilled 2026-10-31 during the MDU-45 docs sweep; verified via in-repo tests and artifacts)
 
 - **Why:** `qa`, `qa-pro`, `qa-free` still use the legacy `tools` block while all other agents use `permission`; inconsistent tooling hints; stray untracked `deepseek_error.png` in repo root.
-- **Description:** Migrate the three QA agents to the `permission` style, matching sibling agents (read/grep/glob/webfetch/websearch allowed; edit/write denied or allow-only-in-scratch; bash restricted). Remove the stray PNG (or move to `docs/` if it illustrates a real incident). Normalize descriptions to a consistent tense/format. Add a JSON Schema file for `opencode.json` (documenting the config contract) in `docs/` or `schemas/`.
+- **Description:** Migrate the three QA agents to the `permission` style, matching sibling agents (allow read, grep, glob, webfetch, and websearch; deny edit and write or allow them only in scratch; restrict bash). Remove the stray PNG (or move to `docs/` if it illustrates a real incident). Normalize descriptions to a consistent tense/format. Add a JSON Schema file for `opencode.json` (documenting the config contract) in `docs/` or `schemas/`.
 - **Acceptance criteria:**
   1. No agent mixes `tools` and `permission` styles.
   2. `qa`/`qa-pro`/`qa-free` have explicit, least-privilege permissions documented and tested by `validate.py`.
@@ -462,3 +462,19 @@ Each MDU above is sized for the repo's own orchestrator to complete in one close
 - **Suggested agents:** orchestrator (hold), user (ruling).
 - **Dependencies:** MDU-46 (staged it). Fork itself: someday, unplanned.
 - **Follow-up status:** Staged — 2026-10-31 (filing gated; fork unplanned per the 2026-10-31 user ruling; MDU-46 test pins keep the draft clean)
+
+### MDU-47 · Definition-guards batch + orchestrator repoint
+
+- **Why:** Four queued apply-now clauses (20261017-1, 20261021-11, 20261021-8 reworded, 20261030-5) needed to land in the live agent definitions, plus the 20261026-2 orchestrator-model repoint ruling needed to be recorded rather than silently applied.
+- **Description:** Insert the clause texts into base `prompts/` and their `grok/agents/` mirrors (code-reviewer, grok-review, qa, architect) with byte-identical wording and correct ordering; fold both QA sentences into the overlay `overlays/prompts/qa.md` full-file override so OpenCode/Claude deployments see them. Repoint base `opencode.json` orchestrator model to `opencode-go/glm-5.3-flash` and update its description tail, leaving the seven other `mimo-v2.6-flash` rows untouched. Add verify pins for the already-shipped 20261017-1 Dirty-tree guard (MDU-24) and update `docs/brief-checklist.md`, `tests/README.md`, and this backlog entry.
+- **Acceptance criteria:**
+  1. Base suite green incl. new `tests/test_mdu_47_definition_batch.py` pins; overlay suite green incl. `tests/test_mdu_47_overlay_qa_fold.py` fold pins; both builds idempotent; MDU-24/44/45/46 pins unaffected.
+  2. All 16 prompt-file clause insertions byte-match the design doc blockquotes; prompt-regression gate exit 0 with unchanged baseline.
+  3. Orchestrator model + description repointed; the other seven `mimo-v2.6-flash` rows untouched; no other registry edit.
+  4. Overlay build carries both folded QA sentences into `build/prompts/qa.md`.
+  5. Checklist, tests README, and backlog rows land in the same base commit.
+- **Suggested agents:** architect (design — done), just-code-mid (implement), code-reviewer (review), test-agent-mid (tests), devops (builds), qa (validate).
+- **Repoint ruling:** user ruling 2026-10-31 — orchestrator repointed to `opencode-go/glm-5.3-flash`. Design-time one-shot probes returned exactly `OK` on BOTH `glm-5.3-flash` and `mimo-v2.6-flash`, so the repoint is a sizing choice, not a capability fix; the seven other `mimo-v2.6-flash` rows stay put.
+- **Follow-up:** the overlay root personal `grok-*` variants (`grok-qa`, `grok-qa-pro`, `grok-architect`, `grok-architect-premium`, `grok-test-agent`, `grok-test-agent-pro`, `grok-code-reviewer-pro`) were NOT edited in this batch — the clauses landed in the base prompts, their `grok/agents/` mirrors, and the overlay `qa` override only. Extend to those files in a future user-approved MDU if parity is wanted.
+- **Dependencies:** MDU-24 (20261017-1 already shipped), MDU-41 (trace/procedure precedent), MDU-45 (grok-review registry), MDU-46 (checklist + model field).
+- **Status:** Done — 2026-11-01 (definition clauses shipped in base prompts and grok mirrors, overlay qa override folded both sentences, orchestrator repointed to `opencode-go/glm-5.3-flash`, verify pins added, builds and suites green)

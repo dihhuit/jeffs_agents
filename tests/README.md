@@ -18,6 +18,7 @@ CLI).
 | `test_validate_schema.py` | `validate_schema` against `schemas/opencode.schema.json`: valid config passes, violations report the offending field, missing `jsonschema` skips with a warning, missing/malformed schema or config handled gracefully |
 | `test_run_ledger.py` | `validate_manifest` (required fields incl. `harness`, status/harness enums, phase/verification structure), `validate_file`, `load_manifests`, `summarize` (by_status, by_harness, phases, QA) and `format_summary` plus the `validate` / `summarize` CLI paths |
 | `test_mdu_46_apply_now_tooling.py` | optional top-level `model` field (absent/valid/empty/non-string, `REQUIRED_FIELDS` parity pin, `by_model` + `format_summary` + CLI) and doc pins for `docs/brief-checklist.md` clause ids plus the local upstream draft (filing gate, masked evidence pointer, no submission mechanics) |
+| `test_mdu_47_definition_batch.py` | clause pins (16 prompt-file assertions across code-reviewer, grok-review, qa, architect), mirror parity, ordering pins, dirty-tree verify pins, orchestrator model repoint pin, and checklist pins |
 | `conftest.py` | Puts `scripts/lib/` on `sys.path` so tests import the modules the same way `scripts/build.sh` does |
 
 ## Running

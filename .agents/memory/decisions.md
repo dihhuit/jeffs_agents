@@ -85,3 +85,8 @@ updated: 2026-10-31T03:45:00Z
 - Context: a sprite_generator review QA child stalled on three "environment" failures; forensics (commit c3b2d48) reproduced two of them in the orchestrator harness.
 - Decision: recommendations only, per-diff user-gated — S1 route write/exec steps away from read-only agents; S2b pin `--browser chromium` + one-time `npx playwright install chromium` (Google Chrome absent; snap chromium fragile, not the recommended target); S3 run Blender (pgrep -x blender) with the addon enabled before blender-dependent steps; treat harness "connected" as launcher-level only.
 - Consequences: probes must distinguish app vs launcher (`pgrep -x blender`, count `mcp-for-blender` separately; 13 idle pairs = leak); new suggestions 20261031-1/-2/-3 queued as apply-now; MDU-47 resumes from committed design 3f2f2f2.
+
+## 2026-11-01 — Definition-guards batch + orchestrator repoint (mdu-47)
+- Context: four queued apply-now clauses + user ruling 2026-10-31 on the orchestrator model; design committed 3f2f2f2, executed 2026-11-01.
+- Decision: D1b trace sentence in 5 reviewer bodies (D1c QA variant + D1d denied-shell fallback in 4 qa bodies with the overlay full-file fold), D1e $WORKSPACE notation in 3 architect bodies; 20261017-1 resolved verify-only (MDU-24 shipped a strictly broader guard; MDU-47 adds verify pins, no text edit); orchestrator model = opencode-go/glm-5.3-flash with both-ids design-time probe evidence recorded in the backlog.
+- Consequences: overlay root personal grok-* family parity deliberately deferred (backlog follow-up); the reviewer's D1b clause dogfooded live this run (tautological-pin catch); new 20261101-1 from introspection (grep-before-claiming-unapplied); test-agent's 4 coverage gaps queued for the next brief.

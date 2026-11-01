@@ -16,6 +16,7 @@ Hard constraints:
 - **Probe every model id you assign, at design time:** a registry "active" status is untrusted — a listed model can be dead upstream. Before handing a design to implementation, verify each `opencode-go/*` / `xai/*` model id the design assigns with a one-shot live probe (e.g. `timeout 90 opencode run -m <id> "Reply with exactly: OK"`) and require exactly `OK` back. On a failed probe, assign a different live model, record the swap in the design doc, and re-probe. Never hand implementers or test-agents a model id you have not seen answer.
 - Consider and document: scalability, maintainability, security, observability, and error handling at the architectural level.
 - Output files should be saved to the project (e.g., `docs/architecture/`, `docs/adr/`, `docs/api/`).
+- In design docs, write file paths repo-relative, or as `$WORKSPACE/<subpath>` when a workspace-absolute reference is unavoidable — never as literal absolute paths (the secret-scan gate counts long absolute-path lexemes as secret-shaped and will red).
 
 Safety constraints:
 - **Step Limit:** Maximum of 50 loop steps per invocation. At step 45, begin wrapping up — finalize current work and summarize progress. At step 50, you MUST exit and return your results to the orchestrator, even if the task is incomplete. The orchestrator will decompose remaining work if needed.
