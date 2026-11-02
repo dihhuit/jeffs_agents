@@ -1,7 +1,7 @@
 ---
 type: project
 created: 2026-10-27T13:24:20Z
-updated: 2026-10-31T02:50:00Z
+updated: 2026-11-02T00:20:00Z
 ---
 
 # Project facts — open-agent-definitions (base agent-team repo)
@@ -64,3 +64,13 @@ updated: 2026-10-31T02:50:00Z
 - Registry convention: every grok/agents/*.md needs a same-name agent in the merged build-tree opencode.json (census in validate.py, allowlist research only, dated). grok-review was REGISTERED (user ruling) on xai/grok-build-0.1; base 21 agents / 12 prompts / 20 grok profiles; merged overlay 43 agents / 41 profiles.
 - probe_models.py config_sha256: ANY opencode.json agent addition invalidates the committed probe report — mandatory --refresh --gate from both repos follows every registry change (D11 runbook step; caught live in mdu-45).
 - Test-writing rule (review-derived): a validator-wiring test pinning rc==1 alone is vacuous if an unrelated validator error also fires — assert the emitted error text in captured stdout (capsys) as well as rc.
+## 2026-11-01 (mdu-49)
+- Base runs/ are gitignored entirely — run manifests are local-only in the base repo; do not stage them (mdu-47's "artifacts" listing referenced a gitignored path).
+- Secret-scan design-doc path-lexeme trap recurring form: slash-joined role name compounds (e.g. orchestrator/grokestrator) trip the 32+ char lexeme rule too — split at the slash like absolute paths.
+- QA brief must carry the pre-QA manifest diff context as well as the manifest path; QA caught summary-vs-record contradictions in rounds 1-2 that the finalize grep missed (20261101-1's grep-at-introspection lesson applies to finalize time too).
+
+## 2026-11-02 (mdu-50)
+- session_signals.py (1143 lines, in skills/session-introspect/scripts/) detectors reworked: no-id cwd run now picks the FRESHER of v1 `session` vs v2 `session_v2` by max time_updated (EPS_MS=300000, ties favor v2); with-id wrong-directory emits `session id X belongs to D, not cwd` + parent/children recovery and the with-id match is the cwd prefix predicate (fixes the mdu-45 workspace-vs-repo-dir facet); JSON gained top-level `info` = {store, store_candidates, time_range}, additive only.
+- Family tier suffixes (-pro/-mid/-premium/-free) are stripped by `_family()` for counter-dict pooling (streak/qa_fails/error_counts/read_counts/misses/long_counts/long_high + `reject` phrase added); NOT for `metrics.agents`, token_hotspot, long_cycle, or the expensive_model bulk check — that call site must pass the RAW name (`_family` would strip the suffix the exclusion needs) — regression-pinned after the review MAJOR.
+- v2 stores carry NO part text (0/216 live events have text, 20261101-3 high): on `info.store=="v2"` treat review_rejections/qa_fail_repeat/permission/tool-error/reread zeros as UNKNOWN and derive friction from manifest phase notes until the live-store schema probe MDU lands; QA GRADE regex `(?im)^qa grade:\s*fail\b`, once per message, `FAILED` never fires.
+- Test conventions: unit tests go to tests/test_session_signals.py (33), store-selection hermetic fixtures to tests/test_mdu_50_session_store_selection.py (17, tmp_path SQLite + db_path= inject + HOME-override CLI subtests); suite 754; pytest -q only, mutants in /tmp/opencode copies.

@@ -334,3 +334,168 @@ def test_select_harness_no_match_reports_all_misses() -> None:
     assert "No log source matched (tried opencode, grok, claude)" in notes
     assert any("No matching OpenCode session for cwd" in n for n in notes)
     assert any("Grok logs not found" in n for n in notes)
+
+
+# ---------------------------------------------------------------------------
+# Tier-family grouping (MDU-50 defect 3)
+# ---------------------------------------------------------------------------
+
+
+def test_family_strips_one_trailing_tier_suffix() -> None:
+    assert session_signals._family("code-reviewer-pro") == "code-reviewer"
+    assert session_signals._family("code-reviewer-mid") == "code-reviewer"
+    assert session_signals._family("code-reviewer-premium") == "code-reviewer"
+    assert session_signals._family("code-reviewer-free") == "code-reviewer"
+    assert session_signals._family("code-reviewer") == "code-reviewer"
+    assert session_signals._family("grok-qa-mid") == "grok-qa"
+    assert session_signals._family("orchestrator") == "orchestrator"
+    assert session_signals._family("pro") == "pro"
+
+
+def test_review_reject_streak_pools_tier_variants() -> None:
+    events = [
+        _event("code-reviewer-pro", "REQUEST CHANGES: tests missing", t=1.0),
+        _event("code-reviewer-mid", "I REJECT this: docs missing", t=2.0),
+        _event("code-reviewer-free", "LGTM", t=3.0),
+    ]
+    signals = session_signals.collect_signals(events)
+    sig = next(s for s in signals if s["kind"] == "review_reject_streak")
+    assert sig["agent"] == "code-reviewer"
+    assert "2 consecutive rejections from code-reviewer" in sig["evidence"]
+    assert "variants:" in sig["evidence"]
+    assert "code-reviewer-pro" in sig["evidence"]
+    assert "code-reviewer-mid" in sig["evidence"]
+
+
+def test_bare_reject_verdict_counts_as_rejection() -> None:
+    events = [
+        _event("code-reviewer", "REJECT", t=1.0),
+        _event("code-reviewer", "REJECT", t=2.0),
+    ]
+    signals = session_signals.collect_signals(events)
+    sig = next(s for s in signals if s["kind"] == "review_reject_streak")
+    assert sig["agent"] == "code-reviewer"
+    assert "2 consecutive rejections" in sig["evidence"]
+
+
+def test_qa_fail_repeat_pools_tier_variants() -> None:
+    events = [
+        _event("qa-mid", "QA GRADE: FAIL", t=1.0),
+        _event("qa", "QA GRADE: FAIL", t=2.0),
+    ]
+    signals = session_signals.collect_signals(events)
+    sig = next(s for s in signals if s["kind"] == "qa_fail_repeat")
+    assert sig["agent"] == "qa"
+    assert "reported FAIL 2 times" in sig["evidence"]
+
+
+def test_repeated_tool_error_pools_tier_variants() -> None:
+    events = [
+        _event("just-code-pro", "tool error", t=1.0, tool="bash", tool_error=True),
+        _event("just-code-mid", "tool error", t=2.0, tool="bash", tool_error=True),
+        _event("just-code", "tool error", t=3.0, tool="bash", tool_error=True),
+    ]
+    signals = session_signals.collect_signals(events)
+    sig = next(s for s in signals if s["kind"] == "repeated_tool_error")
+    assert sig["agent"] == "just-code"
+    assert "hit 3 errors" in sig["evidence"]
+
+
+def test_free_tier_is_a_bulk_role_for_expensive_model() -> None:
+    assert session_signals._is_bulk_agent("code-reviewer-free") is True
+    assert session_signals._is_bulk_agent("code-reviewer") is True
+    assert session_signals._is_bulk_agent("code-reviewer-pro") is False
+    events = [
+        _event("code-reviewer-free", "reviewed", t=1.0),
+    ]
+    events[0]["model"] = "grok-4.7"
+    signals = session_signals.collect_signals(events)
+    sig = next(s for s in signals if s["kind"] == "expensive_model")
+    assert sig["agent"] == "code-reviewer-free"
+
+
+def test_pro_tier_on_flagship_model_is_not_expensive() -> None:
+    """Regression: the bulk check must see the raw tier suffix, not the family."""
+    events = [
+        _event("code-reviewer-pro", "reviewed", t=1.0),
+    ]
+    events[0]["model"] = "grok-4.7"
+    signals = session_signals.collect_signals(events)
+    assert not any(s["kind"] == "expensive_model" for s in signals)
+
+
+def test_mid_tier_on_flagship_model_is_not_expensive() -> None:
+    events = [
+        _event("just-code-mid", "edited", t=1.0),
+    ]
+    events[0]["model"] = "grok-4.7"
+    signals = session_signals.collect_signals(events)
+    assert not any(s["kind"] == "expensive_model" for s in signals)
+
+
+def test_context_reread_pools_tier_variants_to_reach_threshold() -> None:
+    """Two re-reads per tier variant only cross the threshold when family-pooled."""
+    events = [
+        _event("just-code-pro", "read", t=1.0, tool="read", tool_path="a.py"),
+        _event("just-code-pro", "read", t=2.0, tool="read", tool_path="a.py"),
+        _event("just-code-mid", "read", t=3.0, tool="read", tool_path="a.py"),
+        _event("just-code-mid", "read", t=4.0, tool="read", tool_path="a.py"),
+    ]
+    signals = session_signals.collect_signals(events)
+    sig = next(s for s in signals if s["kind"] == "context_reread")
+    assert sig["agent"] == "just-code"
+
+
+def test_pro_tier_cache_miss_still_groups_under_family() -> None:
+    """Cost pooling stays family-keyed; only the bulk-tier test uses the raw name."""
+    events = [
+        _event("code-reviewer-pro", "reviewed", t=1.0, tokens_in=90_000),
+    ]
+    events[0]["cache_read"] = 512
+    events[0]["model"] = "grok-4.7"
+    signals = session_signals.collect_signals(events)
+    sig = next(s for s in signals if s["kind"] == "cache_miss")
+    assert sig["agent"] == "code-reviewer"
+
+
+# ---------------------------------------------------------------------------
+# QA verdict line (MDU-50 defect 4)
+# ---------------------------------------------------------------------------
+
+
+def test_quoted_qa_verdict_instruction_is_not_a_fail() -> None:
+    instruction = "End with exactly: QA GRADE: PASS or QA GRADE: FAIL"
+    events = [
+        _event("qa", instruction, t=1.0),
+        _event("qa", instruction, t=2.0),
+    ]
+    signals = session_signals.collect_signals(events)
+    assert not any(s["kind"] == "qa_fail_repeat" for s in signals)
+
+
+def test_standalone_qa_verdict_line_counts_once_per_message() -> None:
+    events = [
+        _event("qa", "findings: x\nQA GRADE: FAIL\nQA GRADE: FAIL", t=1.0),
+        _event("qa", "QA GRADE: FAIL", t=2.0),
+    ]
+    signals = session_signals.collect_signals(events)
+    sig = next(s for s in signals if s["kind"] == "qa_fail_repeat")
+    assert "reported FAIL 2 times" in sig["evidence"]
+
+
+def test_lowercase_qa_verdict_line_counts() -> None:
+    events = [
+        _event("qa", "qa grade: fail", t=1.0),
+        _event("qa", "qa grade: fail", t=2.0),
+    ]
+    signals = session_signals.collect_signals(events)
+    assert any(s["kind"] == "qa_fail_repeat" for s in signals)
+
+
+def test_qa_grade_failed_word_does_not_count() -> None:
+    events = [
+        _event("qa", "QA GRADE: FAILED", t=1.0),
+        _event("qa", "QA GRADE: FAILED", t=2.0),
+    ]
+    signals = session_signals.collect_signals(events)
+    assert not any(s["kind"] == "qa_fail_repeat" for s in signals)

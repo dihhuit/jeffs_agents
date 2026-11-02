@@ -14,6 +14,7 @@ import json
 import os
 import re
 import sqlite3
+from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import quote
 
@@ -28,7 +29,16 @@ REJECTION_PHRASES = [
     "changes requested",
     "do not approve",
     "not approved",
+    "reject",
 ]
+
+# A QA phase must end with a standalone verdict line ("QA GRADE: FAIL").
+# Line-anchored so a message that quotes the instruction mid-line
+# ("... QA GRADE: PASS or QA GRADE: FAIL.") does not count.
+QA_FAIL_VERDICT = re.compile(r"(?im)^qa grade:\s*fail\b")
+
+# Rotated model tiers share one role; pool their counts under the base name.
+TIER_SUFFIXES = ("-pro", "-mid", "-premium", "-free")
 
 APPROVAL_PHRASES = ["approve", "lgtm", "sign-off"]
 REVIEWER_SUBSTRINGS = ["code-reviewer", "grok-review"]
@@ -52,6 +62,7 @@ REPEATED_ERROR_THRESHOLD = 3
 PERMISSION_THRESHOLD = 5
 CONTEXT_REREAD_THRESHOLD = 4
 QA_FAIL_THRESHOLD = 2
+EPS_MS = 300_000
 CACHE_MISS_READ_MAX = 1152
 CACHE_MISS_INPUT_MIN = 80_000
 LONG_CONTEXT_TOKENS = 140_000
@@ -143,6 +154,20 @@ def _is_reviewer(agent: str) -> bool:
 
 def _is_qa(agent: str) -> bool:
     return any(sub in agent.lower() for sub in QA_SUBSTRINGS)
+
+
+def _family(agent: str) -> str:
+    """Return the role family: the name with one trailing tier suffix stripped.
+
+    ``code-reviewer-pro`` and ``code-reviewer-free`` both become
+    ``code-reviewer``.  No cross-harness unification happens (``grok-qa`` stays
+    ``grok-qa``): one store per session makes name collisions impossible.
+    """
+    name = agent.lower()
+    for suffix in TIER_SUFFIXES:
+        if name.endswith(suffix) and len(name) > len(suffix):
+            return name[: -len(suffix)]
+    return name
 
 
 def _is_coder(agent: str) -> bool:
@@ -237,9 +262,10 @@ def collect_signals(events: list[dict]) -> list[dict]:
     # Sort by time for all span/streak logic.
     sorted_events = sorted(events, key=lambda e: _coerce_float(e.get("t")))
 
-    # 1. Review rejection streak
+    # 1. Review rejection streak (pooled across rotated tier variants)
     streak_agent: str | None = None
     streak_texts: list[str] = []
+    streak_variants: list[str] = []
     prior_coder: str | None = None
     for evt in sorted_events:
         agent = str(evt.get("agent") or "")
@@ -249,18 +275,25 @@ def collect_signals(events: list[dict]) -> list[dict]:
                 prior_coder = agent
             continue
         if _is_rejection(text):
-            streak_agent = agent
+            streak_agent = _family(agent)
             streak_texts.append(text)
+            if agent not in streak_variants:
+                streak_variants.append(agent)
         elif _is_approval(text):
             if len(streak_texts) >= 2 and streak_agent:
                 complaint = streak_texts[-1]
+                evidence = (
+                    f"{len(streak_texts)} consecutive rejections from {streak_agent}; "
+                    f"last complaint: {complaint[:200]}"
+                )
+                if len(streak_variants) > 1:
+                    evidence += f"; variants: {', '.join(streak_variants)}"
                 signals.append(
                     _signal(
                         kind="review_reject_streak",
                         severity="high",
                         agent=streak_agent,
-                        evidence=f"{len(streak_texts)} consecutive rejections from {streak_agent}; "
-                        f"last complaint: {complaint[:200]}",
+                        evidence=evidence,
                         suggestion="Add the reviewer's repeated complaint to the coding agent prompt "
                         "as a pre-flight checklist item.",
                         apply_now=f"Put the reviewer's repeated complaint verbatim into the next "
@@ -270,15 +303,21 @@ def collect_signals(events: list[dict]) -> list[dict]:
                 if prior_coder:
                     signals[-1]["evidence"] += f" | prior coder: {prior_coder}"
             streak_texts = []
+            streak_variants = []
     # End-of-session streak (no approval after it).
     if len(streak_texts) >= 2 and streak_agent:
         complaint = streak_texts[-1]
+        evidence = (
+            f"{len(streak_texts)} consecutive rejections from {streak_agent}; "
+            f"last complaint: {complaint[:200]}"
+        )
+        if len(streak_variants) > 1:
+            evidence += f"; variants: {', '.join(streak_variants)}"
         sig = _signal(
             kind="review_reject_streak",
             severity="high",
             agent=streak_agent,
-            evidence=f"{len(streak_texts)} consecutive rejections from {streak_agent}; "
-            f"last complaint: {complaint[:200]}",
+            evidence=evidence,
             suggestion="Add the reviewer's repeated complaint to the coding agent prompt "
             "as a pre-flight checklist item.",
             apply_now=f"Put the reviewer's repeated complaint verbatim into the next "
@@ -355,10 +394,10 @@ def collect_signals(events: list[dict]) -> list[dict]:
                     )
                 )
 
-    # 4. Repeated tool errors
+    # 4. Repeated tool errors (family-pooled across tier variants)
     error_counts: dict[tuple[str, str | None], int] = {}
     for evt in sorted_events:
-        agent = str(evt.get("agent") or "")
+        agent = _family(str(evt.get("agent") or ""))
         tool = evt.get("tool")
         tool = str(tool) if tool else None
         if evt.get("tool_error") and tool:
@@ -395,10 +434,10 @@ def collect_signals(events: list[dict]) -> list[dict]:
             )
         )
 
-    # 6. Context reread
+    # 6. Context reread (family-pooled across tier variants)
     read_counts: dict[tuple[str, str | None], int] = {}
     for evt in sorted_events:
-        agent = str(evt.get("agent") or "")
+        agent = _family(str(evt.get("agent") or ""))
         tool = evt.get("tool")
         tool = str(tool) if tool else ""
         path = evt.get("tool_path")
@@ -421,13 +460,14 @@ def collect_signals(events: list[dict]) -> list[dict]:
                 )
             )
 
-    # 7. QA fail repeat
+    # 7. QA fail repeat (family-pooled across tier variants)
     qa_fails: dict[str, int] = {}
     for evt in sorted_events:
         agent = str(evt.get("agent") or "")
         text = str(evt.get("text") or "")
-        if _is_qa(agent) and "FAIL" in text:
-            qa_fails[agent] = qa_fails.get(agent, 0) + 1
+        if _is_qa(agent) and QA_FAIL_VERDICT.search(text):
+            family = _family(agent)
+            qa_fails[family] = qa_fails.get(family, 0) + 1
     for agent, count in qa_fails.items():
         if count >= QA_FAIL_THRESHOLD:
             signals.append(
@@ -467,9 +507,11 @@ def collect_signals(events: list[dict]) -> list[dict]:
 
 def _is_bulk_agent(agent: str) -> bool:
     name = agent.lower()
+    # Tier rotation: -mid/-pro/-premium are deliberately expensive; -free is a
+    # cheap rotation tier and still counts as a bulk role.
     if name.endswith(("-mid", "-pro", "-premium")):
         return False
-    return name in BULK_AGENTS
+    return _family(name) in BULK_AGENTS
 
 
 def _cost_signals(events: list[dict]) -> list[dict]:
@@ -480,7 +522,8 @@ def _cost_signals(events: list[dict]) -> list[dict]:
     long_high: dict[str, int] = {}
     expensive: dict[str, str] = {}
     for evt in events:
-        agent = str(evt.get("agent") or "") or "session"
+        raw_agent = str(evt.get("agent") or "") or "session"
+        agent = _family(raw_agent)
         tokens_in = _coerce_int(evt.get("tokens_in"))
         cache_read = _coerce_int(evt.get("cache_read"))
         prompt = tokens_in + cache_read
@@ -491,8 +534,11 @@ def _cost_signals(events: list[dict]) -> list[dict]:
             long_counts[agent] = long_counts.get(agent, 0) + 1
         if prompt >= LONG_CONTEXT_HIGH_TOKENS:
             long_high[agent] = long_high.get(agent, 0) + 1
-        if _is_bulk_agent(agent) and any(flag in model for flag in FLAGSHIP_MODELS):
-            expensive[agent] = model
+        # Raw name, not the pooled family: _is_bulk_agent excludes the
+        # -mid/-pro/-premium tiers itself, and _family() would strip the
+        # suffix before that check could see it.
+        if _is_bulk_agent(raw_agent) and any(flag in model for flag in FLAGSHIP_MODELS):
+            expensive[raw_agent] = model
     for agent, count in misses.items():
         found.append(
             _signal(
@@ -628,44 +674,241 @@ def _normalize_event(
     }
 
 
-def _collect_opencode(cwd: str, session_id: str | None = None) -> tuple[list[dict], dict, list[str]]:
+def _opencode_db_path() -> Path:
+    """Default OpenCode sqlite store path (overridable for tests)."""
+    return Path.home() / ".local" / "share" / "opencode" / "opencode.db"
+
+
+def _to_epoch_ms(value: object) -> float:
+    """Coerce an epoch-seconds, epoch-ms, or ISO-8601 timestamp to epoch ms."""
+    if value is None or isinstance(value, bool):
+        return 0.0
+    if isinstance(value, (int, float)):
+        num = float(value)
+    else:
+        text = str(value).strip()
+        if not text:
+            return 0.0
+        if re.fullmatch(r"[+-]?\d+(?:\.\d+)?", text):
+            num = float(text)
+        else:
+            try:
+                parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+            except ValueError:
+                return 0.0
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=timezone.utc)
+            return parsed.timestamp() * 1000.0
+    if num <= 0:
+        return 0.0
+    return num * 1000.0 if num < 1e11 else num
+
+
+def _ms_to_iso(ms: float | None) -> str | None:
+    if not ms or ms <= 0:
+        return None
+    return datetime.fromtimestamp(ms / 1000.0, tz=timezone.utc).strftime(
+        "%Y-%m-%dT%H:%M:%SZ"
+    )
+
+
+def _time_range(events: list[dict]) -> dict:
+    """Min/max positive event time as UTC ISO-8601 (nulls when absent)."""
+    times = [t for t in (_coerce_float(e.get("t")) for e in events) if t > 0]
+    if not times:
+        return {"oldest": None, "newest": None}
+    return {
+        "oldest": _ms_to_iso(min(times) * 1000.0),
+        "newest": _ms_to_iso(max(times) * 1000.0),
+    }
+
+
+def _newest_row(rows: list[sqlite3.Row]) -> dict | None:
+    """Pick the freshest row in Python; no SQL ORDER BY on an untyped column."""
+    newest: dict | None = None
+    for row in rows:
+        ms = _to_epoch_ms(row["time_updated"])
+        if newest is None or ms > newest["newest_ms"]:
+            newest = {"id": row["id"], "newest_ms": ms}
+    return newest
+
+
+def _store_freshness(cur: sqlite3.Cursor, cwd: str) -> dict[str, dict | None]:
+    """Freshest session per store: v1 ``session``, v2 ``session_v2``."""
+    freshness: dict[str, dict | None] = {}
+    for store, table in (("v1", "session"), ("v2", "session_v2")):
+        try:
+            cur.execute(
+                f"SELECT id, time_updated FROM {table} "
+                "WHERE directory = ? OR ? LIKE directory || '%'",
+                (cwd, cwd),
+            )
+            freshness[store] = _newest_row(cur.fetchall())
+        except sqlite3.Error:
+            freshness[store] = None
+    return freshness
+
+
+def _select_store(freshness: dict[str, dict | None]) -> str:
+    """v2 is the live schema; v1 wins only when clearly fresher (> EPS_MS)."""
+    v1, v2 = freshness["v1"], freshness["v2"]
+    if v1 is None and v2 is None:
+        return ""
+    if v1 is None:
+        return "v2"
+    if v2 is None:
+        return "v1"
+    if v1["newest_ms"] > v2["newest_ms"] + EPS_MS:
+        return "v1"
+    return "v2"
+
+
+def _session_row(
+    cur: sqlite3.Cursor, table: str, session_id: str, cwd: str
+) -> sqlite3.Row | None:
+    """Look an id up with the cwd prefix predicate so ancestor dirs match."""
+    try:
+        cur.execute(
+            f"SELECT id, directory, parent_id, time_updated FROM {table} "
+            "WHERE id = ? AND (directory = ? OR ? LIKE directory || '%') LIMIT 1",
+            (session_id, cwd, cwd),
+        )
+        return cur.fetchone()
+    except sqlite3.Error:
+        return None
+
+
+def _wrong_directory_notes(
+    cur: sqlite3.Cursor, session_id: str, cwd: str
+) -> list[str]:
+    """Explain why a supplied session id matched neither store, with recovery."""
+    notes: list[str] = []
+    table = ""
+    found: sqlite3.Row | None = None
+    for candidate in ("session", "session_v2"):
+        try:
+            cur.execute(
+                f"SELECT id, directory, parent_id FROM {candidate} WHERE id = ? LIMIT 1",
+                (session_id,),
+            )
+            found = cur.fetchone()
+        except sqlite3.Error:
+            found = None
+        if found is not None:
+            table = candidate
+            break
+    if found is None:
+        return [f"session id {session_id} not found in OpenCode stores"]
+
+    directory = found["directory"] or ""
+    notes.append(f"session id {session_id} belongs to {directory}, not {cwd}")
+
+    parent_id = found["parent_id"]
+    if parent_id and _session_row(cur, table, parent_id, cwd) is not None:
+        notes.append(f"propose parent as root: rerun with --session-id {parent_id}")
+
+    child_count = 0
+    try:
+        cur.execute(
+            f"SELECT COUNT(*) FROM {table} WHERE parent_id = ? "
+            "AND (directory = ? OR ? LIKE directory || '%')",
+            (session_id, cwd, cwd),
+        )
+        count_row = cur.fetchone()
+        child_count = int(count_row[0]) if count_row else 0
+    except sqlite3.Error:
+        child_count = 0
+    if child_count:
+        notes.append(
+            f"supplied id has {child_count} child session(s) under {cwd}; "
+            "rerun without --session-id (freshest-store selection) "
+            f"or with --cwd {directory}"
+        )
+    return notes
+
+
+def _collect_opencode(
+    cwd: str,
+    session_id: str | None = None,
+    db_path: Path | None = None,
+) -> tuple[list[dict], dict, list[str]]:
     """Read OpenCode sqlite logs from ~/.local/share/opencode/opencode.db."""
     events: list[dict] = []
     notes: list[str] = []
-    info: dict = {"harness": "opencode", "session_id": "", "cwd": cwd}
-    db_path = Path.home() / ".local" / "share" / "opencode" / "opencode.db"
-    if not db_path.is_file():
-        notes.append(f"OpenCode db not found: {db_path}")
+    info: dict = {
+        "harness": "opencode",
+        "session_id": "",
+        "cwd": cwd,
+        "store": "",
+        "time_range": {"oldest": None, "newest": None},
+    }
+
+    def _done() -> tuple[list[dict], dict, list[str]]:
+        info["time_range"] = _time_range(events)
         return events, info, notes
+
+    resolved_db = Path(db_path) if db_path is not None else _opencode_db_path()
+    if not resolved_db.is_file():
+        notes.append(f"OpenCode db not found: {resolved_db}")
+        return _done()
+    db_path = resolved_db
 
     # Simpler: re-open and fetch parts per message.
     try:
         conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
+        store = ""
         if session_id:
-            cur.execute(
-                "SELECT id FROM session WHERE id = ? AND directory = ? LIMIT 1",
-                (session_id, cwd),
-            )
+            # The id pins the tree; no cross-store freshness comparison runs.
+            if _session_row(cur, "session", session_id, cwd) is not None:
+                store = "v1"
+            elif _session_row(cur, "session_v2", session_id, cwd) is not None:
+                store = "v2"
+            if not store:
+                notes.extend(_wrong_directory_notes(cur, session_id, cwd))
+                conn.close()
+                return _done()
+            root_id = session_id
         else:
-            cur.execute(
-                "SELECT id FROM session WHERE directory = ? OR ? LIKE directory || '%' "
-                "ORDER BY time_updated DESC LIMIT 1",
-                (cwd, cwd),
-            )
-        row = cur.fetchone()
-        if not row:
+            freshness = _store_freshness(cur, cwd)
+            info["store_candidates"] = [
+                {
+                    "store": name,
+                    "id": freshness[name]["id"] if freshness[name] else None,
+                    "newest": (
+                        _ms_to_iso(freshness[name]["newest_ms"])
+                        if freshness[name]
+                        else None
+                    ),
+                }
+                for name in ("v1", "v2")
+            ]
+            store = _select_store(freshness)
+            if not store:
+                notes.append("No matching OpenCode session for cwd")
+                conn.close()
+                return _done()
+            if freshness["v1"] is not None and freshness["v2"] is not None:
+                other = "v1" if store == "v2" else "v2"
+                notes.append(
+                    f"store selected: {store} "
+                    f"(newest {_ms_to_iso(freshness[store]['newest_ms']) or 'unknown'}; "
+                    f"{other} newest "
+                    f"{_ms_to_iso(freshness[other]['newest_ms']) or 'unknown'})"
+                )
+            root_id = freshness[store]["id"]
+
+        if store == "v2":
             v2_events, v2_info, v2_notes = _collect_opencode_v2(conn, cwd, session_id)
             notes.extend(v2_notes)
-            if v2_events:
-                info.update(v2_info)
-                conn.close()
-                return v2_events, info, notes
-            notes.append("No matching OpenCode session for cwd")
+            info.update(v2_info)
+            info["store"] = "v2"
+            events = v2_events
             conn.close()
-            return events, info, notes
-        root_id = row["id"]
+            return _done()
+
+        info["store"] = "v1"
         # If this session has parent_id, use parent.
         cur.execute("SELECT parent_id FROM session WHERE id = ?", (root_id,))
         prow = cur.fetchone()
@@ -764,11 +1007,13 @@ def _collect_opencode(cwd: str, session_id: str | None = None) -> tuple[list[dic
             if v2_events:
                 events = v2_events
                 info.update(v2_info)
+                info["store"] = "v2"
+                notes.append("store selected: v2 (v1 tree had no token data)")
         conn.close()
     except Exception as exc:
         notes.append(f"OpenCode collector error: {exc}")
 
-    return events, info, notes
+    return _done()
 
 
 def _collect_opencode_v2(
@@ -782,19 +1027,22 @@ def _collect_opencode_v2(
         cur = conn.cursor()
         if session_id:
             cur.execute(
-                "SELECT id FROM session_v2 WHERE id = ? AND directory = ? LIMIT 1",
-                (session_id, cwd),
+                "SELECT id FROM session_v2 WHERE id = ? "
+                "AND (directory = ? OR ? LIKE directory || '%') LIMIT 1",
+                (session_id, cwd, cwd),
             )
+            row = cur.fetchone()
+            root_id = row["id"] if row else ""
         else:
             cur.execute(
-                "SELECT id FROM session_v2 WHERE directory = ? OR ? LIKE directory || '%' "
-                "ORDER BY time_updated DESC LIMIT 1",
+                "SELECT id, time_updated FROM session_v2 "
+                "WHERE directory = ? OR ? LIKE directory || '%'",
                 (cwd, cwd),
             )
-        row = cur.fetchone()
-        if not row:
+            newest = _newest_row(cur.fetchall())
+            root_id = newest["id"] if newest else ""
+        if not root_id:
             return events, info, notes
-        root_id = row["id"]
         cur.execute("SELECT parent_id FROM session_v2 WHERE id = ?", (root_id,))
         prow = cur.fetchone()
         if prow and prow["parent_id"]:
@@ -1134,6 +1382,7 @@ def main(argv: list[str] | None = None) -> int:
         "signals": signals,
         "metrics": metrics,
         "notes": notes,
+        "info": info,
     }
     print(json.dumps(result, indent=2))
     return 0

@@ -1,7 +1,7 @@
 ---
 type: decisions
 created: 2026-10-27T13:24:20Z
-updated: 2026-10-31T03:45:00Z
+updated: 2026-11-02T00:20:00Z
 ---
 
 # Decision log
@@ -90,3 +90,12 @@ updated: 2026-10-31T03:45:00Z
 - Context: four queued apply-now clauses + user ruling 2026-10-31 on the orchestrator model; design committed 3f2f2f2, executed 2026-11-01.
 - Decision: D1b trace sentence in 5 reviewer bodies (D1c QA variant + D1d denied-shell fallback in 4 qa bodies with the overlay full-file fold), D1e $WORKSPACE notation in 3 architect bodies; 20261017-1 resolved verify-only (MDU-24 shipped a strictly broader guard; MDU-47 adds verify pins, no text edit); orchestrator model = opencode-go/glm-5.3-flash with both-ids design-time probe evidence recorded in the backlog.
 - Consequences: overlay root personal grok-* family parity deliberately deferred (backlog follow-up); the reviewer's D1b clause dogfooded live this run (tautological-pin catch); new 20261101-1 from introspection (grep-before-claiming-unapplied); test-agent's 4 coverage gaps queued for the next brief.
+## 2026-11-01 — Definition batch 3 codification pattern (mdu-49)
+- Context: six still-unapplied apply-now clauses kept recurring across runs while remaining cheaper than repeated wordings in briefs; MDU-47 batch proved the three-mirror pattern.
+- Decision: codify on the same user-approved-batch path — design-anchored byte-identical insertion, per-clause non-vacuous pins, no opencode.json/registry edits, prompt gate unchanged baseline. D4 stays out of mdu-lifecycle SKILL.md (maintenance-cost ruling); D6 gets a degradation ladder instead of verbatim HEAD+commit-hash text.
+- Consequences: apply-now paragraph records stay as defense-in-depth; new 20261101-2 model-tier-mismatch suggestion; summary-vs-phase-note grep discipline to be applied at every pre-QA finalize (20261014-5 closed on a watch).
+
+## 2026-11-02 — session_signals detector fixes: fresh-store + wrong-dir + family pooling + QA verdict regex (mdu-50)
+- Context: 20261021-4 (high, twice-recurred stale v1 store + wrong-directory silence), 20261021-3 (family-prefix rejection blindness), 20261021-5 (QA substring FP); design doc 2fff3f8 excluded live v2 text extraction as schema-unverifiable — introspection then proved that exclusion is load-bearing (0/216 live v2 events carry text, new high 20261101-3).
+- Decision: fresheststore-wins (v2 on ties/within EPS_MS=300000), JSON `info` = {store, store_candidates, time_range} additive, wrong-directory explicit note + parent/children recovery + with-id relaxed to cwd prefix predicate, `_family()` tier-suffix pooling for counter dicts only (raw names everywhere identity matters: metrics.agents/hotspot/long_cycle/expensive_model), `reject` vocabulary added, QA verdict line-anchored regex; v2 store-selected fallback note when v1 carries no token data.
+- Consequences: text-detector signals are inert on v2 trees until 20261101-3 lands (manifest-derived friction is the compensating control, now to be treated as UNKNOWN-not-zero on v2); 31 tests added across two files (suite 723→754); one deviation judged by design intent (family-membership bulk check) — precedent that a self-contradictory design literal can be overridden when the rationale is unambiguous and a reviewer approves; final review verdict: the `_is_bulk_agent(raw_agent)` call-site keying rule.

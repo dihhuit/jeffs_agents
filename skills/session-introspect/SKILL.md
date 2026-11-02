@@ -24,7 +24,7 @@ agent definitions or source code**.
 
 | Harness | Path | Notes |
 | --- | --- | --- |
-| OpenCode | `~/.local/share/opencode/opencode.db` | SQLite; tables `session`, `message.data` JSON, `part.data` JSON |
+| OpenCode | `~/.local/share/opencode/opencode.db` | SQLite; v1 tables `session`, `message.data` JSON, `part.data` JSON; v2 tables `session_v2`, `session_message.data` JSON |
 | Grok | `~/.grok/sessions/<urlencoded-cwd>/<session-id>/` | `summary.json`, `events.jsonl`, `chat_history.jsonl` |
 | Claude | `~/.claude/projects/<cwd-with-slashes-as-dashes>/<sessionId>.jsonl` | records have `type`, `timestamp`, `message.usage`, `message.model` |
 
@@ -49,20 +49,45 @@ python3 session_signals.py [--cwd DIR] [--session-id ID] [--harness auto|opencod
 It prints one JSON object to stdout and exits 0 even when logs are missing. If
 logs are missing, a note is added to the `notes` array and signals may be empty.
 
+### OpenCode store selection and `info`
+
+Without `--session-id` the script compares the two OpenCode stores (`session`,
+`session_v2`) using each store's freshest `time_updated` row for the cwd (the
+cwd itself or any ancestor directory). v2 is the live schema and wins ties and
+near-ties (within 5 minutes); v1 is used only when it is clearly fresher. A note
+reads `store selected: v2 (newest …; v1 newest …)`.
+
+The JSON object also carries an additive `info` object (top-level `harness`,
+`session_id`, and `cwd` are unchanged for compatibility):
+
+- `store` — `"v1"`, `"v2"`, or `""` (nothing matched).
+- `store_candidates` — only when `--session-id` was omitted:
+  `[{"store": "v1", "id": …, "newest": …}, {"store": "v2", …}]`.
+- `time_range` — `{"oldest": …, "newest": …}` UTC ISO-8601 for the selected
+  tree, `null` when the tree has no positive timestamps.
+
+With `--session-id` the id pins the tree and no comparison runs; a session whose
+directory is the cwd **or any ancestor of the cwd** matches. If the id exists
+only under an unrelated directory the script keeps `session_id` empty, emits no
+events and adds `session id <S> belongs to <D>, not <cwd>` (plus `propose parent
+as root: rerun with --session-id <P>` and a children-under-cwd hint when those
+apply). That is still an exit-0 result: read the `notes` array, not the exit
+code, and treat the empty `session_id` as unknown.
+
 ## Signal kinds
 
 The script emits these signal types:
 
-- `review_reject_streak` — reviewer agents emitted 2+ consecutive rejections before an approval.
+- `review_reject_streak` — one reviewer **family** emitted 2+ consecutive rejections before an approval; rotated tier variants (`-pro`/`-mid`/`-premium`/`-free`) pool, and the evidence lists them. Bare `REJECT` verdicts count.
 - `long_cycle` — per-agent active time (sum of gaps < 10 min) exceeded 8 min (warn) or 15 min (high); wall clock is recorded but not acted on.
 - `token_hotspot` — an agent consumed >= 80k tokens, or >= 40% of session tokens and >= 20k.
-- `cache_miss` — a turn with `cache.read` <= 1152 and `input` >= 80000. The transcript was rebilled.
-- `long_context` — a turn with `input + cache.read` >= 140000. High if any turn is >= 200000.
-- `expensive_model` — a bulk role (default coding, test, standard review, QA, devops, research, UI) ran on grok-4.7, glm-5.2, or kimi-k3. Orchestrator, architecture, and mid/pro roles are not this signal.
-- `repeated_tool_error` — same agent+tool errored >= 3 times.
+- `cache_miss` — a turn with `cache.read` <= 1152 and `input` >= 80000. The transcript was rebilled. (family-pooled across tier variants)
+- `long_context` — a turn with `input + cache.read` >= 140000. High if any turn is >= 200000. (family-pooled across tier variants)
+- `expensive_model` — a bulk role (default coding, test, standard review, QA, devops, research, UI — including the `-free` tier) ran on grok-4.7, glm-5.2, or kimi-k3. Orchestrator, architecture, and mid/pro roles are not this signal.
+- `repeated_tool_error` — same agent+tool errored >= 3 times. (family-pooled across tier variants)
 - `permission_thrash` — >= 5 permission requests in the session.
-- `context_reread` — same agent read/grepped the same path >= 4 times.
-- `qa_fail_repeat` — QA text contained `FAIL` at least twice.
+- `context_reread` — same agent read/grepped the same path >= 4 times. (family-pooled across tier variants)
+- `qa_fail_repeat` — a standalone verdict line `QA GRADE: FAIL` (case-insensitive, line-anchored) in >= 2 messages, family-pooled. A message quoting the format instruction mid-line no longer counts.
 - `stalled_subagent` — >= 10 min gap between consecutive events.
 - `fix_loop` (manifest) — `fix_iterations >= 2`.
 - `phase_fail_streak` (manifest) — same phase failed >= 2 times.
