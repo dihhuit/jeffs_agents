@@ -499,3 +499,39 @@ def test_qa_grade_failed_word_does_not_count() -> None:
     ]
     signals = session_signals.collect_signals(events)
     assert not any(s["kind"] == "qa_fail_repeat" for s in signals)
+
+
+# ---------------------------------------------------------------------------
+# Synthetic v2 tool events must not inflate metrics or cycle evidence (MDU-51)
+# ---------------------------------------------------------------------------
+
+
+def test_tool_role_events_are_excluded_from_agent_metrics() -> None:
+    """A message plus its synthetic tool events counts as one message."""
+    events = [
+        _event("just-code", "edited", t=10.0, tokens_in=1000, tokens_out=100),
+        _event("just-code", "", t=10.0, role="tool", tool="read", tool_path="a.py"),
+        _event("just-code", "", t=10.0, role="tool", tool="edit", tool_path="a.py"),
+    ]
+    metrics = session_signals._compute_metrics(events)
+    row = next(a for a in metrics["agents"] if a["name"] == "just-code")
+    assert row["messages"] == 1
+    assert row["tokens_in"] == 1000
+    assert row["tokens_out"] == 100
+    assert row["duration_s"] == 0
+
+
+def test_long_cycle_evidence_count_excludes_tool_role_events() -> None:
+    """Same-t tool events cannot change active/wall time or the evidence count."""
+    events = [
+        _event("just-code", "first", t=0.0),
+        _event("just-code", "second", t=500.0),
+        _event("just-code", "third", t=1000.0),
+        _event("just-code", "", t=1000.0, role="tool", tool="read", tool_path="a.py"),
+        _event("just-code", "", t=1000.0, role="tool", tool="grep", tool_path="b"),
+    ]
+    signals = session_signals.collect_signals(events)
+    sig = next(s for s in signals if s["kind"] == "long_cycle")
+    assert "active 1000s" in sig["evidence"]
+    assert "across 3 events" in sig["evidence"]
+

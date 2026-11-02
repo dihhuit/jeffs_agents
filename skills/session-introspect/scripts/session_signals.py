@@ -5,6 +5,13 @@ Pure-stdlib CLI and importable functions.  Designed to be invoked by the
 ``introspector`` agent after an MDU (or any task) to turn recent session
 evidence into agent-definition suggestions without ever editing definitions
 or source code.
+
+OpenCode v2 stores (``session_v2``/``session_message``) are read by extracting
+the ``content`` array: ``text`` parts become the message text (``reasoning``
+parts are deliberately excluded) and finalized ``tool`` parts become synthetic
+``role="tool"`` events.  Permission events are not extractable on v2 (the
+``permission`` table is project-scoped), so ``permission_thrash`` reads zero by
+construction there.
 """
 
 from __future__ import annotations
@@ -67,6 +74,20 @@ CACHE_MISS_READ_MAX = 1152
 CACHE_MISS_INPUT_MIN = 80_000
 LONG_CONTEXT_TOKENS = 140_000
 LONG_CONTEXT_HIGH_TOKENS = 200_000
+
+# Opaqueness notes for OpenCode v2 trees.  A structural zero (no text, no
+# permission surface) must never read as a clean run.  Both wordings are
+# greppable and deliberately avoid the substrings ``v1`` and ``store selected``
+# so they cannot collide with the v1/store-selection notes.
+V2_PERMISSION_NOTE = (
+    "v2 permission extraction: none (permission table is project-scoped, not "
+    "session-scoped); permission_thrash reads zero — treat as UNKNOWN"
+)
+V2_TEXT_MISSING_NOTE = (
+    "v2 text extraction: none of {count} assistant message(s) carried "
+    "extractable text; text-based signals read zero — treat as UNKNOWN"
+)
+
 FLAGSHIP_MODELS = ("grok-4.7", "glm-5.2", "kimi-k3")
 BULK_AGENTS = {
     "just-code",
@@ -330,6 +351,10 @@ def collect_signals(events: list[dict]) -> list[dict]:
     # 2. Long cycles per agent (active time, not wall clock)
     by_agent: dict[str, list[float]] = {}
     for evt in sorted_events:
+        # Synthetic v2 tool events share their message timestamp; counting them
+        # would only inflate the "across N events" evidence.
+        if str(evt.get("role") or "") == "tool":
+            continue
         agent = str(evt.get("agent") or "")
         t = _coerce_float(evt.get("t"))
         if agent and t >= 0:
@@ -1016,6 +1041,91 @@ def _collect_opencode(
     return _done()
 
 
+def _v2_tool_target(name: str, tool_input: object) -> str | None:
+    """Pick the detector-relevant target of a v2 tool part's ``state.input``.
+
+    ``tool_path`` has exactly one consumer, ``context_reread`` (detector 6), and
+    grep inputs carry a ``pattern`` instead of a ``path``.  Preferring the
+    pattern keeps N distinct greps from pooling under one ``(agent, "grep")``
+    key and false-firing at threshold 4.
+    """
+    if not isinstance(tool_input, dict):
+        return None
+    if "grep" in name.lower():
+        keys = ("pattern", "path", "filePath", "file", "command")
+    else:
+        keys = ("path", "filePath", "file", "command")
+    for key in keys:
+        val = tool_input.get(key)
+        if val:
+            return str(val)
+    return None
+
+
+def _v2_extract_message(msg: dict) -> tuple[str, list[dict]]:
+    """Split a v2 ``session_message.data`` row into text and tool parts.
+
+    Returns ``(text, finalized_tool_parts)``.  Only ``text`` parts contribute
+    text: ``reasoning`` parts are chain-of-thought and must never count as
+    verdicts (v2 separates CoT structurally, so the exclusion happens here
+    instead of via ``_strip_think`` after the fact).  Tool parts that are still
+    ``running``/``streaming`` and parts without a non-empty ``name`` are
+    dropped: an un-finalized call has no outcome worth counting.
+    """
+    content = msg.get("content")
+    if not isinstance(content, list):
+        return "", []
+    pieces: list[str] = []
+    tool_parts: list[dict] = []
+    for part in content:
+        if not isinstance(part, dict):
+            continue
+        ptype = part.get("type")
+        if ptype == "text":
+            text = part.get("text")
+            if isinstance(text, str):
+                pieces.append(text)
+        elif ptype == "tool":
+            name = part.get("name")
+            if not isinstance(name, str) or not name:
+                continue
+            state = part.get("state")
+            status = state.get("status") if isinstance(state, dict) else None
+            if status in ("running", "streaming"):
+                continue
+            tool_parts.append(part)
+    return " ".join(pieces), tool_parts
+
+
+def _v2_tool_event(agent: str, t: float, part: dict) -> dict | None:
+    """Build one synthetic ``role="tool"`` event from a finalized tool part.
+
+    Returns ``None`` when the part is not countable (in-flight status, no
+    name).  Tokens stay on the message event so cost signals are not double
+    billed; ``permission_requested`` is always False on v2 (D-5).
+    """
+    if not isinstance(part, dict):
+        return None
+    name = part.get("name")
+    if not isinstance(name, str) or not name:
+        return None
+    state = part.get("state")
+    state = state if isinstance(state, dict) else {}
+    status = state.get("status")
+    if status in ("running", "streaming"):
+        return None
+    return _normalize_event(
+        agent=agent,
+        role="tool",
+        text="",
+        t=t,
+        tool=name,
+        tool_path=_v2_tool_target(name, state.get("input")),
+        tool_error=status in ("error", "failed"),
+        permission_requested=False,
+    )
+
+
 def _collect_opencode_v2(
     conn: sqlite3.Connection, cwd: str, session_id: str | None
 ) -> tuple[list[dict], dict, list[str]]:
@@ -1023,6 +1133,18 @@ def _collect_opencode_v2(
     events: list[dict] = []
     notes: list[str] = []
     info: dict = {"harness": "opencode", "session_id": session_id or "", "cwd": cwd}
+    # Capability constants: text and tool extraction are on for v2, permission
+    # extraction is not (the permission table is project-scoped).  The counts
+    # are filled in as rows are interpreted.
+    extraction = {
+        "messages": 0,
+        "text_events": 0,
+        "tool_events": 0,
+        "text": True,
+        "tools": True,
+        "permission": False,
+    }
+    info["v2_extraction"] = extraction
     try:
         cur = conn.cursor()
         if session_id:
@@ -1065,7 +1187,11 @@ def _collect_opencode_v2(
                 msg = json.loads(srow["data"] or "{}")
             except json.JSONDecodeError:
                 continue
+            if not isinstance(msg, dict):
+                continue
             tokens = msg.get("tokens") or {}
+            if not isinstance(tokens, dict):
+                tokens = {}
             cache = tokens.get("cache") or {}
             model_field = msg.get("model") or {}
             model = ""
@@ -1074,18 +1200,40 @@ def _collect_opencode_v2(
             elif model_field:
                 model = str(model_field)
             created = srow["time_created"]
+            t = _coerce_float(created) / 1000.0 if created else 0.0
+            agent = str(
+                msg.get("agent") or session_agents.get(srow["session_id"], "")
+            )
+            text, tool_parts = _v2_extract_message(msg)
+            extraction["messages"] += 1
+            if text.strip():
+                extraction["text_events"] += 1
             events.append(
                 _normalize_event(
-                    agent=str(msg.get("agent") or session_agents.get(srow["session_id"], "")),
+                    agent=agent,
                     role="assistant",
-                    text="",
-                    t=_coerce_float(created) / 1000.0 if created else 0.0,
+                    text=text,
+                    t=t,
                     tokens_in=_coerce_int(tokens.get("input")),
                     tokens_out=_coerce_int(tokens.get("output")),
                     cache_read=_coerce_int(cache.get("read") if isinstance(cache, dict) else 0),
                     model=model,
                 )
             )
+            # One synthetic event per finalized tool part, in content order;
+            # same-t ordering is stable in collect_signals.
+            for part in tool_parts:
+                tool_event = _v2_tool_event(agent, t, part)
+                if tool_event is None:
+                    continue
+                events.append(tool_event)
+                extraction["tool_events"] += 1
+        if events:
+            notes.append(V2_PERMISSION_NOTE)
+            if extraction["messages"] > 0 and extraction["text_events"] == 0:
+                notes.append(
+                    V2_TEXT_MISSING_NOTE.format(count=extraction["messages"])
+                )
     except sqlite3.Error as exc:
         notes.append(f"OpenCode v2 messages unavailable: {exc}")
     return events, info, notes
@@ -1247,6 +1395,11 @@ def _compute_metrics(events: list[dict]) -> dict:
     agents: dict[str, dict] = {}
     review_rejections = 0
     for evt in events:
+        # Synthetic v2 tool events are per-call bookkeeping for tool detectors,
+        # not assistant messages: keep per-agent counts, token sums and
+        # durations tied to real message events.
+        if str(evt.get("role") or "") == "tool":
+            continue
         agent = str(evt.get("agent") or "")
         if not agent:
             continue

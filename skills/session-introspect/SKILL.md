@@ -24,7 +24,7 @@ agent definitions or source code**.
 
 | Harness | Path | Notes |
 | --- | --- | --- |
-| OpenCode | `~/.local/share/opencode/opencode.db` | SQLite; v1 tables `session`, `message.data` JSON, `part.data` JSON; v2 tables `session_v2`, `session_message.data` JSON |
+| OpenCode | `~/.local/share/opencode/opencode.db` | SQLite; v1 tables `session`, `message.data` JSON, `part.data` JSON; v2 tables `session_v2`, `session_message.data` JSON with a typed `content` array — `text` (`{type, text}`), `reasoning` (`{type, text, state, time}`), `tool` (`{type, id, name, executed, state, time}` where `state` is `{status, input, metadata}`) |
 | Grok | `~/.grok/sessions/<urlencoded-cwd>/<session-id>/` | `summary.json`, `events.jsonl`, `chat_history.jsonl` |
 | Claude | `~/.claude/projects/<cwd-with-slashes-as-dashes>/<sessionId>.jsonl` | records have `type`, `timestamp`, `message.usage`, `message.model` |
 
@@ -65,6 +65,34 @@ The JSON object also carries an additive `info` object (top-level `harness`,
   `[{"store": "v1", "id": …, "newest": …}, {"store": "v2", …}]`.
 - `time_range` — `{"oldest": …, "newest": …}` UTC ISO-8601 for the selected
   tree, `null` when the tree has no positive timestamps.
+- `v2_extraction` — present whenever a v2 tree was selected:
+  `{"messages": N, "text_events": N, "tool_events": N, "text": true,
+  "tools": true, "permission": false}`. The booleans are capability constants
+  (text and tool extraction on, permission extraction unavailable); the counts
+  are what was actually extracted from `content` parts.
+
+#### v2 `content` extraction and its opaqueness notes
+
+On a v2 tree, message text comes from `text` parts only — `reasoning` parts
+are chain-of-thought and are **never** counted as verdicts. Each finalized
+`tool` part (`state.status` not `running`/`streaming`, with a non-empty `name`)
+becomes its own synthetic `role="tool"` event, so per-call tool detectors count
+calls rather than messages. Those synthetic events are excluded from
+`metrics.agents` message/token/duration rows and from `long_cycle`'s event
+count.
+
+Two notes keep a structural zero from reading as a clean run. Both are
+exit-0 notes, not errors:
+
+- always on a v2 run with events: `v2 permission extraction: none (permission
+  table is project-scoped, not session-scoped); permission_thrash reads zero —
+  treat as UNKNOWN`.
+- when assistant rows exist but none carried extractable text: `v2 text
+  extraction: none of <N> assistant message(s) carried extractable text;
+  text-based signals read zero — treat as UNKNOWN`.
+
+Rows missing `content` or `tokens` degrade gracefully (empty text, zero token
+counters); unparseable `data` rows are skipped.
 
 With `--session-id` the id pins the tree and no comparison runs; a session whose
 directory is the cwd **or any ancestor of the cwd** matches. If the id exists
@@ -85,12 +113,25 @@ The script emits these signal types:
 - `long_context` — a turn with `input + cache.read` >= 140000. High if any turn is >= 200000. (family-pooled across tier variants)
 - `expensive_model` — a bulk role (default coding, test, standard review, QA, devops, research, UI — including the `-free` tier) ran on grok-4.7, glm-5.2, or kimi-k3. Orchestrator, architecture, and mid/pro roles are not this signal.
 - `repeated_tool_error` — same agent+tool errored >= 3 times. (family-pooled across tier variants)
-- `permission_thrash` — >= 5 permission requests in the session.
+- `permission_thrash` — >= 5 permission requests in the session. On an OpenCode **v2** store this reads zero **by construction** (the `permission` table is project-scoped, not session-scoped): treat it as UNKNOWN, never as clean, and derive permission friction from the run narrative/manifest instead.
 - `context_reread` — same agent read/grepped the same path >= 4 times. (family-pooled across tier variants)
 - `qa_fail_repeat` — a standalone verdict line `QA GRADE: FAIL` (case-insensitive, line-anchored) in >= 2 messages, family-pooled. A message quoting the format instruction mid-line no longer counts.
 - `stalled_subagent` — >= 10 min gap between consecutive events.
 - `fix_loop` (manifest) — `fix_iterations >= 2`.
 - `phase_fail_streak` (manifest) — same phase failed >= 2 times.
+
+**On OpenCode v2 stores**, text- and tool-dependent kinds
+(`review_reject_streak`, `qa_fail_repeat`, `repeated_tool_error`,
+`context_reread`) are live via `text` parts (reasoning excluded) and finalized
+`tool` parts — this is new in the v2 `content` extraction. The cost kinds
+(`cache_miss`, `long_context`, `expensive_model`, `token_hotspot`) are also
+live, but they read `tokens`/model rather than `content` parts and were already
+live before that extraction.
+`permission_thrash` alone reads zero by construction and must be treated as
+UNKNOWN. Before reading any zero as a clean result, check
+`info.v2_extraction` and the two opaqueness notes above — a v2 tree that
+extracted no text at all says so and is not a clean run.
+
 
 ## Hard rule
 
