@@ -106,7 +106,7 @@ code, and treat the empty `session_id` as unknown.
 
 The script emits these signal types:
 
-- `review_reject_streak` — one reviewer **family** emitted 2+ consecutive rejections before an approval; rotated tier variants (`-pro`/`-mid`/`-premium`/`-free`) pool, and the evidence lists them. Bare `REJECT` verdicts count.
+- `review_reject_streak` — one reviewer **family** emitted 2+ consecutive rejections before an approval; rotated tier variants (`-pro`/`-mid`/`-premium`/`-free`) pool, and the evidence lists them. Bare `REJECT` verdicts count. Verdict matching is word-boundary based; quoted or underscore-joined mentions of the signal kind or the phrase list, and adjacent negations ("no rejections"), are mentions, not verdicts — a reviewer discussing the detector is not rejecting.
 - `long_cycle` — per-agent active time (sum of gaps < 10 min) exceeded 8 min (warn) or 15 min (high); wall clock is recorded but not acted on.
 - `token_hotspot` — an agent consumed >= 80k tokens, or >= 40% of session tokens and >= 20k.
 - `cache_miss` — a turn with `cache.read` <= 1152 and `input` >= 80000. The transcript was rebilled. (family-pooled across tier variants)

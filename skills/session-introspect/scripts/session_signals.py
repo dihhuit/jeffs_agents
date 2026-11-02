@@ -31,13 +31,45 @@ __all__ = ["collect_signals", "signals_from_manifest", "main"]
 # Signal detection constants
 # ---------------------------------------------------------------------------
 
-REJECTION_PHRASES = [
-    "request changes",
-    "changes requested",
-    "do not approve",
-    "not approved",
-    "reject",
-]
+# Verdict matchers are word-boundary anchored (mdu-52).  Plain substring
+# matching scored a reviewer NIT that merely named the signal kind
+# ("review_reject_streak") as a rejection round; ``\b`` alone is not enough
+# either, because prose/hyphen spellings and quoted phrase-list entries keep
+# their boundaries, so VERDICT_MENTION_RE strips those mentions first.
+REJECTION_RE = re.compile(
+    r"\b(?:request changes|changes requested|do not approve|not approved"
+    r"|reject(?:ed|s|ing|ion|ions)?)\b",
+    re.IGNORECASE,
+)
+APPROVAL_RE = re.compile(
+    r"\b(?:approv(?:e|es|ed)|lgtm|sign-offs?)\b",
+    re.IGNORECASE,
+)
+# Stripped (replaced by a single space) before verdict matching: the signal
+# kind in any spelling, an adjacent negated plural, and a quoted standalone
+# phrase are mentions, not verdicts.  A genuine verdict never carries these
+# forms, so removing them can only narrow the match.
+VERDICT_MENTION_RE = re.compile(
+    r"(?i)\b(?:review[\s_-]+)?reject[\s_-]+streak\b"  # the signal kind, any spelling
+    r"|\b(?:no|zero)\s+rejections?\b"  # adjacent negated plural
+    r"|[`'\"]\s*(?:request changes|changes requested|do not approve"
+    r"|not approved|reject(?:ed|s|ing|ion|ions)?)\s*[`'\"]"  # quoted standalone phrase
+    # Quantified-metric mention (mdu-52 cycle 2, live AC-report FP): the reject
+    # counter's name and the shapes its evidence/report templates put around it
+    # are measurements, not verdicts.  Every branch keeps the "reject" stem, so
+    # stripping can only remove matches, never create one; a bare "rejections"
+    # with no quantifier/template context still reads as a verdict.
+    r"|\breview_rejections?\b"  # metric name: review_rejection(s)
+    # ``consecutive`` is mandatory: only the counter's own template uses it.
+    # Without it, a bare "<count> rejections" span ("2 rejections remain
+    # unaddressed") was stripped and flipped genuine verdicts false; it also
+    # broke idempotence, since "two review_rejections rejections" lost the
+    # metric name on pass 1 and the count span on pass 2.  Requiring the word
+    # leaves both passes agreeing with the first.
+    r"|\b(?:\d+|zero|no|none|one|two|three)\s+consecutive\s+rejections?\b"
+    r"|\brejections?\s*(?:[=!<>]=?|≥|≤)\s*\d+"  # counter comparison
+    r"|\brejections?\s+from\b"  # evidence template tail
+)
 
 # A QA phase must end with a standalone verdict line ("QA GRADE: FAIL").
 # Line-anchored so a message that quotes the instruction mid-line
@@ -47,7 +79,6 @@ QA_FAIL_VERDICT = re.compile(r"(?im)^qa grade:\s*fail\b")
 # Rotated model tiers share one role; pool their counts under the base name.
 TIER_SUFFIXES = ("-pro", "-mid", "-premium", "-free")
 
-APPROVAL_PHRASES = ["approve", "lgtm", "sign-off"]
 REVIEWER_SUBSTRINGS = ["code-reviewer", "grok-review"]
 CODER_SUBSTRINGS = [
     "just-code",
@@ -153,20 +184,27 @@ def _strip_think(text: str) -> str:
     return text
 
 
-def _contains_any(text: str, phrases: list[str]) -> bool:
-    low = text.lower()
-    return any(phrase in low for phrase in phrases)
+def _verdict_text(text: str) -> str:
+    """Think-stripped text with mention/negation guards neutralized.
+
+    Each guard match is replaced by a single space (never the empty string)
+    so stripping cannot join two fragments into a verdict phrase.
+    """
+    return VERDICT_MENTION_RE.sub(" ", _strip_think(text))
+
+
+def _rejects(vt: str) -> bool:
+    """Match a rejection phrase against already-guard-neutralized text."""
+    return REJECTION_RE.search(vt) is not None
 
 
 def _is_rejection(text: str) -> bool:
-    return _contains_any(_strip_think(text), REJECTION_PHRASES)
+    return _rejects(_verdict_text(text))
 
 
 def _is_approval(text: str) -> bool:
-    low = _strip_think(text).lower()
-    return any(phrase in low for phrase in APPROVAL_PHRASES) and not _is_rejection(
-        text
-    )
+    vt = _verdict_text(text)
+    return APPROVAL_RE.search(vt) is not None and not _rejects(vt)
 
 
 def _is_reviewer(agent: str) -> bool:
