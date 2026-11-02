@@ -1,7 +1,7 @@
 ---
 type: session
 created: 2026-11-02T18:05:00Z
-updated: 2026-11-02T18:05:00Z
+updated: 2026-11-02T18:06:00Z
 ---
 
 ## 2026-11-02T17:20:00Z — session-start (ses_e63839af6ffe3a6SM2Iv0Gqgm7)
@@ -14,3 +14,7 @@ updated: 2026-11-02T18:05:00Z
 - summary: 20261101-4 closed — _is_rejection/_is_approval hardened to word-boundary REJECTION_RE/APPROVAL_RE + 4 narrow mention guards (kind-mention, quoted-phrase, adjacent-negation, quantified-metric with `consecutive` mandatory); strictly-narrowing invariant proven; live FP probe on ses_e65b5a9 1→0; 785→800 tests; deployed 4-way byte-identical (c449bbed/e43c0e14); QA PASS 10/10 (items 5+9 attenuated, labeled); two review rounds APPROVE (4 NIT/finding folds); introspection opened 20261102-1 (HIGH — reviewer verdict-line precedence: a fresh FP class, reviewer messages quoting/analyzing the matcher, incl. Verdict: APPROVE bodies — this session's own review_rejections=3 on ses_e638… is false; treat review_rejections>0 as unverified until verdict-line precedence lands) and 20261102-2 (warn, introspector self-cost 211k).
 - key_decisions: D-1/D-2 word-boundary stems (ReplacedALL: REJECTION_PHRASES/APPROVAL_PHRASES/_contains_any removed); D-3 guards space-substituting in _verdict_text; D-4 strictly-narrowing invariant documented; branch 5 requires `consecutive` (finding-1 fold) restoring idempotence; qa-grade recorded after PASS at 18:00Z; deploy table now md5-verified by QA independently.
 - manifest: runs/mdu-52-rejection-matcher-hardening/manifest.json (exit 0; qa/validate/commit rows complete; started_at corrected to actual UTC window 13:39:20Z)
+## 2026-11-02T18:06:00Z — commit-and-push (mdu-52-rejection-matcher-hardening)
+- base: b9ce7d2 + chore(memory) 4763466 (jeffs_agents, pushed 8bfae53..4763466); overlay: aae06f0 (opencode_agents, regenerated build tree, pushed 2ac393e..aae06f0); origin/main clean both.
+- overlay commit note: secret scanner absent in overlay — manual scrub AFTER commit this run (order slip, content clean; recorded in project.md).
+- checkpoint: mdu-52 fully closed (design/implement/review×2/fix×2/test/deploy×2/QA-PASS/introspect/commit/push). next: user picks — 20261102-1 (HIGH, verdict-line precedence), 20261102-2 (warn), 20261101-2 (overlay grok-* coder parity), scanner path-exemption 20261030-5, upstream filings (user-gated). blockers: none.
