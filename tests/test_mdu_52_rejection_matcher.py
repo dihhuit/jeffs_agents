@@ -4,6 +4,12 @@ Pins the false-positive classes 20261101-4 recorded (a reviewer NIT that
 mentions the signal kind or quotes the phrase list must not read as a verdict)
 and the true verdicts that must survive the narrowing.  The script is imported
 via importlib, matching ``tests/test_session_signals.py``.
+
+mdu-53 layers verdict-line precedence on top (a standalone verdict line
+classifies the whole message; see the mdu-53 design doc and
+``test_mdu_53_verdict_line_precedence.py``): the narrowing claim below is
+scoped to the guard set and the no-verdict-line body tier -- all 15 cases here
+hold byte-identical.
 """
 
 from __future__ import annotations
@@ -196,6 +202,8 @@ def test_guard_strip_substitutes_a_space() -> None:
 
 # ---------------------------------------------------------------------------
 # 12. Stem retention — the "no true verdict lost" half of D-4's narrowing claim
+#     (still true under mdu-53: guards only remove matches, and verdict-line
+#     precedence never removes a true verdict — these assertions are unchanged)
 # ---------------------------------------------------------------------------
 
 

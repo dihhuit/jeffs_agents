@@ -50,8 +50,16 @@ APPROVAL_RE = re.compile(
 # phrase are mentions, not verdicts.  A genuine verdict never carries these
 # forms, so removing them can only narrow the match.
 VERDICT_MENTION_RE = re.compile(
-    r"(?i)\b(?:review[\s_-]+)?reject[\s_-]+streak\b"  # the signal kind, any spelling
-    r"|\b(?:no|zero)\s+rejections?\b"  # adjacent negated plural
+    # Backtick-span mention (mdu-53, must stay first so the longest span strips
+    # in one pass): any single-line backticked span containing rejection
+    # vocabulary is metalanguage -- a quoted regex source, a quoted guard
+    # branch, or a backticked example string.  The span contains a
+    # reject/rejection stem by construction, so stripping only narrows.
+    r"(?i)`[^`\n]*(?:request changes|changes requested|do not approve"
+    r"|not approved|reject(?:ed|s|ing|ion|ions)?)[^`\n]*`"
+    r"|\b(?:review[\s_-]+)?reject[\s_-]+streak\b"  # the signal kind, any spelling
+    r"|\b(?:no|zero|not)\s+(?:an?\s+)?rejections?\b"  # adjacent + prose negation
+    r"|\bnot\s+rejecting\b"  # negated progressive
     r"|[`'\"]\s*(?:request changes|changes requested|do not approve"
     r"|not approved|reject(?:ed|s|ing|ion|ions)?)\s*[`'\"]"  # quoted standalone phrase
     # Quantified-metric mention (mdu-52 cycle 2, live AC-report FP): the reject
@@ -69,6 +77,38 @@ VERDICT_MENTION_RE = re.compile(
     r"|\b(?:\d+|zero|no|none|one|two|three)\s+consecutive\s+rejections?\b"
     r"|\brejections?\s*(?:[=!<>]=?|≥|≤)\s*\d+"  # counter comparison
     r"|\brejections?\s+from\b"  # evidence template tail
+)
+
+# --- mdu-53: verdict-line precedence --------------------------------------
+# A message that states its verdict on a standalone line is classified by
+# that line alone; body prose can never override or veto it.  Two line
+# shapes count:
+#   1. labelled: "## Verdict: APPROVE (cycle-2 delta)" -- heading marks
+#      optional, "verdict" + ":" + a value on one line;
+#   2. bare: a line starting with a decision word (REJECT / REJECTED /
+#      APPROVE / APPROVED / REQUEST CHANGES / LGTM).
+# Noun forms (rejection/rejections) and the progressive (rejecting) are
+# deliberately NOT bare decision words: noun-initial lines are the observed
+# quoted-example shape ("rejections from the two rounds: ..."), and those
+# wordings still count via the labelled shape or the body fallback.
+# Excluded structurally: fenced-code content (skipped by _verdict_line),
+# blockquoted lines (">" fails the anchor), and 4+-space-indented lines
+# (markdown indented code).  The FIRST verdict line in the message wins.
+VERDICT_LINE_RE = re.compile(
+    r"(?im)^[ \t]{0,3}#{0,6}[ \t]*verdict[ \t]*:[ \t]*(?P<value>.+)$"
+    r"|^[ \t]{0,3}(?P<word>request changes|reject(?:ed)?"
+    r"|approv(?:e|ed)|lgtm)\b"
+)
+# The deciding phrase is matched ANCHORED (re.match, never re.search): the
+# text after the verdict word is a qualifier ("(cycle-2 delta)") and is
+# exactly where a body-quoting FP could hide -- "## Verdict: APPROVE
+# (rejections all addressed)" must stay an approval.
+VERDICT_REJECT_PHRASE_RE = re.compile(
+    r"(?i)^(?:request changes|changes requested|do not approve|not approved"
+    r"|reject(?:ed|s|ing|ion|ions)?)\b"
+)
+VERDICT_APPROVE_PHRASE_RE = re.compile(
+    r"(?i)^(?:approv(?:e|es|ed)|lgtm)\b"
 )
 
 # A QA phase must end with a standalone verdict line ("QA GRADE: FAIL").
@@ -184,6 +224,27 @@ def _strip_think(text: str) -> str:
     return text
 
 
+def _verdict_line(text: str) -> str | None:
+    """Return the first standalone verdict line's deciding phrase, or None.
+
+    Input is think-stripped by the caller.  Fenced code blocks are skipped;
+    blockquoted and 4+-space-indented lines cannot match VERDICT_LINE_RE's
+    anchor.  The first verdict line wins.
+    """
+    in_fence = False
+    for line in text.splitlines():
+        stripped = line.lstrip(" \t")
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        m = VERDICT_LINE_RE.match(line)
+        if m:
+            return m.group("value") or m.group("word") or ""
+    return None
+
+
 def _verdict_text(text: str) -> str:
     """Think-stripped text with mention/negation guards neutralized.
 
@@ -198,13 +259,38 @@ def _rejects(vt: str) -> bool:
     return REJECTION_RE.search(vt) is not None
 
 
+def _review_class(text: str) -> str:
+    """Classify a review message: "reject", "approve", or "none".
+
+    Verdict-line precedence (mdu-53): a standalone verdict line decides the
+    message alone -- body prose never overrides or vetoes it, including when
+    the verdict word is one the phrase regexes do not know (an explicit
+    unrecognized verdict is not a round).  A message with no verdict line
+    falls back to the guarded body matchers (mdu-52 semantics).
+    """
+    candidate = _verdict_line(_strip_think(text))
+    if candidate is not None:
+        if VERDICT_REJECT_PHRASE_RE.match(candidate):
+            return "reject"
+        if VERDICT_APPROVE_PHRASE_RE.match(candidate):
+            return "approve"
+        return "none"
+    vt = _verdict_text(text)
+    if _rejects(vt):
+        return "reject"
+    if APPROVAL_RE.search(vt):
+        return "approve"
+    return "none"
+
+
 def _is_rejection(text: str) -> bool:
-    return _rejects(_verdict_text(text))
+    """True when the message classifies as a rejection round."""
+    return _review_class(text) == "reject"
 
 
 def _is_approval(text: str) -> bool:
-    vt = _verdict_text(text)
-    return APPROVAL_RE.search(vt) is not None and not _rejects(vt)
+    """True when the message classifies as an approval round."""
+    return _review_class(text) == "approve"
 
 
 def _is_reviewer(agent: str) -> bool:
@@ -1432,6 +1518,7 @@ def _collect_claude(cwd: str, session_id: str | None = None) -> tuple[list[dict]
 def _compute_metrics(events: list[dict]) -> dict:
     agents: dict[str, dict] = {}
     review_rejections = 0
+    review_approvals = 0
     for evt in events:
         # Synthetic v2 tool events are per-call bookkeeping for tool detectors,
         # not assistant messages: keep per-agent counts, token sums and
@@ -1458,13 +1545,19 @@ def _compute_metrics(events: list[dict]) -> dict:
             agents[agent]["times"].append(t)
         if _is_reviewer(agent) and _is_rejection(str(evt.get("text") or "")):
             review_rejections += 1
+        elif _is_reviewer(agent) and _is_approval(str(evt.get("text") or "")):
+            review_approvals += 1
 
     agent_list = []
     for data in agents.values():
         times = data.pop("times")
         data["duration_s"] = int(max(times) - min(times)) if len(times) >= 2 else 0
         agent_list.append(data)
-    return {"agents": agent_list, "review_rejections": review_rejections}
+    return {
+        "agents": agent_list,
+        "review_rejections": review_rejections,
+        "review_approvals": review_approvals,
+    }
 
 
 # ---------------------------------------------------------------------------

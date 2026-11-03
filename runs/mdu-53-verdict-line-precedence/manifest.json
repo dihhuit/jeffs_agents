@@ -1,0 +1,31 @@
+{
+  "mdu_id": "mdu-53-verdict-line-precedence",
+  "title": "Rejection matcher verdict-line precedence (20261102-1)",
+  "status": "completed",
+  "harness": "opencode",
+  "started_at": "2026-11-03T13:30:54Z",
+  "completed_at": "2026-11-03T13:52:00Z",
+  "model": "opencode-go/glm-5.3-flash",
+  "phases": [
+    {"phase": "design", "agent": "architect", "model_tier": "premium", "outcome": "pass", "notes": "docs/design/mdu-53-verdict-line-precedence.md (746 lines); one accepted adaptation D-2para3.3 — literal no-verdict-line=>not-a-round inverted ~10 pinned true positives across 3 files; equivalent-intent rule = precedence + extended negation + backtick-span guard, residue disclosed (mdu-50 design-intent precedent). Live gate: review_rejections==0 + review_approvals>=2 on ses_e63839af6ffe3a6SM2Iv0Gqgm7."},
+    {"phase": "implement", "agent": "just-code", "model_tier": "budget", "outcome": "pass", "notes": "session_signals.py (+105/-6) _review_class precedence + guards + additive review_approvals; mdu-52 test file docstrings only; +12 tests -> 812 passed; live probe on FP tree: review_rejections 0, approvals 3, no streak. Flagged: D-6 case-4 streak wording pinned by equivalent intent (accepted); AC-12 SKILL.md sentence deferred to doc-fix child."},
+    {"phase": "review", "agent": "code-reviewer", "model_tier": "mid", "outcome": "pass", "notes": "Round 1: REQUEST CHANGES — MAJOR AC-13 (agent-improvements 20261102-1 closure was a design deliverable, not deferred) + NIT D-6 case-4 reconciliation note; fixed by doc-only fix child (SKILL.md AC-12 landed in a parallel child, verbatim per D-7). Round 2 (fresh reviewer): APPROVE — verdict-line precedence, guards narrowing, call sites, additive counter, D-6 pin all traced."},
+    {"phase": "test", "agent": "test-agent", "model_tier": "budget", "outcome": "pass", "notes": "813 passed (added 1 required-AC pin: unquoted body vocabulary loses to verdict line, mutation-sensitive). mdu-52 test file diff-verified (43 assertions byte-identical vs HEAD). Mutation battery: 8 of 9 direct mutations killed (search-mutation survives structurally: VERDICT_*_PHRASE_RE are ^-anchored; the a2 variant with ^ removed kills the flip-trap pin), full pre-fix revert kills 12/13. AC table complete; doc ACs verified in-tree."},
+    {"phase": "deploy", "agent": "devops", "model_tier": "mid", "outcome": "pass", "notes": "base build + overlay build exit 0 (validators 10/10 both); deploy.sh --force exit 0; probe-gate step skipped with rationale (no config/registry change; deploy's built-in model-health gate green anyway); 4-way byte-identity identical for session_signals.py + SKILL.md (base build / overlay build / ~/.config/opencode / ~/.grok); live AC-14 gate on INSTALLED copy: review_rejections 0, review_approvals 3, no review_reject_streak; deployed-opencode.json sha == HEAD blob (no agent-config content changed)."},
+    {"phase": "validate", "agent": "qa", "model_tier": "mid", "outcome": "pass", "notes": "GRADE PASS 8/8 (V1 ledger exit 0; V2 813/813; V3 live gate independently re-run 0/3/no-streak; V4 4-way byte-identity both files; V5 AC pins concrete; V6 SKILL.md+closure verbatim; V7 no summary contradictions; V8 diff surface exactly AC-15). Findings: F1 LOW notation slip (numstat 99/-6, note said 105 — post-QA manifest drift forbidden, recorded not fixed), F2 INFO design-note line-count snapshot staleness, F3 INFO verbatim shell denials (`python3 -c`-free commands only; correct HOME /home/dihhuit)."},
+    {"phase": "commit", "agent": "orchestrator", "model_tier": "budget", "outcome": "pending", "notes": "secret gate + (no prompt-file changes, prompt gate N/A) + commit both repos + push after introspect"}
+  ],
+  "fix_iterations": 1,
+  "autonomy_level": 3,
+  "verification": {"build": true, "tests_passed": 813, "tests_total": 813, "qa_grade": "PASS", "ci_green": null},
+  "artifacts": [
+    "docs/design/mdu-53-verdict-line-precedence.md",
+    "skills/session-introspect/scripts/session_signals.py",
+    "skills/session-introspect/SKILL.md",
+    "tests/test_mdu_53_verdict_line_precedence.py",
+    "tests/test_mdu_52_rejection_matcher.py",
+    "agent-improvements.md",
+    "runs/mdu-53-verdict-line-precedence/manifest.json"
+  ],
+  "summary": "Verdict lines (## Verdict: / bare line-start REJECT/APPROVE/REQUEST CHANGES/LGTM, anchored-prefix) now classify reviewer messages alone; body prose can neither override nor veto; verdict-bearing APPROVE+matcher-analysis bodies count as approvals (veto bug fixed); extended not-a-rejection/not-rejecting negation + backtick-span guards; additive metrics.review_approvals; mdu-52 invariant reworded-scoped; suite 813 green; live FP probe 0/3/no-streak; deployed 4-way identical."
+}
