@@ -1,7 +1,7 @@
 ---
 type: project
 created: 2026-10-27T13:24:20Z
-updated: 2026-11-02T00:20:00Z
+updated: 2026-11-03T14:12:00Z
 ---
 
 # Project facts — open-agent-definitions (base agent-team repo)
@@ -80,3 +80,8 @@ updated: 2026-11-02T00:20:00Z
 - Watch: `_is_rejection` bare-"reject" substring can false-fire on reviewer NITs quoting "review_reject_streak" — live first-run FP (20261101-4, warn): treat review_rejections>0 as UNVERIFIED (trace the matching event) until matcher hardening MDU lands.
 - Suite 785; v2 fixtures in tests/test_mdu_51_v2_text_extraction.py (29, hermetic tmp_path sqlite incl. HOME-override CLI); note-wording trap: v2 notes must not contain `v1` or `store selected` substrings (mdu-50 test assertion); SQL-unmodified tripwire pin (`FROM session_v2` ×4 / `FROM session_message` ×1, AC-12).
 - Gotcha (2026-11-02, mdu-52): opencode_agents has NO scripts/lib/secret_scan.py — overlay commits must apply the secret-scrub checklist manually BEFORE `git commit`, not after (mdu-52 committed first, then verified; content was identical to already-scanned base source, so no exposure, but the gate order was violated). runs/ is untracked in the base per repo policy — commit it with the MDU only via explicit path because the manifest is durable evidence for QA/introspector disputability.
+
+## 2026-11-03 (mdu-53)
+- Scanner path-lexeme class widened: slash-joined PHASE/role-name compounds also trip the 32+ char rule with no repo path involved (a 37-char design-implement-test... style compound flagged in agent-improvements.md) — the same class as mdu-45's slash-joined role names. Split at slashes everywhere, including prose enumerations.
+- Manifest lesson re-proven at scale: edit-anchored manifest writes lost a required field (fix_iterations), retro-inserted stray text, and left a trailing comma in one MDU — the whole-file rewrite rule covers ALL future edits, even single-field ones (extra validate after every edit).
+- The mounted blind spot: mdu-53's FP grew IN the previous session while the fix shipped after; live gates must target the session id recorded at FP time, and children re-verify from the INSTALLED copy post-deploy (same guard as the model-audit row).

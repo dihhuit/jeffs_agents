@@ -1,7 +1,7 @@
 ---
 type: decisions
 created: 2026-10-27T13:24:20Z
-updated: 2026-11-02T00:20:00Z
+updated: 2026-11-03T14:10:00Z
 ---
 
 # Decision log
@@ -109,3 +109,8 @@ updated: 2026-11-02T00:20:00Z
 - Context: 20261101-4 live FP — bare-'reject' substring matching counted reviewer NITs quoting the metric; substring REJECTION_PHRASES also FP'd prose "rejections" mentions and vetoed approvals ("unapproved").
 - Decision: replace substring lists with word-boundary REJECTION_RE/APPROVAL_RE stems; four narrow space-substituting mention guards (kind-mention collocation, quoted-standalone-phrase, adjacent negation, quantified-metric with mandatory `consecutive`); strictly-narrowing invariant (guards may only remove matches). Verdict-line precedence (a reviewer message whose own verdict says APPROVE is never a rejection) deferred to 20261102-1 rather than shipped piecemeal.
 - Consequences: live probe verified FP 1→0 on the real failing session; known accepted limits — spelled counts ≥ "four", non-operator separators, verdict-less analytic quoting (20261102-1 class) can still FP; treat review_rejections>0 as unverified until 20261102-1 lands.
+
+## 2026-11-03 — verdict-line precedence for the rejection matcher (mdu-53-verdict-line-precedence)
+- Context: 20261102-1 live FP — reviewer messages quoting/analyzing the matcher fired review_reject_streak HIGH against manifest truth 0; the FP also vetoes _is_approval, so APPROVE verdicts never reset the streak (fires and sticks).
+- Decision: anchored-prefix verdict lines (labelled `## Verdict:` or bare line-start REJECT/REJECTED/APPROVE/APPROVED/REQUEST CHANGES/LGTM, ≤3-space indent, fence-skipped, first-line-wins) classify a message ALONE via new _review_class ("reject"/"approve"/"none"); body prose can neither override nor veto; one accepted adaptation (D-2§3.3) — literal "no verdict line ⇒ not a round" was unshippable (prose-verdict true positives pinned in 3 test files), so verdict-less messages fall to the guarded body tier with residue disclosed; extended adjacent-negation guard + new backtick-span mention guard; additive metrics.review_approvals.
+- Consequences: 20261102-1 closed with a verbatim §D-8 note in agent-improvements.md; review_rejections>0 is now trustworthy on freshly-run introspector passes (watch: exported baseline records written before 011f4b0 may still carry FP-era counts); live FP gate asserted from the installed deployed copy (0/3/no-streak, ses tree of the prior MDU); new suggestion-note carries for the next loop: 20261024-1 escalated warn→high (architect long_context record — cap architect briefs before 140k)
