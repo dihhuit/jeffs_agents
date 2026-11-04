@@ -47,6 +47,13 @@
       "model_tier": "mid",
       "outcome": "pass",
       "notes": "round 1 QA GRADE FAIL on AC-8 only: manifest summary said '49 new tests' contradicted by phase notes and collect (59 = 35+24); MINOR insertion-attribution wording (12 root + 12 build copies); AC-1..AC-7 all PASS round 1, deploy not re-run; fix = orchestrator whole-file manifest rewrite (bookkeeping only, no product change). round 2 QA GRADE PASS: fixed strings confirmed, numstat unchanged 16f/24i/0d, D1b falsifier re-grep 1/1, full consistency sweep PASS, ATTEST [ok] on final manifest. no findings"
+    },
+    {
+      "phase": "commit",
+      "agent": "orchestrator",
+      "model_tier": "budget",
+      "outcome": "pass",
+      "notes": "base feature commit 084b470 (7 files incl. manifest via explicit path); secret scan staged clean after one 20261030-5 path-lexeme reword (44-char slash-joined phase compound in the introspector note); prompt-regression gate 7/7; run_ledger validate [ok]; overlay commit follows separately"
     }
   ],
   "fix_iterations": 1,
@@ -71,6 +78,6 @@
     "opencode_agents/tests/test_mdu_54_overlay_grok_clause_parity.py",
     "opencode_agents/tests/test_mdu_54_parity_coverage.py"
   ],
-  "summary": "10 definition-batch clause insertions (D5 x3 coder, D1d+D1c x2 qa, D1e x2 architect, D1b reviewer) landed byte-identical on the overlay-root personal grok-* family, E2E via build/deploy with 59 new tests, review APPROVE, QA re-validation pending.",
+  "summary": "10 definition-batch clause insertions (D5 x3 coder, D1d+D1c x2 qa, D1e x2 architect, D1b reviewer) landed byte-identical on the overlay-root personal grok-* family, E2E via build/deploy with 59 new tests, review APPROVE, QA PASS (2 rounds), commits landing.",
   "qa_grade": "PASS"
 }
