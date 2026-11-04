@@ -493,3 +493,17 @@ Each MDU above is sized for the repo's own orchestrator to complete in one close
 - **Follow-up:** the overlay root personal `grok-*` variants (`grok-qa`, `grok-qa-pro`, `grok-architect`, `grok-architect-premium`, `grok-test-agent`, `grok-test-agent-pro`, `grok-code-reviewer-pro`) were NOT edited in this batch — the clauses landed in the base prompts, their `grok/agents/` mirrors, and the overlay `qa` override only. Extend to those files in a future user-approved MDU if parity is wanted.
 - **Dependencies:** MDU-24 (20261017-1 already shipped), MDU-41 (trace/procedure precedent), MDU-45 (grok-review registry), MDU-46 (checklist + model field).
 - **Status:** Done — 2026-11-01 (definition clauses shipped in base prompts and grok mirrors, overlay qa override folded both sentences, orchestrator repointed to `opencode-go/glm-5.3-flash`, verify pins added, builds and suites green)
+
+### MDU-54 · Overlay personal grok-* definition-parity batch
+
+- **Why:** The MDU-47 and MDU-49 deferral follow-ups left the overlay-root personal `grok-*` full files without the definition-batch clauses the base siblings carry — the personal Grok mirrors lagged every behavioral guard shipped since, in the harness the user actually deploys from.
+- **Description:** Land the role-applicable MDU-47/49 clauses byte-identically on the overlay-root personal grok profiles: D5 (always-verify) x3 coder family, D1d + D1c (denied-shell + QA sencence pair, base `qa.md` shapes) x2 qa, D1e ($WORKSPACE notation) x2 architect, D1b (read-only trace) x1 code-reviewer-pro — 10 clause insertions across 8 files, plus regenerated build copies, plus this backlog row. Extend the recorded deferral list with an evidence-backed exclusion table (devops/ui-ux/research carry no batch clauses; grokestrator complete since MDU-49; overlays/grok/agents personal-only trio needs a prompt-side fold — deferred).
+- **Acceptance criteria:**
+  1. Overlay diff = 24 insertions, 0 deletions, confined to the 8 root profiles + their 8 tracked build copies; clause text byte-matches the base carrier files (grep `-x` proven).
+  2. Excluded profiles and `overlays/grok/agents/` trio carry zero batch-clause text (absence-pinned).
+  3. grok-test-agent{,-pro}.md untouched (verify-only; Dirty-tree guard already present, MDU-24 shipment).
+  4. Overlay suite green incl. two new MDU-54 test files (59 tests); base suite 813 unchanged; overlay build idempotent; prompt-regression gate 7/7 baseline intact; probe gate green (no registry change).
+  5. Deploy 8/8 byte-identical (build copies vs installed, all 3 global snippets present); manifest validated and committed.
+- **Suggested agents:** architect (design — done), just-code (implement — done), code-reviewer (review — done), test-agent (tests — done), devops (build/deploy — done), qa (validate — done).
+- **Dependencies:** MDU-47 (deferral + clause set), MDU-49 (clause set + batch codification pattern), MDU-53 (20261024-1 architect cap carry honored).
+- **Status:** Done — 2026-11-04 (10 clause insertions byte-identical; review APPROVE round 1; 59 new tests, overlay 269 / base 813 green; gate+probe+deploy green; QA PASS round 2 after one manifest bookkeeping fix)

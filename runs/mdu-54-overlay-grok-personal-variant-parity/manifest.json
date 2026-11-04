@@ -1,0 +1,76 @@
+{
+  "mdu_id": "mdu-54-overlay-grok-personal-variant-parity",
+  "title": "Extend definition-batch clauses to the overlay-root personal grok-* family",
+  "status": "completed",
+  "harness": "opencode",
+  "started_at": "2026-11-04T00:00:00Z",
+  "completed_at": "2026-11-04T14:22:03Z",
+  "phases": [
+    {
+      "phase": "design",
+      "agent": "architect",
+      "model_tier": "premium",
+      "outcome": "pass",
+      "notes": "docs/design/mdu-54-overlay-grok-personal-variant-parity.md — 10 insertions / 8 files scoped; test-agent family verify-only (guard shipped MDU-24); devops/ui-ux/research/overlays-trio excluded with grep evidence; anchors grep-verified"
+    },
+    {
+      "phase": "implement",
+      "agent": "just-code",
+      "model_tier": "budget",
+      "outcome": "pass",
+      "notes": "24 insertions (12 across the 8 overlay root grok profiles + 12 in their tracked build copies), byte-identical to base siblings; new test file test_mdu_54_overlay_grok_clause_parity.py 35 cases + 5xFail mutation protocol; overlay suite 245 passed, base 813 unchanged; build exit 0; prompt-regression snapshot/diff/gate PASS 7/7; secret scan clean; zero anchor deltas"
+    },
+    {
+      "phase": "review",
+      "agent": "code-reviewer",
+      "model_tier": "mid",
+      "outcome": "pass",
+      "notes": "APPROVE round 1, single pass; model id opencode-go/mimo-v2.6-flash (explicit spawn override; 20261101-2 apply-now record); byte-identity confirmed 5/5 at base carrier file:line; static-trace scope, plain-form shell escapes only; 2 NITs recorded (architect test name overclaim - fixed by test phase; ordering failure-message reprs)"
+    },
+    {
+      "phase": "test",
+      "agent": "test-agent",
+      "model_tier": "budget",
+      "outcome": "pass",
+      "notes": "4 genuine coverage gaps closed with 24 new pins in tests/test_mdu_54_parity_coverage.py (base-sibling byte identity x10, browser-BLOCKED non-violation x2, D1c shape x2, exclusion absence x10, MDU54_TEST_ROOT-honoring); NIT renamed; 1-round mutation sanity exactly-1-failure; overlay suite 269 passed, base 813 unchanged"
+    },
+    {
+      "phase": "deploy",
+      "agent": "devops",
+      "model_tier": "mid",
+      "outcome": "pass",
+      "notes": "fresh build exit 0 (43 agents/41 grok profiles), pytest 269 green, probe --refresh --gate exit 0 (config hash unchanged), dry-run + --force exit 0 (15 prompts / 41 grok / 43 claude), build-vs-installed byte-identity 8/8 IDENTICAL with 3 snippets in installed copies (root-vs-installed mismatch was brief comparison-basis error, control proof on untouched profiles); evidence /tmp/opencode/mdu-54-deploy-evidence.md"
+    },
+    {
+      "phase": "validate",
+      "agent": "qa",
+      "model_tier": "mid",
+      "outcome": "pass",
+      "notes": "round 1 QA GRADE FAIL on AC-8 only: manifest summary said '49 new tests' contradicted by phase notes and collect (59 = 35+24); MINOR insertion-attribution wording (12 root + 12 build copies); AC-1..AC-7 all PASS round 1, deploy not re-run; fix = orchestrator whole-file manifest rewrite (bookkeeping only, no product change). round 2 QA GRADE PASS: fixed strings confirmed, numstat unchanged 16f/24i/0d, D1b falsifier re-grep 1/1, full consistency sweep PASS, ATTEST [ok] on final manifest. no findings"
+    }
+  ],
+  "fix_iterations": 1,
+  "autonomy_level": 3,
+  "verification": {
+    "build": true,
+    "tests_passed": 1082,
+    "tests_total": 1082,
+    "qa_grade": "PASS",
+    "ci_green": null
+  },
+  "artifacts": [
+    "docs/design/mdu-54-overlay-grok-personal-variant-parity.md",
+    "opencode_agents/grok/agents/grok-just-code.md",
+    "opencode_agents/grok/agents/grok-just-code-mid.md",
+    "opencode_agents/grok/agents/grok-just-code-pro.md",
+    "opencode_agents/grok/agents/grok-qa.md",
+    "opencode_agents/grok/agents/grok-qa-pro.md",
+    "opencode_agents/grok/agents/grok-architect.md",
+    "opencode_agents/grok/agents/grok-architect-premium.md",
+    "opencode_agents/grok/agents/grok-code-reviewer-pro.md",
+    "opencode_agents/tests/test_mdu_54_overlay_grok_clause_parity.py",
+    "opencode_agents/tests/test_mdu_54_parity_coverage.py"
+  ],
+  "summary": "10 definition-batch clause insertions (D5 x3 coder, D1d+D1c x2 qa, D1e x2 architect, D1b reviewer) landed byte-identical on the overlay-root personal grok-* family, E2E via build/deploy with 59 new tests, review APPROVE, QA re-validation pending.",
+  "qa_grade": "PASS"
+}
