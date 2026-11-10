@@ -102,6 +102,14 @@ as root: rerun with --session-id <P>` and a children-under-cwd hint when those
 apply). That is still an exit-0 result: read the `notes` array, not the exit
 code, and treat the empty `session_id` as unknown.
 
+### Run timing and the pass's own signals
+
+The script runs at pass start, so the introspector's own token, long_context, and
+stall signals are captured mid-pass and structurally under-report — a closing
+re-run (or an orchestrator-side run after the pass) is needed to see them. A pass
+record that claims no long_context is describing only the pre-script window;
+check a closing run before treating the pass's own cost as clean.
+
 ## Signal kinds
 
 The script emits these signal types:

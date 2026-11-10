@@ -1,7 +1,7 @@
 ---
 type: decisions
 created: 2026-10-27T13:24:20Z
-updated: 2026-11-03T14:10:00Z
+updated: 2026-11-04T14:44:01Z
 ---
 
 # Decision log

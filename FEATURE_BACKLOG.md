@@ -507,3 +507,10 @@ Each MDU above is sized for the repo's own orchestrator to complete in one close
 - **Suggested agents:** architect (design — done), just-code (implement — done), code-reviewer (review — done), test-agent (tests — done), devops (build/deploy — done), qa (validate — done).
 - **Dependencies:** MDU-47 (deferral + clause set), MDU-49 (clause set + batch codification pattern), MDU-53 (20261024-1 architect cap carry honored).
 - **Status:** Done — 2026-11-04 (10 clause insertions byte-identical; review APPROVE round 1; 59 new tests, overlay 269 / base 813 green; gate+probe+deploy green; QA PASS round 2 after one manifest bookkeeping fix)
+
+### MDU-55 · Introspector self-cost discipline
+
+- **Why:** suggestion `20261102-2` (warn, target introspector, kind token_hotspot) — the loop-mode pass re-read the growing `agent-improvements.md` in full and ran the signal script at pass start, so the pass's own token/long_context/stall signals structurally under-reported.
+- **Description:** one new indented sub-bullet under the loop-mode read bullet in both introspector mirrors (byte-identical bodies; grok keeps its frontmatter) carrying the grep-open-ids / targeted-edit / one-script-run / 140k wrap-up discipline; the SKILL.md run-timing subsection; a 12-case pin file; the suggestion flip to resolved pending live exercise.
+- **Artifacts:** `prompts/introspector.md`, `grok/agents/introspector.md`, `skills/session-introspect/SKILL.md`, `tests/test_mdu_55_introspector_discipline.py`, `agent-improvements.md` flip; design doc `docs/design/mdu-55-introspector-self-cost-discipline.md`.
+- **Status:** Done — 2026-11-10 (clause and note shipped and pinned, 12 new tests, base suite 825 green; no deploy — static acceptance, pending the first post-deploy live exercise)

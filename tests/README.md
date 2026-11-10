@@ -20,6 +20,7 @@ CLI).
 | `test_mdu_46_apply_now_tooling.py` | optional top-level `model` field (absent/valid/empty/non-string, `REQUIRED_FIELDS` parity pin, `by_model` + `format_summary` + CLI) and doc pins for `docs/brief-checklist.md` clause ids plus the local upstream draft (filing gate, masked evidence pointer, no submission mechanics) |
 | `test_mdu_47_definition_batch.py` | clause pins (16 prompt-file assertions across code-reviewer, grok-review, qa, architect), mirror parity, ordering pins, dirty-tree verify pins, orchestrator model repoint pin, and checklist pins |
 | `test_mdu_49_definition_batch.py` | full-clause pins for the six MDU-49 clauses (21 file-level assertions across the 3 orchestrator mirrors, 4 coder bodies, 2 introspector bodies), design-doc blockquote consistency, D5 coder/orchestrator shape parity, D4→D3→D2 cluster and D1/D5/D6 ordering pins, checklist pins, and an `MDU49_TEST_ROOT` override for the mutation matrix |
+| `test_mdu_55_introspector_discipline.py` | introspector self-cost discipline pins: the loop-mode reading sub-bullet present exactly once in each mirror and byte-identical across them, its position between the read parent and the manifest bullet, the read parent byte-unchanged, design-doc constant consistency, and the SKILL.md run-timing note (heading once, body verbatim, between `## How to run the helper` and `## Signal kinds`), with an `MDU55_TEST_ROOT` override for the mutation matrix |
 | `conftest.py` | Puts `scripts/lib/` on `sys.path` so tests import the modules the same way `scripts/build.sh` does |
 
 ## Running
