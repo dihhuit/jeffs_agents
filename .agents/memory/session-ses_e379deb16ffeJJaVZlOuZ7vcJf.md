@@ -18,3 +18,8 @@ updated: 2026-11-11T03:52:27Z
 - key_decisions: audit pin admits Open only for `(queue head)`-marked sections (at most one); qa-pro + overlay-root grok-qa* carry Clause B per mdu-54 role-applicability; design-doc round-2 medium folded docs-only by orchestrator (mdu-55 precedent); manifest runs/ stays local-only per mdu-49 rule (mdu-52's explicit-path note is superseded).
 - manifest: runs/mdu-57-form-denial-retry-discipline/manifest.json (local-only, gitignored)
 - carries: 20261110-3 NEW (architect grep-counted carrier census); 20261110-2 still open (cache miss recurred this run); 20261102-2 timing half COMPLIANT, store-side observation pending.
+
+## 2026-11-11T03:52:27Z — post-mdu bookkeeping (mdu-58 queued)
+- User directive: add Grokception MDU to backlog, do not start. MDU-58 written as queue head (grok-inception on xai/*, mdu-42 hard rule applies, probe-first model pick, expected NO new grok/agents profile since Grok Build's inception already runs grok-4.7).
+- mdu-45 audit pin widened to a 3-row queue budget (queue-head marker OR `queued` status); review APPROVE; suite 851 green; commit c2bb3a2 pushed.
+- Resume block updated: next session starts at MDU-58 (user pick).

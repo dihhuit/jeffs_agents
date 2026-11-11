@@ -129,3 +129,8 @@ updated: 2026-11-11T03:52:27Z
 - Context: MDU-56's honest queue-head row (no resolution) reds the mdu-45 audit pin `test_backlog_no_entry_remains_unresolved`, which as written forbids any open backlog entry — a backlog that cannot hold queued work is unusable.
 - Decision: the pin accepts a `- **Status:** Open …` line ONLY when the section heading ends with `(queue head)`; at most one open entry file-wide; exactly-one-Status and `audited >= 20` unchanged. MDU-56 carries `Open — queued`.
 - Consequences: future queue-head MDU rows must be marked `(queue head)` and gain a Status line at write time; non-marked sections still require Done or Superseded; the exemption is fail-closed (marker loss reds the audit).
+
+## 2026-11-11 — Backlog audit queue budget widened to 3 (mdu-58 queueing)
+- Context: user queued a second pending MDU (MDU-58 Grokception) while MDU-56 was still open; the mdu-57 pin admitted only one Open row, which cannot represent a real ahead-of-execution queue.
+- Decision: `Status: Open` admitted via two gated paths — heading ends with `(queue head)` (next up) or the Status text contains `queued` (waiting behind the head); open-entries cap raised 1 to 3; unmarked bare `Open` still fails (fail-closed); exactly-one-Status and audited>=20 unchanged. MDU-58 is the new queue head per user pick; MDU-56 demoted to queued.
+- Consequences: at most one queue head + two queued rows; adding a fourth pending row requires resolving or demoting an existing one first; review APPROVE single pass (mimo-v2.6-flash) with one optional LOW (composition wording) left unfixed.
