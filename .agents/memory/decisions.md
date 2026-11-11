@@ -1,7 +1,7 @@
 ---
 type: decisions
 created: 2026-10-27T13:24:20Z
-updated: 2026-11-10T14:20:00Z
+updated: 2026-11-11T03:52:27Z
 ---
 
 # Decision log
@@ -124,3 +124,8 @@ updated: 2026-11-10T14:20:00Z
 - Context: 20261102-2 (warn) — introspector passes re-read the whole 820+ line agent-improvements.md and ran to 200k+ tokens with self-signals structurally under-reported (script at pass start).
 - Decision: codify the brief-side discipline into the introspector mirrors (one reading-discipline sub-bullet in both, byte-identical) + an SKILL.md note naming the under-report mechanism; acceptance static at source+build-copy level, NO --force deploy (installed trees refresh at the next routine deploy); 20261102-2 flipped resolved pending first post-deploy live exercise with an explicit reopen trigger (which the introspection itself then fired honestly — the shipped clause complied but the script slipped mid-pass after form denials, so it reopened per its own terms and root-caused to 20261110-1).
 - Consequences: first live exercise recorded in-tree; definition change closed-out on the mdu-49 clause-present precedent; new carries 20261110-1 (probe-command pre-stating for QA/introspector briefs) and 20261110-2 (fresh session after cache miss) for the next loop.
+
+## 2026-11-10 — mdu-45 backlog audit pin widened: heading-gated queue-head Open exemption (mdu-57)
+- Context: MDU-56's honest queue-head row (no resolution) reds the mdu-45 audit pin `test_backlog_no_entry_remains_unresolved`, which as written forbids any open backlog entry — a backlog that cannot hold queued work is unusable.
+- Decision: the pin accepts a `- **Status:** Open …` line ONLY when the section heading ends with `(queue head)`; at most one open entry file-wide; exactly-one-Status and `audited >= 20` unchanged. MDU-56 carries `Open — queued`.
+- Consequences: future queue-head MDU rows must be marked `(queue head)` and gain a Status line at write time; non-marked sections still require Done or Superseded; the exemption is fail-closed (marker loss reds the audit).

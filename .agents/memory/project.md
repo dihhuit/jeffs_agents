@@ -1,7 +1,7 @@
 ---
 type: project
 created: 2026-10-27T13:24:20Z
-updated: 2026-11-10T14:20:00Z
+updated: 2026-11-11T03:52:27Z
 ---
 
 # Project facts — open-agent-definitions (base agent-team repo)
@@ -95,3 +95,9 @@ updated: 2026-11-10T14:20:00Z
 - Run-ledger phase values are a fixed enum (commit, deploy, design, implement, review, test, validate) — an introspection row is recorded as a second `validate` row with agent: introspector, never phase 'introspect' (validator exit 1 caught it live).
 - QA children can be denied common file-utils (`cp`, redirects, heredocs) by the sandbox; script-file probes + `install`/`sed -i` workarounds ran but produced 14 repeated_tool_error shell events — the next QA brief must pre-state probe commands and the file-tool fallback (new suggestion 20261110-1).
 - Post-MDU fresh-session start is a measured cost lever after a cache-miss session: orchestrator + architect cache misses re-bill >=80k input each (new suggestion 20261110-2).
+
+## 2026-11-10 (mdu-57)
+- QA probe pre-stating (the shipped clause C) live-exercised: pre-named plain-form probes ran with two form denials retried once then re-routed — zero improvised rewrites, PASS round 1. Keep pre-stating probes + file-tool fallback in every QA brief.
+- git add pathspec failure class (OBS-2 + this session twice): one bad or gitignored path in a multi-path `git add` fails the ENTIRE add (silently under 2> /dev/null), leaving zero or partial staging — stage only verified paths, never append a guessed extension, and check `git status` output before running gates.
+- Review-loop discipline that worked: round 1 caught a design-survey miss (2 live overlay-root grok carriers); survey counts must be grep-censused, not hand-counted (new 20261110-3).
+- Backlog Status convention: non-queue-head rows need Done or Superseded at write time; an honest in-progress row phrases it as "Done — <date> (... QA pending at row-write time)".
