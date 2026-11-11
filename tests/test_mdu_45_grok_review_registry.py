@@ -301,16 +301,21 @@ def test_backlog_no_entry_remains_unresolved() -> None:
     Each ``### MDU-XX`` section in FEATURE_BACKLOG.md must carry exactly one
     ``- **Status:**`` line whose value resolves the entry (Done or Superseded).
 
-    Queue-head exemption: the one section whose heading ends with
-    ``(queue head)`` may instead carry a Status value beginning with ``Open``,
-    so the backlog can name the next unit of work without being forced to
-    pre-declare it done. The exemption is gated on the heading marker, not
-    the Status text, so an unmarked section with an ``Open`` status still
-    fails, and at most one entry in the whole file can be open.
+    An ``Open`` Status is admitted by either of two paths, so the backlog can
+    name pending work without pre-declaring it done:
+
+    1. **Queue head** — the section heading ends with ``(queue head)``. This
+       is the unit of work next up for execution.
+    2. **Queued** — the Status text itself contains ``queued``. This is work
+       waiting behind the head, explicitly labelled so it stays auditable.
+
+    Both paths are gated (heading marker or Status wording), so an unmarked
+    section with a bare ``Open`` status still fails. At most three entries
+    may be open concurrently: one queue head plus up to two queued rows, the
+    queue budget the user allocates ahead of execution.
 
     A section with zero or duplicate Status lines, or with a value that is
-    neither Done nor Superseded (nor ``Open`` on the marked queue head),
-    fails the audit.
+    neither Done nor Superseded (nor an admitted ``Open``), fails the audit.
     """
     text = BACKLOG.read_text(encoding="utf-8")
     sections = re.split(r"(?m)^(?=### MDU-)", text)
@@ -331,14 +336,17 @@ def test_backlog_no_entry_remains_unresolved() -> None:
         assert len(statuses) == 1, (
             f"{mdu}: expected exactly one Status line, got {statuses}"
         )
-        if is_queue_head and re.search(r"^- \*\*Status:\*\*\s*Open\b", statuses[0]):
+        status_is_open = re.search(r"^- \*\*Status:\*\*\s*Open\b", statuses[0])
+        is_queued = "queued" in statuses[0].lower()
+        if status_is_open and (is_queue_head or is_queued):
             open_entries.append(mdu)
             continue
         assert re.search(r"\b(Done|Superseded)\b", statuses[0]), (
             f"{mdu}: Status line does not resolve the entry: {statuses[0]}"
         )
-    assert len(open_entries) <= 1, (
-        f"at most one backlog entry may be open (the queue head), got {open_entries}"
+    assert len(open_entries) <= 3, (
+        "at most three backlog entries may be open at once (one queue head "
+        f"plus up to two queued rows behind it), got {open_entries}"
     )
     assert audited >= 20, f"audit saw implausibly few backlog entries: {audited}"
 
