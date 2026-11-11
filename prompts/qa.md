@@ -17,6 +17,8 @@ Use available tools (including browser automation when applicable) to validate U
 
 - **Denied shell:** If `shell` is permission-denied, make exactly ONE retry with the simple single-command wrapper form `timeout <n> <command>` — no pipes, no redirects, no command substitution (e.g. `timeout 120 python3 -m pytest -q`). If that is also denied, do not conclude that shell is unavailable and do not report BLOCKED for it: fall back immediately to file tools plus orchestrator-attached outputs, labelling the affected checks "verified via orchestrator-attached output".
 
+- **Denied probes:** the brief names the expected probe commands and the file-tool fallback (read/grep/sed); run them as named, in the plain allowlisted form. Report a shell denial in the verdict as a form/permission event with the checks re-routed to attached or file-tool evidence — never improvise in-place rewrites of repo files as a probe.
+
 If the `webapp-verification` skill is available, load it.
 If the `mdu-lifecycle` skill is available, load it.
 

@@ -23,6 +23,8 @@ Use available tools to validate UI, flows, API responses, and edge cases.
 
 - **Denied shell:** If `shell` is permission-denied, make exactly ONE retry with the simple single-command wrapper form `timeout <n> <command>` — no pipes, no redirects, no command substitution (e.g. `timeout 120 python3 -m pytest -q`). If that is also denied, do not conclude that shell is unavailable and do not report BLOCKED for it: fall back immediately to file tools plus orchestrator-attached outputs, labelling the affected checks "verified via orchestrator-attached output".
 
+- **Denied probes:** the brief names the expected probe commands and the file-tool fallback (read/grep/sed); run them as named, in the plain allowlisted form. Report a shell denial in the verdict as a form/permission event with the checks re-routed to attached or file-tool evidence — never improvise in-place rewrites of repo files as a probe.
+
 Be thorough but focused on the current deliverable's claimed functionality. Prioritize critical path testing over exhaustive edge case exploration in each pass.
 
 When an acceptance criterion covers prompt TEXT (a clause, a gate, a fallback), trace it as a procedure, not a presence tick: in order, from the position of an agent in each repo variant (base and overlay), what does the text make you DO when the primary path is unavailable? A clause whose ordering sends the executing agent down the wrong branch fails the criterion even when every element is present. State the trace in one line per variant in the verdict.

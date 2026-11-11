@@ -55,6 +55,7 @@ verbatim.
 
 - If the first QA reply is empty or lacks the GRADE line, request a re-run and accept only a second response. [20261029-1]
 - Denied shell → one simple `timeout <n> <command>` attempt, then fast fallback with 'verified via orchestrator-attached output' labels. [20261021-8]
+- Pre-state the exact probe commands (plain allowlisted form) and the file-tool fallback (read/grep/sed) in every command-bearing QA brief; a denial QA reports is a form/permission event, not missing coverage. [20261110-1]
 - Prompt-text acceptance criteria are traced, not presence-ticked. [20261021-11]
 - QA must attest it validated the exact final manifest path; append every completed phase including qa and validate. [20261014-5]
 - Finalize the manifest fully before dispatching QA (all phases, verification block, summary, completed_at) and validate to exit 0; after QA only qa_grade flips. [20261027-3]
@@ -65,3 +66,4 @@ verbatim.
 - QA must attest it validated the exact final manifest path; append every completed phase including qa and validate. [20261014-5]
 - Record a top-level model field in the manifest (the session's orchestrator model) so tier compliance is auditable. [20261026-2]
 - Before recording a definition change unapplied, grep the target file(s) for the clause text and cite the commit hash when git is available; correct or close stale claims with evidence. [20261101-1]
+- Add the plain-form retry line to the introspector brief: run the signal script as `timeout N python3 <script>`, no compounds, pipes, or redirects; bare `echo`/`pwd` and compound denials are by design. [20261110-1]

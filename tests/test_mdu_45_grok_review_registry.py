@@ -300,28 +300,46 @@ def test_backlog_no_entry_remains_unresolved() -> None:
 
     Each ``### MDU-XX`` section in FEATURE_BACKLOG.md must carry exactly one
     ``- **Status:**`` line whose value resolves the entry (Done or Superseded).
+
+    Queue-head exemption: the one section whose heading ends with
+    ``(queue head)`` may instead carry a Status value beginning with ``Open``,
+    so the backlog can name the next unit of work without being forced to
+    pre-declare it done. The exemption is gated on the heading marker, not
+    the Status text, so an unmarked section with an ``Open`` status still
+    fails, and at most one entry in the whole file can be open.
+
     A section with zero or duplicate Status lines, or with a value that is
-    neither Done nor Superseded, fails the audit.
+    neither Done nor Superseded (nor ``Open`` on the marked queue head),
+    fails the audit.
     """
     text = BACKLOG.read_text(encoding="utf-8")
     sections = re.split(r"(?m)^(?=### MDU-)", text)
     audited = 0
+    open_entries: list[str] = []
     for section in sections:
-        heading = re.match(r"### (MDU-\d+)", section)
+        heading = re.match(r"### (MDU-\d+)(.*)", section)
         if heading is None:
             continue
         audited += 1
+        mdu = heading.group(1)
+        is_queue_head = heading.group(2).rstrip().endswith("(queue head)")
         statuses = [
             line.strip()
             for line in section.splitlines()
             if line.strip().startswith("- **Status:**")
         ]
         assert len(statuses) == 1, (
-            f"{heading.group(1)}: expected exactly one Status line, got {statuses}"
+            f"{mdu}: expected exactly one Status line, got {statuses}"
         )
+        if is_queue_head and re.search(r"^- \*\*Status:\*\*\s*Open\b", statuses[0]):
+            open_entries.append(mdu)
+            continue
         assert re.search(r"\b(Done|Superseded)\b", statuses[0]), (
-            f"{heading.group(1)}: Status line does not resolve the entry: {statuses[0]}"
+            f"{mdu}: Status line does not resolve the entry: {statuses[0]}"
         )
+    assert len(open_entries) <= 1, (
+        f"at most one backlog entry may be open (the queue head), got {open_entries}"
+    )
     assert audited >= 20, f"audit saw implausibly few backlog entries: {audited}"
 
 

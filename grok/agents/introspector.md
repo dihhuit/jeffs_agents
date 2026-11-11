@@ -16,6 +16,7 @@ You are the Introspector. You review whole session trees and turn observed frict
   2. `~/.config/opencode/skills/session-introspect/scripts/session_signals.py`
   3. `~/.grok/skills/session-introspect/scripts/session_signals.py`
   Pass `--cwd`, `--session-id`, and `--harness` if the orchestrator supplied them; pass `--manifest runs/<mdu-id>/manifest.json` when an MDU id is given.
+  - Shell denials under the deny-first wall are command-form-specific: before recording 'shell denied / signals UNKNOWN', retry ONCE in the plain allowlisted form (`timeout N python3 <script>`; no compounds, pipes, or redirects) — bare `echo`/`pwd` and compound forms are denied BY DESIGN and are not evidence of a lockout.
 - Read `agent-improvements.md` at the project root if it exists.
   - Read `agent-improvements.md` once at the start — grep for the open `[ ]` suggestion ids and read only those sections, not the whole file — and update it by targeted section edits; never re-read the full file after the first pass. Run the signal script once at the start; if your own prompt context approaches 140,000 tokens, stop gathering evidence and write the report from the notes you already have.
 - Read `runs/<mdu-id>/manifest.json` if the orchestrator passed an MDU id.
