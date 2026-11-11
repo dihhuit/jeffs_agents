@@ -1,7 +1,7 @@
 ---
 type: project
 created: 2026-10-27T13:24:20Z
-updated: 2026-11-04T14:44:01Z
+updated: 2026-11-10T14:20:00Z
 ---
 
 # Project facts — open-agent-definitions (base agent-team repo)
@@ -90,3 +90,8 @@ updated: 2026-11-04T14:44:01Z
 - Overlay-root personal grok/agents profiles are ROOT-ADDED sources (no base sibling with a grok- prefix): edits land in the root file; build copies gain the 3 appended global snippets (overlays.sh append), so root-vs-installed is NEVER byte-identical by design — deploy fidelity must be asserted build-copy-vs-installed (mdu-54's 8/8 check), with untouched root-only profiles as mismatch-controls.
 - Base-sibling byte-identity greps for clause pins: use literal full-line `grep -F -x` against the base carrier file — the mdu-54 coverage-file pattern (`needs_base`-gated test verifying 5 clause instances) is the reusable shape.
 - Design docs for definition batches should carry an explicit "which sibling carries the clause today" reconciliation; MDU-47/49 clause texts were reconciled by grepping base bodies at HEAD rather than trusting the older batch docs' wording.
+
+## 2026-11-10 (mdu-55)
+- Run-ledger phase values are a fixed enum (commit, deploy, design, implement, review, test, validate) — an introspection row is recorded as a second `validate` row with agent: introspector, never phase 'introspect' (validator exit 1 caught it live).
+- QA children can be denied common file-utils (`cp`, redirects, heredocs) by the sandbox; script-file probes + `install`/`sed -i` workarounds ran but produced 14 repeated_tool_error shell events — the next QA brief must pre-state probe commands and the file-tool fallback (new suggestion 20261110-1).
+- Post-MDU fresh-session start is a measured cost lever after a cache-miss session: orchestrator + architect cache misses re-bill >=80k input each (new suggestion 20261110-2).

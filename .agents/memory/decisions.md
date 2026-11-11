@@ -1,7 +1,7 @@
 ---
 type: decisions
 created: 2026-10-27T13:24:20Z
-updated: 2026-11-04T14:44:01Z
+updated: 2026-11-10T14:20:00Z
 ---
 
 # Decision log
@@ -119,3 +119,8 @@ updated: 2026-11-04T14:44:01Z
 - Context: MDU-47/49 deferral follow-ups (backlog) left the overlay-root personal grok-* full files without the definition-batch clauses their base siblings carry.
 - Decision: land 10 role-applicable clauses byte-identical (D5 x3 coder, D1d+D1c x2 qa, D1e x2 architect, D1b x1 code-reviewer-pro) on 8 overlay grok/agents profiles; test-agent family verify-only (guard shipped MDU-24); exclusions evidence-backed (devops/ui-ux/research carry no clauses; grokestrator complete MDU-49; overlays/grok/agents trio personal-only, needs a prompt-side fold — deferred as open question).
 - Consequences: personal Grok mirrors reach parity with base siblings for batch clauses; 59 new pins (2 overlay test files incl. base-sibling byte-identity absence-class pins); review APPROVE single pass; QA PASS round 2 (one manifest bookkeeping fix — 49→59 test-count slip, fix_iterations=1); review child model ids now recorded in manifest phase notes per 20261101-2 (first carry).
+
+## 2026-11-10 — Introspector self-cost discipline clause shipped; restricted acceptance, no deploy (mdu-55)
+- Context: 20261102-2 (warn) — introspector passes re-read the whole 820+ line agent-improvements.md and ran to 200k+ tokens with self-signals structurally under-reported (script at pass start).
+- Decision: codify the brief-side discipline into the introspector mirrors (one reading-discipline sub-bullet in both, byte-identical) + an SKILL.md note naming the under-report mechanism; acceptance static at source+build-copy level, NO --force deploy (installed trees refresh at the next routine deploy); 20261102-2 flipped resolved pending first post-deploy live exercise with an explicit reopen trigger (which the introspection itself then fired honestly — the shipped clause complied but the script slipped mid-pass after form denials, so it reopened per its own terms and root-caused to 20261110-1).
+- Consequences: first live exercise recorded in-tree; definition change closed-out on the mdu-49 clause-present precedent; new carries 20261110-1 (probe-command pre-stating for QA/introspector briefs) and 20261110-2 (fresh session after cache miss) for the next loop.
