@@ -151,6 +151,7 @@ Grok-named agents (`grok-*`, `grokestrator`, `grok-plan`) must resolve to `xai/*
 |  | [`ui-ux-designer-pro`](prompts/ui-ux-designer.md) | [prompts/ui-ux-designer.md](prompts/ui-ux-designer.md) | Polished production UI, design systems (Go premium). |
 | Introspection | [`introspector`](prompts/introspector.md) | [prompts/introspector.md](prompts/introspector.md) | Post-MDU session introspection (Go mid). |
 | Inception | [`inception`](prompts/inception.md) | [prompts/inception.md](prompts/inception.md) | Idea → spec interviewer (Go budget; user-invoked). |
+| Inception (xAI) | [`grok-inception`](prompts/grok-inception.md) | [prompts/grok-inception.md](prompts/grok-inception.md) | Idea → spec interviewer on the Grok flagship (xAI-billed; user-invoked). |
 
 ### Grok Build profiles (in [`grok/agents/`](grok/agents/))
 
@@ -471,8 +472,8 @@ base_agents/                   # this public repo
 │   └── opencode.schema.json   # JSON Schema for opencode.json
 ├── config/
 │   └── model-registry.txt     # Model allowlist (pinned)
-├── opencode.json              # OpenCode agent registry (21 agents, all paid)
-├── prompts/                   # OpenCode prompt bodies (canonical system prompts) — 12 files
+├── opencode.json              # OpenCode agent registry (22 agents, all paid)
+├── prompts/                   # OpenCode prompt bodies (canonical system prompts) — 13 files
 │   ├── orchestrator.md
 │   ├── just-code.md
 │   ├── test-agent.md
@@ -484,7 +485,8 @@ base_agents/                   # this public repo
 │   ├── research.md
 │   ├── ui-ux-designer.md
 │   ├── introspector.md
-│   └── inception.md
+│   ├── inception.md
+│   └── grok-inception.md
 ├── grok/agents/               # Grok Build agent profiles (20 profiles)
 │   ├── orchestrator.md, research.md, inception.md, introspector.md, grok-review.md
 │   ├── just-code.md, just-code-mid.md, just-code-pro.md

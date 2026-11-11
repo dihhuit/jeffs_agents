@@ -79,8 +79,8 @@ def test_grok_review_read_only_invariants() -> None:
     assert {"action": "subagent", "resource": "*", "effect": "deny"} in perm_list
 
 
-def test_grok_review_agent_count_is_21() -> None:
-    assert len(_config()["agents"]) == 21
+def test_grok_review_agent_count_is_22() -> None:
+    assert len(_config()["agents"]) == 22
 
 
 def test_grok_review_prompt_file_exists_and_ref_resolves() -> None:
@@ -256,13 +256,13 @@ def test_readme_stale_grok_claim_replaced() -> None:
     assert "MDU-25 split" in text
 
 
-def test_readme_layout_counts_21_12() -> None:
+def test_readme_layout_counts_22_13() -> None:
     text = README.read_text(encoding="utf-8")
     idx = text.find("## Repository Layout")
     assert idx >= 0
     rest = text[idx:idx + 2000]
-    assert "(21 agents, all paid)" in rest
-    assert "— 12 files" in rest
+    assert "(22 agents, all paid)" in rest
+    assert "— 13 files" in rest
 
 
 def test_readme_progress_line_date_and_structure() -> None:

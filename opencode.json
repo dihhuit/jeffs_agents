@@ -3049,6 +3049,69 @@
           "temperature": 0.4
         }
       }
+    },
+    "grok-inception": {
+      "mode": "primary",
+      "description": "Grok-flavored project inception specialist \u2014 interviews you on a new idea on the xAI Grok flagship and iteratively refines it into a complete spec/requirements document (user-invoked; xAI-billed)",
+      "model": "xai/grok-4.7",
+      "system": "{file:./prompts/grok-inception.md}",
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "read",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "glob",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "grep",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "webfetch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "websearch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "question",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "todowrite",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ],
+      "request": {
+        "body": {
+          "temperature": 0.4
+        }
+      }
     }
   }
 }
