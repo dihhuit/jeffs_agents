@@ -134,3 +134,8 @@ updated: 2026-11-11T03:52:27Z
 - Context: user queued a second pending MDU (MDU-58 Grokception) while MDU-56 was still open; the mdu-57 pin admitted only one Open row, which cannot represent a real ahead-of-execution queue.
 - Decision: `Status: Open` admitted via two gated paths — heading ends with `(queue head)` (next up) or the Status text contains `queued` (waiting behind the head); open-entries cap raised 1 to 3; unmarked bare `Open` still fails (fail-closed); exactly-one-Status and audited>=20 unchanged. MDU-58 is the new queue head per user pick; MDU-56 demoted to queued.
 - Consequences: at most one queue head + two queued rows; adding a fourth pending row requires resolving or demoting an existing one first; review APPROVE single pass (mimo-v2.6-flash) with one optional LOW (composition wording) left unfixed.
+
+## 2026-11-11 — Grokception placement, model, and mirror (mdu-58)
+- Context: user directive to bill an Inception variant to the xAI account in OpenCode; grok- prefix invokes the mdu-42 xai hard rule; both xai candidates probed green.
+- Decision: grok-inception primary in BASE opencode.json on xai/grok-4.7 (cross-harness behavioral parity with Grok Build's inception; user-invoked role, no fleet multiplier); prompt = prompts/grok-inception.md, identity+tone-only adaptation (inception carries no batch clauses); NO grok/agents/grok-inception.md and no GROK_MIRRORS entry (would duplicate Grok Build's existing user-invoked inception); overlay inherits (43→44) with build-copy pins.
+- Consequences: xai/grok-4.7 became a first-class probe target in both repos' reports; overlay build-copy pins pin the inheritance; MDU-56 promoted to queue head after completion.

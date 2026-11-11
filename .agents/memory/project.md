@@ -101,3 +101,6 @@ updated: 2026-11-11T03:52:27Z
 - git add pathspec failure class (OBS-2 + this session twice): one bad or gitignored path in a multi-path `git add` fails the ENTIRE add (silently under 2> /dev/null), leaving zero or partial staging — stage only verified paths, never append a guessed extension, and check `git status` output before running gates.
 - Review-loop discipline that worked: round 1 caught a design-survey miss (2 live overlay-root grok carriers); survey counts must be grep-censused, not hand-counted (new 20261110-3).
 - Backlog Status convention: non-queue-head rows need Done or Superseded at write time; an honest in-progress row phrases it as "Done — <date> (... QA pending at row-write time)".
+
+- 2026-11-11 (mdu-58): the overlay repo has NO scripts/lib/probe_models.py — its probe gate runs the base script from the overlay dir (`python3 ../open-agent-definitions/scripts/lib/probe_models.py --refresh --gate --config build/opencode.json --report config/model-probe-report.json`), per design doc step 8; filed 20261111-1 (low) to add a wrapper/prompt coverage.
+- 2026-11-11 (mdu-58): secret_scan.py high-entropy rule flags long dot/slash path tokens (e.g. ~/.config/opencode/...) in prose notes — rephrase path tokens in memory/introspection text before re-adding, then re-run --staged.
