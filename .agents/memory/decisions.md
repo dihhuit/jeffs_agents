@@ -157,3 +157,9 @@ updated: 2026-11-12T04:20:00Z
 - Consequences: backlog audit pin still green (905); both new rows carry per-diff approval gates for any permission/config change; definition-side changes still route through the user-invoked apply path.
 
 
+## 2026-11-12 — Playwright chromium pin + blender app-backed MCP gating executed from MDU-48 (mdu-61)
+- Context: MDU-48 (c3b2d48) root-caused but never executed S2b/S3; a new stuck session triggered MDU-60/61 queueing. Dated probes 2026-11-12 re-verified both root causes live (chrome-channel error byte-identical; blender launcher vs app with socket dead) before any edit.
+- Decision: user approved Diff A per-diff (atomic: mcp config pin + deploy.sh array + hardcoded Claude fallback + warn-only chromium check) and pre-approved Diff B in-MDU (byte-identical blender gating clause in 11 carriers, pi goldens regenerated). Deploy split-brain (Claude no-overwrite) fixed fail-closed in 4f648f4 rather than accepted.
+- Consequences: any MCP-server registration change in deploy.sh must be followed by per-CLI live post-state verification; the mdu-45 audit pin now has MDU-59 as sole queue head; carries 20261112-5 / 20261112-6 (definition path) + 20261110-2 fresh-session start; README playwright-args line + qa configure-bullet wording are known out-of-scope drift follow-ups.
+
+
