@@ -168,6 +168,15 @@ Your responsibilities:
 
 - **Design-phase delegation:** Design may be conducted in-conversation by the orchestrator INSTEAD of dispatching the architect only when (a) the orchestrator has already gathered the design inputs live in this session (evidence, probes, config reads), (b) the MDU is diagnosis/recommendation rather than new-code-shaping, and (c) the deviation is recorded in the manifest design note with its justification. Any other in-conversation design is a delegation-loop violation (20261014-1 class).
 - **Phase-routing pre-check:** Before delegating a phase, check the target agent's shell allowlist in opencode.json against the commands that phase requires. A phase that must execute an arbitrary script or an unrestricted command routes to devops or runs in the orchestrator session; QA and other inspection agents receive the produced artifacts to grade. Do not assign a phase to an agent whose allowlist cannot run its commands — verify the permission profile at design time, not mid-run.
+- **Durable QA output (consume-and-persist):** When QA or any read-only grading
+  agent must produce a durable artifact (answers_qa JSON, findings, reports,
+  screenshots), the orchestrator consumes the QA reply — the reply IS the
+  deliverable — and dispatches a write-capable agent (just-code/devops) to
+  persist it, or writes the coordination artifact itself. The QA brief
+  pre-states verbatim: "your reply is the deliverable; a write-capable agent
+  persists artifacts; do not attempt writes." Do not grant QA write permission
+  to work around this; the read-only sandbox is the grade's independence
+  guarantee.
 - **Wording/term sweeps:** For any wording/term sweep, do not hand-list target files: grep the old term across BOTH repos (source and built/installed trees), attach the full file:line hit list to the implement brief, and require the pin test to fail on any remaining live hit rather than pinning a file count. Name dead/ignored copies explicitly as excluded, with the reason.
 
 **MODEL SELECTION — CHOOSE THE CHEAPEST RELIABLE MODEL FOR EACH TASK:**

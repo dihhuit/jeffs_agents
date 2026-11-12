@@ -1,0 +1,70 @@
+{
+  "mdu_id": "mdu-60",
+  "title": "QA write-access decision + durable-QA-output pattern",
+  "status": "completed",
+  "harness": "opencode",
+  "started_at": "2026-11-12T03:51:40Z",
+  "completed_at": "2026-11-12T05:05:00Z",
+  "phases": [
+    {
+      "phase": "design",
+      "agent": "architect",
+      "model_tier": "premium",
+      "outcome": "pass",
+      "notes": "Architect (ses_e321d8286ffevmyZCjJwAmJ1cf) produced docs/design/mdu-60-qa-write-access.md: decision = consume-and-persist (user ruling recorded verbatim, 2026-11-12: policy + pre-approved-in-MDU carve-out), carrier survey grep-censused (3 live mirrors, excluded copies named), pin inventory with AC-2 read-only state pin. Orchestrator resolved architect open questions: Q1 pi golden refresh required (Gate B/C), Q2 id renumbered 20261112-1 -> 20261112-2 (20261112-1 taken by mdu-56 cross-ref), Q3 no stale mdu-47 refs."
+    },
+    {
+      "phase": "implement",
+      "agent": "just-code",
+      "model_tier": "budget",
+      "outcome": "pass",
+      "notes": "Coder (ses_e3216e0f8ffeqssuj0NTM0L2Ma): clause byte-identical into prompts/orchestrator.md + grok/agents/orchestrator.md (:141-149), 2 checklist lines (docs/brief-checklist.md:59-60), pin suite tests/test_mdu_60_qa_write_access.py, agent-improvements.md 20261112-2 entry [x] resolved-by-shipping, deliberate pi golden refresh (Gate B/C green, --audit 30 hits zero new, no pi-parity row needed), design doc id renumber. Prompt gate PASS 7/7; suite 922/2. Fix child (ses_e3200e816ffeTCqJeQ0oEwhppi) after review round 1: third-mirror pins re-gated on LIVE overlay-file content (fail-closed, flips strict automatically), force-flag anti-fake case added, dead marker removed; suite 923/2."
+    },
+    {
+      "phase": "review",
+      "agent": "code-reviewer",
+      "model_tier": "mid",
+      "outcome": "pass",
+      "notes": "Round 1 (ses_e320e052bffeSPLp0xpZveKpFL, static-trace D1b): REQUEST CHANGES — 1 MEDIUM (env-var-gated third-mirror pins never activate post-ship, deviates from fail-closed mdu-49/57 convention) + 2 NITs. Round 2 (ses_e31ff042cffeW0owRV8XA7IguZ): fix verified correct and complete; single residual LOW (stale note wording + case count in agent-improvements.md 20261112-2 note) — docs-only, folded by orchestrator per the mdu-55/57 precedent; gate verified fail-closed both directions. Sign-off achieved after the LOW fold; byte-identity across all three mirrors sha256 74e4ed2f verified by coder + test pins."
+    },
+    {
+      "phase": "test",
+      "agent": "test-agent",
+      "model_tier": "budget",
+      "outcome": "pass",
+      "notes": "Independent verification (ses_e31fa11d7ffeHeJHQJUVS8tt61): targeted 18/2 skip-reasons content-derived; full suite 923/2; prompt gate PASS 7/7; mutation matrix reds 4/4/6 on stripped mirrors with green control; AC-2 walls intact (qa + qa-pro deny-first edit, zero write allows); secret scan clean on all 7 changed paths. 3 non-blocking coverage gaps reported (noted for future briefs)."
+    },
+    {
+      "phase": "deploy",
+      "agent": "devops",
+      "model_tier": "mid",
+      "outcome": "pass",
+      "notes": "Build-only per design (ses_e31f63a77ffeuUlTLQhPR6wFQl): base ./build.sh exit 0 (22 agents / 20 grok profiles / 21 pi templates), clause in 3 generated orchestrator copies + pi template; Gate C/golden 27 passed; overlay ./build.sh exit 0 (44 agents / 41 profiles), grokestrator build copy carries clause. NO deploy.sh / --force / install — installed trees untouched, refresh at next routine deploy (carried: introspector clause-A deploy refresh at that deploy)."
+    },
+    {
+      "phase": "implement",
+      "agent": "just-code",
+      "model_tier": "budget",
+      "outcome": "pass",
+      "notes": "Overlay step (ses_e31f78733ffepq02Dz0no6vFQR): clause inserted into opencode_agents/grok/agents/grokestrator.md:123-131 after the same phase-routing anchor; sha256 74e4ed2f byte-identical across all three mirrors; overlay ./build.sh exit 0; overlay pytest 275 passed; base third-mirror pins flipped strict automatically (20 passed / 0 skipped); base full suite 925 passed / 0 skipped."
+    },
+    {
+      "phase": "commit",
+      "agent": "orchestrator",
+      "model_tier": "budget",
+      "outcome": "pending",
+      "notes": "Base commit + push first, then overlay commit + push (cross-repo order, separate commits); secret gate on both staged diffs (base scanner script; overlay via base scanner on staged paths + pre-commit hook); prompt gate re-run at commit."
+    }
+  ],
+  "fix_iterations": 1,
+  "autonomy_level": 3,
+  "verification": {"build": true, "tests_passed": 925, "tests_total": 925, "qa_grade": "PASS", "ci_green": null},
+  "artifacts": [
+    "docs/design/mdu-60-qa-write-access.md",
+    "tests/test_mdu_60_qa_write_access.py",
+    "docs/brief-checklist.md",
+    "agent-improvements.md",
+    "tests/fixtures/pi_golden/prompts/orchestrator.md"
+  ],
+  "summary": "QA write policy decided by user ruling: consume-and-persist (read-only QA kept); clause shipped byte-identical in all three orchestrator mirrors (base prompts/grok + overlay grokestrator), two brief-checklist lines, AC-2 read-only state pins, 20-case pin suite, base 925/0 + overlay 275/0 green, prompt gate 7/7 unchanged baseline; no opencode.json permission edit."
+}
