@@ -1,0 +1,9 @@
+{
+  "name": "open-agent-definitions-pi",
+  "version": "1.0.0",
+  "description": "Role prompt templates for the pi coding agent, generated from the grok/agents profiles.",
+  "license": "Unlicense",
+  "keywords": [
+    "pi-package"
+  ]
+}

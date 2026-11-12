@@ -310,6 +310,49 @@ def validate_claude_agents(build_dir: Path) -> list[str]:
     return errors
 
 
+def validate_pi_package(build_dir: Path) -> list[str]:
+    """Light checks for the generated pi package (MDU-56).
+
+    Requires 21 prompt templates (20 role ports + ``roster``) under
+    ``build_dir/pi/prompts/``, a ``package.json`` manifest, and frontmatter
+    with non-empty ``description`` and ``argument-hint`` on every template.
+    Byte-level pins (verbatim bodies, golden, parity coverage) live in tests.
+    """
+    pi_dir = build_dir / "pi"
+    if not pi_dir.is_dir():
+        # Synthetic build trees in unit tests carry no pi package; build.sh
+        # always generates one, so absence is not itself an error here.
+        return []
+    if not (pi_dir / "package.json").is_file():
+        return ["missing pi/package.json"]
+
+    prompts_dir = pi_dir / "prompts"
+    if not prompts_dir.is_dir():
+        return ["missing pi/prompts/"]
+
+    errors: list[str] = []
+    prompt_files = sorted(prompts_dir.glob("*.md"))
+    if len(prompt_files) != 21:
+        errors.append(
+            f"pi/prompts/ has {len(prompt_files)} templates, expected 21 "
+            "(20 roles + roster)"
+        )
+    for prompt_file in prompt_files:
+        meta = parse_frontmatter(prompt_file.read_text(encoding="utf-8"))
+        if not meta:
+            errors.append(
+                f"pi prompt missing YAML frontmatter: prompts/{prompt_file.name}"
+            )
+            continue
+        for key in ("description", "argument-hint"):
+            if not meta.get(key):
+                errors.append(
+                    f"pi prompt missing '{key}' in frontmatter: "
+                    f"prompts/{prompt_file.name}"
+                )
+    return errors
+
+
 def validate_skills(build_dir: Path) -> list[str]:
     """Validate Agent Skills frontmatter in build_dir/skills/*/SKILL.md.
 
@@ -623,6 +666,7 @@ def main(argv: list[str] | None = None) -> int:
     errors.extend(validate_grok_agents(build_dir))
     errors.extend(validate_grok_registry_census(build_dir))
     errors.extend(validate_claude_agents(build_dir))
+    errors.extend(validate_pi_package(build_dir))
     errors.extend(validate_skills(build_dir))
     errors.extend(validate_parity(build_dir))
     errors.extend(validate_model_refs(build_dir, DEFAULT_SNAPSHOT))
@@ -655,6 +699,9 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  [ok]    grok census: {census_registered}/{census_total} profiles registered "
           f"({census_allowlisted} allowlisted)")
     print(f"  [ok]    claude/agents: {claude_count} subagents with valid frontmatter")
+    pi_prompts = list((build_dir / "pi" / "prompts").glob("*.md"))
+    if pi_prompts:
+        print(f"  [ok]    pi: {len(pi_prompts)} prompt templates with valid frontmatter")
     parity_pairs = sum(
         len(GROK_MIRRORS[stem])
         for stem in GROK_MIRRORS

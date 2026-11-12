@@ -1,0 +1,126 @@
+{
+  "package": {
+    "name": "open-agent-definitions-pi",
+    "version": "1.0.0",
+    "description": "Role prompt templates for the pi coding agent, generated from the grok/agents profiles.",
+    "license": "Unlicense",
+    "keywords": ["pi-package"]
+  },
+  "source": {
+    "agents_dir": "grok/agents",
+    "preamble": "pi/adapter-preamble.md"
+  },
+  "roster": {
+    "argument-hint": "[role or keyword filter]"
+  },
+  "roles": {
+    "architect": {"argument-hint": "<project or system to design>"},
+    "architect-premium": {"argument-hint": "<complex system or architecture decision>"},
+    "code-reviewer": {"argument-hint": "<diff, branch, or files to review>"},
+    "code-reviewer-pro": {"argument-hint": "<change set for a deep security and architecture review>"},
+    "devops": {"argument-hint": "<build, deploy, or infrastructure task>"},
+    "devops-pro": {"argument-hint": "<multi-service deploy or IaC task>"},
+    "grok-review": {"argument-hint": "<diff or files to review>"},
+    "inception": {"argument-hint": "<new project idea to interview about>"},
+    "introspector": {"argument-hint": "[scope or mode; default loop]"},
+    "just-code": {"argument-hint": "<feature or bug fix brief>"},
+    "just-code-mid": {"argument-hint": "<feature brief that needs deeper reasoning>"},
+    "just-code-pro": {"argument-hint": "<architecture-sensitive change brief>"},
+    "orchestrator": {"argument-hint": "<task or MDU to decompose and delegate>"},
+    "qa": {"argument-hint": "<deliverable, environment, and what to verify>"},
+    "qa-pro": {"argument-hint": "<deliverable for regression and edge-case validation>"},
+    "research": {"argument-hint": "<question or topic to research>"},
+    "test-agent": {"argument-hint": "<code or feature to test>"},
+    "test-agent-pro": {"argument-hint": "<complex or security-sensitive test scope>"},
+    "ui-ux-designer": {"argument-hint": "<screen, flow, or design brief>"},
+    "ui-ux-designer-pro": {"argument-hint": "<production UI design brief>"}
+  },
+  "model_notes": {
+    "grok-4.7": {
+      "text": "Intended model xai/grok-4.7 — pi's default; no flag needed.",
+      "roster": "pi default"
+    },
+    "grok-build-0.1": {
+      "text": "Intended rung grok-build-0.1 (bulk). Verify with `--list-models`; if pi's xai catalog lacks it, run on the default xai/grok-4.7 and note the cost delta. Never block on model choice.",
+      "roster": "verify live"
+    },
+    "default": {
+      "text": "Intended model {model}; verify it with `--list-models` before relying on it.",
+      "roster": "verify live"
+    }
+  },
+  "audit": {
+    "constructs": [
+      {
+        "id": "delegation",
+        "label": "Delegation, sub-agents, spawning, child sessions",
+        "terms": [
+          "delegat",
+          "subagent",
+          "sub-agent",
+          "spawn",
+          "dispatch",
+          "new child"
+        ],
+        "disposition": "reframed-by-preamble",
+        "rationale": "pi has no sub-agent registry (clause 2). The role either performs the phase itself or hands the user a `/x <brief>` brief."
+      },
+      {
+        "id": "todowrite",
+        "label": "TodoWrite task lists",
+        "terms": ["todowrite", "todo list", "todo tool", "todo write"],
+        "disposition": "reframed-by-preamble",
+        "rationale": "No TodoWrite tool exists (clause 1); track work in the response and durable notes instead."
+      },
+      {
+        "id": "question-tool",
+        "label": "Interactive question tool",
+        "terms": ["question tool", "dead question"],
+        "disposition": "reframed-by-preamble",
+        "rationale": "pi has no question tool (clause 1). Ask in plain text and end the turn; never fabricate an answer."
+      },
+      {
+        "id": "mcp-playwright",
+        "label": "Playwright MCP browser automation",
+        "terms": ["playwright", "browser_"],
+        "disposition": "reframed-by-preamble",
+        "rationale": "MCP is opt-in via mcp.json (clause 4). With no Playwright server the profile's own BLOCKED discipline fires."
+      },
+      {
+        "id": "mcp-blender",
+        "label": "Blender MCP authoring",
+        "terms": ["blender"],
+        "disposition": "dropped (overlay-only MCP; no base profile references it)",
+        "rationale": "Blender is an overlay-only personal server, absent from every base profile; nothing to port."
+      },
+      {
+        "id": "opencode-env",
+        "label": "OpenCode environment variables and session ids",
+        "terms": ["opencode_session", "opencode_", "opencode api", "opencode models"],
+        "disposition": "reframed-by-preamble",
+        "rationale": "pi has no OpenCode env vars or session ids (clause 3); keep the checkpoint intent, drop the mechanics."
+      },
+      {
+        "id": "keybindings-compact",
+        "label": "Keybindings, /compact, compaction and cache gates",
+        "terms": ["ctrl+x", "ctrl+", "/compact", "compact", "cache miss", "cache.read"],
+        "disposition": "reframed-by-preamble",
+        "rationale": "Keybindings and /compact are harness mechanics (clause 3); the token-frugality intent still stands."
+      },
+      {
+        "id": "shell-allowlist",
+        "label": "Shell allowlist and host permission mentions",
+        "terms": ["shell allowlist", "shell-allowlist", "allowlist"],
+        "disposition": "reframed-by-preamble",
+        "rationale": "pi allowlists are configuration, not approval (clause 1); the safety gate behind them ports as-is."
+      },
+      {
+        "id": "model-tables",
+        "label": "Model tier tables and model ids",
+        "terms": ["grok-4.7", "grok-build-0.1", "model tier", "model_tier", "xai/", "opencode-go/"],
+        "disposition": "verify-live",
+        "rationale": "Tier guidance survives as prose, but pi's xai catalog must be checked with `--list-models` before a tier is relied on."
+      }
+    ]
+  }
+}

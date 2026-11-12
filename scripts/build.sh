@@ -21,6 +21,10 @@ main() {
   log_step "Generating Claude Code subagents (from opencode.json + prompts)"
   python3 "${SCRIPTS_DIR}/lib/gen_claude_agents.py" "$BUILD_DIR" "${BUILD_DIR}/claude/agents"
 
+  # MDU-56: pi package is generated, never hand-edited, from grok/agents.
+  log_step "Generating pi package (role prompt templates)"
+  python3 "${SCRIPTS_DIR}/lib/gen_pi_templates.py" "${BUILD_DIR}/pi"
+
   # MDU-40: one canonical paid config. Retired Zen artifacts must never be
   # left behind for an old deploy.sh copy to pick up.
   rm -f "${BUILD_DIR}/opencode.zen.json"

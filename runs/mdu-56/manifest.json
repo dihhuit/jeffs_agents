@@ -1,0 +1,43 @@
+{
+  "mdu_id": "mdu-56",
+  "title": "pi harness research + port the grok agents",
+  "status": "completed",
+  "harness": "opencode",
+  "started_at": "2026-11-12T01:39:47Z",
+  "completed_at": "2026-11-12T03:38:28Z",
+  "phases": [
+    {"phase": "design", "agent": "architect", "model_tier": "premium", "outcome": "pass", "notes": "docs/design/mdu-56-pi-port.md (D1-D6) + docs/design/mdu-56-pi-research.md committed from deep-research report; user decisions D-U1 base placement, D-U2 install pre-approved, D-U3 xai-only", "model": "opencode-go/glm-5.2"},
+    {"phase": "implement", "agent": "just-code", "model_tier": "budget", "outcome": "pass", "notes": "pi/adapter-preamble.md, pi/port-config.json, pi/README.md, scripts/lib/gen_pi_templates.py, docs/pi-parity.md (30 rows), golden tests/fixtures/pi_golden (23 files), build.sh hook + validate_pi_package; build exit 0, 872 tests green", "model": "opencode-go/deepseek-v4.1-flash"},
+    {"phase": "review", "agent": "code-reviewer", "model_tier": "mid", "outcome": "pass", "notes": "APPROVE round 1; Gate D 30-30 independently recomputed; findings: 1 MINOR (missing test file = test-agent slice), 1 MINOR (empty-sources vacuous pass), 4 NITs", "model": "opencode-go/mimo-v2.6-flash"},
+    {"phase": "implement", "agent": "just-code", "model_tier": "budget", "outcome": "pass", "notes": "fresh fix child: empty-sources SystemExit guard + roster $ARGUMENTS prose reword (2 sites); golden refreshed; 872 tests green", "model": "opencode-go/deepseek-v4.1-flash"},
+    {"phase": "test", "agent": "test-agent", "model_tier": "budget", "outcome": "pass", "notes": "tests/test_mdu_56_pi_port.py Gates A-E, 33 cases, mutation-verified in /tmp copy; suite 905 passed", "model": "opencode-go/deepseek-v4.1-flash"},
+    {"phase": "deploy", "agent": "orchestrator", "model_tier": "budget", "outcome": "pass", "notes": "design D5 smoke run in orchestrator session (children denied external ~/.pi access per phase-routing pre-check). Phase 1 isolated (copied agent dir minus sessions, nothing in ~/.pi touched): /just-code + /orchestrator expansion in pi -p PASS (docs-UNVERIFIED behavior proven live), $ARGUMENTS substitution PASS. Phase 2 real install (user pre-approved): pi install ./build/pi exit 0 (REFERENCED not copied - README re-run note applies), pi list shows package, xai catalog = grok-4.3/4.5/4.6/4.7 with grok-build-0.1 ABSENT (D2 fallback operative), /roster + /orchestrator + /just-code + --model xai/grok-4.7 one-shots all identify their role", "model": "opencode-go/glm-5.3-flash"},
+    {"phase": "validate", "agent": "qa", "model_tier": "mid", "outcome": "pass", "notes": "QA GRADE: PASS round 1; 5/5 probes green (905 tests, build, audit 30/30, golden diff clean, ledger validate); independent live re-probes + drift-red mutation reproduced; findings resolved: stale queue-head marker fixed, README copy-vs-reference outcome recorded; 4 NOTEs accepted", "model": "opencode-go/mimo-v2.6-flash"},
+    {"phase": "validate", "agent": "introspector", "model_tier": "mid", "outcome": "pass", "notes": "loop mode, session-id passed, 10 signals, 2 new low suggestions (20261111-2 deep-research hotspot, 20261111-3 qa denial-retry split); runs/mdu-56/introspection.md + agent-improvements.md appended; 20261021-9 phase-routing pre-check first live exercise", "model": "opencode-go/mimo-v2.6-flash"},
+    {"phase": "commit", "agent": "orchestrator", "model_tier": "budget", "outcome": "pass", "notes": "explicit-path staging; secret_scan --staged exit 0; prompt-regression gate N/A (no prompts/ or grok/agents/ edits); branch main", "model": "opencode-go/glm-5.3-flash"}
+  ],
+  "fix_iterations": 1,
+  "autonomy_level": 3,
+  "verification": {
+    "build": true,
+    "tests_passed": 905,
+    "tests_total": 905,
+    "qa_grade": "PASS",
+    "ci_green": null
+  },
+  "artifacts": [
+    "docs/design/mdu-56-pi-research.md",
+    "docs/design/mdu-56-pi-port.md",
+    "pi/adapter-preamble.md",
+    "pi/port-config.json",
+    "pi/README.md",
+    "scripts/lib/gen_pi_templates.py",
+    "docs/pi-parity.md",
+    "tests/test_mdu_56_pi_port.py",
+    "tests/fixtures/pi_golden",
+    "scripts/build.sh",
+    "scripts/lib/validate.py",
+    "FEATURE_BACKLOG.md"
+  ],
+  "summary": "Ported the 20 grok profiles to pi as a generated template package (build/pi, installed live on xai/grok-4.7; smoke 8/8 PASS); parity documented; Gates A-E pinned (suite 905)."
+}
