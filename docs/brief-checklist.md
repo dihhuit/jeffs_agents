@@ -50,12 +50,14 @@ verbatim.
 - Sequence phases explicitly: devops runs after review and after the last fix cycle; any fix cycle is followed by re-running the affected suite and both builds. [20261021-6]
 - Name the evidence producer before dispatching the reviewer (devops preferred); a dated review-evidence.md lists each command, exit code, and output path; re-run it after each fix cycle. [20261021-12]
 - Carry a who-executes/who-grades routing table for every command-bearing phase; never assign commands the target agent's allowlist cannot run. [20261021-9]
+- Pre-state the app probe before any blender-dependent step (`pgrep -x blender`; a running mcp-for-blender server process is launcher-level only); absent app → the child reports BLOCKED, never "connected". [20261112-4]
 
 ## qa
 
 - If the first QA reply is empty or lacks the GRADE line, request a re-run and accept only a second response. [20261029-1]
 - Denied shell → one simple `timeout <n> <command>` attempt, then fast fallback with 'verified via orchestrator-attached output' labels. [20261021-8]
 - Pre-state the exact probe commands (plain allowlisted form) and the file-tool fallback (read/grep/sed) in every command-bearing QA brief; a denial QA reports is a form/permission event, not missing coverage. [20261110-1]
+- Pre-state the app probe before any blender-dependent step (`pgrep -x blender`; a running mcp-for-blender server process is launcher-level only); absent app → the child reports BLOCKED, never "connected". [20261112-4]
 - Name the durable-artifact writer (just-code/devops) in every QA brief whose verdict must persist as a file; QA does not write artifacts. [20261112-2]
 - The QA reply is the deliverable; a write-capable agent persists durable artifacts; QA briefs pre-state "do not attempt writes." [20261112-2]
 - Prompt-text acceptance criteria are traced, not presence-ticked. [20261021-11]

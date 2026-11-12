@@ -47,7 +47,15 @@ and the GitHub server in particular is token-hungry.
 - `--caps vision` enables screenshot analysis (the model can "see" pages);
   `--caps=devtools,network,testing` enables console/network inspection and
   browser testing tools. The harness default on this machine is
-  `npx -y @playwright/mcp@latest --caps=devtools,network,testing`.
+  `npx -y @playwright/mcp@latest --caps=devtools,network,testing --browser chromium`
+  (see the browser-channel bullet below).
+- **Browser channel:** the server defaults to the **chrome** channel and
+  expects Google Chrome at its system path (Linux:
+  `/opt/google/chrome/chrome`). On a machine without it, every launch fails
+  with `Chromium distribution 'chrome' is not found`. Fix: pass
+  `--browser chromium` (the bundled build) and run the one-time
+  `npx -y playwright install chromium` (mdu-48 S2b, executed by MDU-61);
+  this machine's overlay config pins `--browser chromium`.
 - The Docker image `mcr.microsoft.com/playwright/mcp` runs the same server in
   a sandboxed container with browsers pre-installed — use it when you want
   isolation from the host (no local browser install, no host filesystem
@@ -145,6 +153,19 @@ still runs the non-browser checks (HTTP, CLI, logs, edge cases). The same
 principle applies to every other server: if an MCP tool is missing or errors,
 fall back to built-in tools (`bash`, `webfetch`, `gh`) or report the gap —
 never silently skip coverage and never block the pipeline on MCP availability.
+
+### App-backed servers: "connected" is launcher-level
+
+A harness "connected" status for an MCP server verifies the server process
+(launcher), not the application the server fronts. For app-backed servers,
+the application must be running and its addon/socket enabled before any
+dependent step: probe the app with `pgrep -x blender` (Blender via
+`mcp-for-blender`); count launcher processes separately with
+`pgrep -fc mcp-for-blender` — idle launcher pairs are a leak signal (mdu-48
+observed 13 stale pairs), and a live launcher with no app still answers
+"Could not connect to Blender". Absent application → report BLOCKED
+(distinct from PASS/FAIL) naming the probe; never report the server as
+"connected" from launcher status alone (qa/devops gating clause, MDU-61).
 
 ## Security
 

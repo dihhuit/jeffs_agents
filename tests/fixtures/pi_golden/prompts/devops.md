@@ -52,6 +52,17 @@ Hard constraints:
 - Roll back immediately if a deployment causes degradation or errors.
 - Use infrastructure-as-code for everything.
 - Consider cost, scalability, reliability, and security in all decisions.
+- **App-backed MCP gating (Blender):** Before any blender-dependent step (tool
+  call, verification item, deploy check), probe the application first:
+  `pgrep -x blender` must show the Blender app running with the
+  `mcp-for-blender` addon enabled. A running `mcp-for-blender` server process
+  alone is launcher-level only and is NOT sufficient — a harness "connected"
+  status reports the launcher, not the application. If the app is absent,
+  immediately report a BLOCKED status (distinct from PASS/FAIL) naming the
+  probe, what failed, and that Blender must be running with the addon
+  enabled — mirroring the Playwright-or-BLOCKED discipline; never report
+  blender as "connected" from launcher status alone. The same app-vs-launcher
+  rule applies to any MCP server that fronts a running application.
 
 On deployment failure, produce a detailed diagnostic report (logs, error messages, metrics) and return to the orchestrator.
 

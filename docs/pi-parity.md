@@ -30,10 +30,11 @@ defaults; this file is the authoritative hand-curated version (Gate D).
 - **question-tool** — no question tool exists. Ask in plain text, end the turn,
   and never invent the user's answer.
 - **mcp-playwright** — MCP is opt-in through `mcp.json` and nothing is
-  configured by default. qa and qa-pro keep their own BLOCKED-or-PASS
-  discipline; a missing server can never become a silent PASS.
-- **mcp-blender** — an overlay-only personal server, absent from every base
-  profile. Nothing to port; zero audit hits.
+  configured by default. qa, qa-pro, devops, and devops-pro keep their own
+  BLOCKED-or-PASS discipline; a missing server can never become a silent PASS.
+- **mcp-blender** — an overlay-only personal server. The base profile clause
+  (MDU-61) gates blender-dependent steps on an app probe and is inert wherever
+  no blender MCP is registered; the server itself is not ported.
 - **opencode-env** — pi has no OpenCode environment variables or session ids.
   Clause 3 drops the mechanics and keeps the checkpoint intent.
 - **keybindings-compact** — keybindings, `/compact`, cache-miss and compaction
@@ -71,6 +72,12 @@ defaults; this file is the authoritative hand-curated version (Gate D).
 | keybindings-compact | just-code-mid | reframed-by-preamble |
 | keybindings-compact | just-code-pro | reframed-by-preamble |
 | keybindings-compact | orchestrator | reframed-by-preamble |
+| mcp-blender | devops | dropped (overlay-only MCP; base clause is inert gating) |
+| mcp-blender | devops-pro | dropped (overlay-only MCP; base clause is inert gating) |
+| mcp-blender | qa | dropped (overlay-only MCP; base clause is inert gating) |
+| mcp-blender | qa-pro | dropped (overlay-only MCP; base clause is inert gating) |
+| mcp-playwright | devops | reframed-by-preamble |
+| mcp-playwright | devops-pro | reframed-by-preamble |
 | mcp-playwright | qa | reframed-by-preamble |
 | mcp-playwright | qa-pro | reframed-by-preamble |
 | model-tables | architect | verify-live |
@@ -88,7 +95,7 @@ defaults; this file is the authoritative hand-curated version (Gate D).
 | shell-allowlist | qa-pro | reframed-by-preamble |
 | todowrite | orchestrator | reframed-by-preamble |
 
-Total: 30 hits across 8 constructs with hits (blender has none).
+Total: 36 hits across 9 constructs with hits.
 
 ## Known limit
 

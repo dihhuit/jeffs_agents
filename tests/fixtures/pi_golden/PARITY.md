@@ -12,7 +12,7 @@ Every harness-specific construct found in `grok/agents/` and how the pi port han
 | todowrite | TodoWrite task lists | reframed-by-preamble | No TodoWrite tool exists (clause 1); track work in the response and durable notes instead. |
 | question-tool | Interactive question tool | reframed-by-preamble | pi has no question tool (clause 1). Ask in plain text and end the turn; never fabricate an answer. |
 | mcp-playwright | Playwright MCP browser automation | reframed-by-preamble | MCP is opt-in via mcp.json (clause 4). With no Playwright server the profile's own BLOCKED discipline fires. |
-| mcp-blender | Blender MCP authoring | dropped (overlay-only MCP; no base profile references it) | Blender is an overlay-only personal server, absent from every base profile; nothing to port. |
+| mcp-blender | Blender MCP authoring | dropped (overlay-only MCP; base clause is inert gating) | Blender is an overlay-only personal server. The base profile clause gates on an app probe and is inert wherever no blender MCP is registered; nothing to port. |
 | opencode-env | OpenCode environment variables and session ids | reframed-by-preamble | pi has no OpenCode env vars or session ids (clause 3); keep the checkpoint intent, drop the mechanics. |
 | keybindings-compact | Keybindings, /compact, compaction and cache gates | reframed-by-preamble | Keybindings and /compact are harness mechanics (clause 3); the token-frugality intent still stands. |
 | shell-allowlist | Shell allowlist and host permission mentions | reframed-by-preamble | pi allowlists are configuration, not approval (clause 1); the safety gate behind them ports as-is. |
@@ -36,6 +36,12 @@ Every harness-specific construct found in `grok/agents/` and how the pi port han
 | keybindings-compact | just-code-mid | reframed-by-preamble |
 | keybindings-compact | just-code-pro | reframed-by-preamble |
 | keybindings-compact | orchestrator | reframed-by-preamble |
+| mcp-blender | devops | dropped (overlay-only MCP; base clause is inert gating) |
+| mcp-blender | devops-pro | dropped (overlay-only MCP; base clause is inert gating) |
+| mcp-blender | qa | dropped (overlay-only MCP; base clause is inert gating) |
+| mcp-blender | qa-pro | dropped (overlay-only MCP; base clause is inert gating) |
+| mcp-playwright | devops | reframed-by-preamble |
+| mcp-playwright | devops-pro | reframed-by-preamble |
 | mcp-playwright | qa | reframed-by-preamble |
 | mcp-playwright | qa-pro | reframed-by-preamble |
 | model-tables | architect | verify-live |
@@ -53,4 +59,4 @@ Every harness-specific construct found in `grok/agents/` and how the pi port han
 | shell-allowlist | qa-pro | reframed-by-preamble |
 | todowrite | orchestrator | reframed-by-preamble |
 
-30 hit(s) across 9 construct(s).
+36 hit(s) across 9 construct(s).

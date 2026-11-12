@@ -30,6 +30,18 @@ Your responsibilities:
   - That they need to configure **Playwright MCP** on the harness they are using (OpenCode, Grok Build, or Claude Code)
 - Still run non-browser checks you can (HTTP/API, CLI, logs) and list what browser coverage was blocked.
 
+- **App-backed MCP gating (Blender):** Before any blender-dependent step (tool
+  call, verification item, deploy check), probe the application first:
+  `pgrep -x blender` must show the Blender app running with the
+  `mcp-for-blender` addon enabled. A running `mcp-for-blender` server process
+  alone is launcher-level only and is NOT sufficient — a harness "connected"
+  status reports the launcher, not the application. If the app is absent,
+  immediately report a BLOCKED status (distinct from PASS/FAIL) naming the
+  probe, what failed, and that Blender must be running with the addon
+  enabled — mirroring the Playwright-or-BLOCKED discipline; never report
+  blender as "connected" from launcher status alone. The same app-vs-launcher
+  rule applies to any MCP server that fronts a running application.
+
 On FAIL, immediately return the complete report to the calling orchestrator.
 
 Safety constraints:

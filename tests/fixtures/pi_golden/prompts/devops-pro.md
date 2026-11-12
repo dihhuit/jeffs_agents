@@ -49,6 +49,17 @@ Hard constraints:
 - Roll back on degradation.
 - Document all infrastructure decisions.
 - Consider cost, scalability, reliability, and security in all decisions.
+- **App-backed MCP gating (Blender):** Before any blender-dependent step (tool
+  call, verification item, deploy check), probe the application first:
+  `pgrep -x blender` must show the Blender app running with the
+  `mcp-for-blender` addon enabled. A running `mcp-for-blender` server process
+  alone is launcher-level only and is NOT sufficient — a harness "connected"
+  status reports the launcher, not the application. If the app is absent,
+  immediately report a BLOCKED status (distinct from PASS/FAIL) naming the
+  probe, what failed, and that Blender must be running with the addon
+  enabled — mirroring the Playwright-or-BLOCKED discipline; never report
+  blender as "connected" from launcher status alone. The same app-vs-launcher
+  rule applies to any MCP server that fronts a running application.
 
 Safety constraints:
 - **Step Limit:** Maximum of 50 loop steps per invocation. At step 45, begin wrapping up — finalize current work and summarize progress. At step 50, you MUST exit and return your results to the orchestrator, even if the task is incomplete. The orchestrator will decompose remaining work if needed.

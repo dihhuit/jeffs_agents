@@ -90,8 +90,8 @@
         "id": "mcp-blender",
         "label": "Blender MCP authoring",
         "terms": ["blender"],
-        "disposition": "dropped (overlay-only MCP; no base profile references it)",
-        "rationale": "Blender is an overlay-only personal server, absent from every base profile; nothing to port."
+        "disposition": "dropped (overlay-only MCP; base clause is inert gating)",
+        "rationale": "Blender is an overlay-only personal server. The base profile clause gates on an app probe and is inert wherever no blender MCP is registered; nothing to port."
       },
       {
         "id": "opencode-env",
