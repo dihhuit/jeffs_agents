@@ -1,7 +1,7 @@
 ---
 type: decisions
 created: 2026-10-27T13:24:20Z
-updated: 2026-11-11T03:52:27Z
+updated: 2026-11-12T04:20:00Z
 ---
 
 # Decision log
@@ -139,3 +139,15 @@ updated: 2026-11-11T03:52:27Z
 - Context: user directive to bill an Inception variant to the xAI account in OpenCode; grok- prefix invokes the mdu-42 xai hard rule; both xai candidates probed green.
 - Decision: grok-inception primary in BASE opencode.json on xai/grok-4.7 (cross-harness behavioral parity with Grok Build's inception; user-invoked role, no fleet multiplier); prompt = prompts/grok-inception.md, identity+tone-only adaptation (inception carries no batch clauses); NO grok/agents/grok-inception.md and no GROK_MIRRORS entry (would duplicate Grok Build's existing user-invoked inception); overlay inherits (43→44) with build-copy pins.
 - Consequences: xai/grok-4.7 became a first-class probe target in both repos' reports; overlay build-copy pins pin the inheritance; MDU-56 promoted to queue head after completion.
+
+## 2026-11-12 — pi port artifact shape and adaptation policy (mdu-56)
+- Context: user adopted pi (`@earendil-works/pi-coding-agent` 1.5.2) as a third harness with only xai authenticated; the 20 base grok profiles (Grok Build frontmatter) cannot be consumed by pi, which has no sub-agents and no permission system. User decisions: port in the BASE repo (generic), install pre-approved once artifacts exist, xai-only.
+- Decision: one generated pi package — `scripts/lib/gen_pi_templates.py` (hooked into `./build.sh` after Claude generation) emits `build/pi/` = package.json + 20 role prompt templates + `/roster` + PARITY.md; adaptation = shared hand-authored adapter preamble (`pi/adapter-preamble.md`, five clauses, explicitly WINS conflicts) over byte-verbatim source bodies, `## Task`/`$ARGUMENTS` tail; parity in `docs/pi-parity.md` (30 audit-lexicon hits, each with a disposition row); gates = tests/test_mdu_56_pi_port.py Gates A–E (33 cases) + tracked golden snapshot. Skills/subagent-extension/static-artifact shapes rejected (bloat/non-determinism/out-of-scope/rot). grokestrator + overlay grok-* family DEFERRED (overlay-reusable generator later).
+- Consequences: live install via `pi install ./build/pi` is REFERENCED (re-run after rebuild); smoke proven live: `/name` template expansion in `pi -p` works (was docs-UNVERIFIED), grok-build-0.1 absent from pi's xai catalog so D2's default-model fallback is operative; new scanner traps recorded (short-sha + slash-split camelCase in prose). Definition-change suggestions 20261111-2 (deep-research brief discipline) and 20261111-3 (qa form-vs-content denial split) queued for the user-invoked path.
+
+## 2026-11-12 — sprite_generator incident queued: QA write policy (MDU-60, new queue head) + MCP fixes (MDU-61); MDU-59 demoted
+- Context: user reported the sprite_generator session stuck again on (a) qa_agent denied writes of findings/results, (b) blender and playwright MCPs "connected" per harness but not working. User applied a short-term unstick (orchestrator receives QA output, dispatches a write-capable agent to persist) and asked for MDUs + a recommendation. MDU-48 (2026-10-31, commit c3b2d48) already root-caused the MCP symptoms (chrome channel pinned to an absent path; blender "connected" is launcher-level only) with unexecuted recommendations S2b/S3.
+- Decision: orchestrator recommendation recorded in MDU-60 — do NOT grant QA write access; codify the consume-and-persist pattern (QA reply = the deliverable; a write-capable agent persists durable artifacts; QA briefs pre-state this). Rationale: read-only grading protects the tree under test and avoids re-creating the answers_qa write-failure class. User rules at MDU-60 design time. Queue reordered by user priority: MDU-60 head, MDU-61 (playwright chromium pin + blender launcher gating, executing MDU-48 S2b/S3 with re-verification probes) second, MDU-59 third — 3 open rows at the mdu-58 cap.
+- Consequences: backlog audit pin still green (905); both new rows carry per-diff approval gates for any permission/config change; definition-side changes still route through the user-invoked apply path.
+
+
