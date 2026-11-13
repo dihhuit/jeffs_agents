@@ -384,6 +384,20 @@ Each MDU above is sized for the repo's own orchestrator to complete in one close
 - **Suggested agents:** explore (suburb_sim session-store forensics, very thorough), deep-research (only if suburb_sim config turns out to use a third-party harness), architect (fix design if prompt/routing change needed), just-code (prompt/config fix), test-agent (pins), qa (validation).
 - **Dependencies:** none in the agent repos; evidence lives in the user's suburb_sim session storage (session id unknown — user can supply it to skip discovery). Overlaps 20261014-1 (in-conversation design violations) only if forensics show no dispatch happened.
 
+### MDU-62 · PR policy rule: no PR for dihhuit/ private repos; explicit approval anywhere else (queued)
+
+- **Status:** Open — queued (behind MDU-59; user ruling 2026-11-13, not started)
+- **Why:** user observed agents opening PRs instead of pushing/merging, and ~99% of their projects are private repos where a push without a PR is fine. User ruling 2026-11-13 (verbatim intent): private GitHub repos under `/dihhuit/` need no PR — push directly; for ANY repo anywhere else, opening/publishing a PR requires explicit per-action human approval (guard against unnoticed AI-generated contributions to OSS repos). The PR-by-default behavior traces to `skills/git-autonomy/SKILL.md:39`: "Push the feature branch and open the PR; do not push directly to `main` unless the project explicitly allows it" — the default is inverted for the user's own repos (the user's projects ARE the explicit allowance, but only for dihhuit/).
+- **Description:** (1) Grep-census PR-creating/push-gating wording across both repos: `skills/git-autonomy/SKILL.md` (base skill, the primary carrier), the three orchestrator mirrors' repository-ownership sections, and any deploy/CI scripts that suggest PRs — attach the full file:line hit list to the implement brief. (2) Codify the two-tier rule byte-identically where it belongs: (a) repos under `github.com/dihhuit/` → no PR required; direct push to `main` remains the sanctioned default-green path (still subject to the existing secret + prompt gates and the protected-branch approval rule if `main` is ever branch-protected); (b) any other remote (OSS, third-party, unclear ownership) → explicit per-action human approval BEFORE opening a PR or pushing any branch; one approval never covers the next action. (3) Decide carrier set at design time: at minimum the git-autonomy SKILL.md push-safety rules section; the orchestrator mirrors get it only if their ownership wording conflicts (the mirrors already say "assuming there's a configured remote" without PR mandates — verify, do not assume). (4) Pins: census test that no carrier instructs opening a PR for a dihhuit/ repo without the approval tier distinction; mutation check that reverting SKILL.md:39 to PR-by-default reds the pin. (5) Wording approval: the user ruling sets the policy; present the exact clause text at design time for a single approval (mdu-60 carve-out pattern) or defer to the apply path if the user prefers.
+- **Acceptance criteria:**
+  1. Census doc lists every live PR-creating or push-gating line in both repos with its disposition (edited / left-as-is + why).
+  2. The two-tier rule ships in the chosen carriers with non-vacuous pins; both suites green; prompt-regression gate unchanged baseline if prompt files are touched.
+  3. A dihhuit/ repo scenario and a third-party repo scenario are both pinned: first = no PR required (direct push allowed), second = approval required before any PR/push.
+  4. Secret gate clean both repos; commits split per cross-repo order if the overlay is touched.
+- **Suggested agents:** architect (carrier census + clause design), just-code (clause edits), test-agent (pins), qa (validation).
+- **Dependencies:** none (evidence in-tree); user approval of the exact clause wording at design time.
+
+
 
 
 ### MDU-60 · QA write-access decision + durable-QA-output pattern
