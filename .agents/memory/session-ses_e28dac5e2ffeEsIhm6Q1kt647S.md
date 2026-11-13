@@ -16,7 +16,7 @@ updated: 2026-11-13T23:50:00Z
 ## 2026-11-13T23:50Z — mdu-complete (mdu-62)
 - mdu_id: mdu-62
 - branch: main (base repo dihhuit/jeffs_agents)
-- commit: 96a62a0 (amended once post-sha for this memory entry)
+- commit: ecfb8a7 (base, pushed; the amend recorded here superseded 96a62a0)
 - summary: Two-tier PR/push policy shipped in skills/git-autonomy/SKILL.md (+PR-desc guard); user-approved MDU-59 Dispatch-truth clause applied to 3 mirrors (dormant pin active); pin suite 11 cases + mutation matrix; base 979/979 + overlay 286/286; QA PASS round 1; deployed live via overlay deploy --force (green probe).
 - key_decisions: two-tier clause wording approved at design time (carve-out, 3 selections); mirrors left as-is (census-verified); design-doc commit-plan corrected pre-commit (overlay source commit required); memory restored append-only.
 - manifest: runs/mdu-62/manifest.json (committed via explicit path; validator [ok])
