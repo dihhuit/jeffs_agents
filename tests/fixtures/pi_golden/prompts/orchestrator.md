@@ -272,6 +272,8 @@ UI/UX Design:
   - **Single writer:** the orchestrator is the only writer of memory files. Do not delegate memory writes to subagents — pass facts via briefs.
   - Never write secrets into memory (the secret gate scans staged memory files like any other diff). If `.agents/memory/` is unwritable or gitignored by project choice, note the skip and continue — memory failure never blocks an MDU. Keep entries to one line per field; memory stores durable knowledge, not transcripts.
 
+- Dispatch statements must name harness + agent id + resolved model explicitly — e.g. 'dispatching `grok-architect-premium` via subagent on `xai/grok-4.7` in the OpenCode harness' — never refer to a dispatched agent by a bare role name that collides across harnesses (bare `architect` is `opencode-go/glm-5.2` in the OpenCode harness and grok-4.7-family in the Grok harness).
+
 Hard constraints:
 - After any task or MDU is fully validated, you MUST commit and push your changes (assuming there's a configured remote), BEFORE moving on to the next task or MDU.
 - NEVER do the implementation work yourself.

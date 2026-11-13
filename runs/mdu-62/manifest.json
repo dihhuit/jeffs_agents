@@ -1,0 +1,69 @@
+{
+  "mdu_id": "mdu-62",
+  "title": "PR policy rule: no PR for dihhuit/ repos; explicit per-action approval elsewhere",
+  "status": "in_progress",
+  "harness": "opencode",
+  "model": "opencode-go/glm-5.3-flash",
+  "started_at": "2026-11-13T23:02:56Z",
+  "completed_at": "2026-11-13T23:36:39Z",
+  "phases": [
+    {
+      "phase": "design",
+      "agent": "architect",
+      "model_tier": "premium",
+      "outcome": "pass",
+      "notes": "docs/design/mdu-62-pr-policy.md (D1-D5); census attached from live greps; user approved exact clause + PR-desc guard + Dispatch-truth apply via carve-out question (2026-11-13, three explicit selections)"
+    },
+    {
+      "phase": "implement",
+      "agent": "just-code",
+      "model_tier": "budget",
+      "outcome": "pass",
+      "notes": "6 approved edits byte-exact + gate-required pi_golden fixture refresh; prompt snapshot/diff/gate all exit 0; pytest 968/0 skip (dormant pin flipped); both builds exit 0; orchestrator verified on disk + repaired pre-existing memory-file truncation (mdu-59 tail, restored from HEAD, append-only re-entries)"
+    },
+    {
+      "phase": "review",
+      "agent": "code-reviewer",
+      "model_tier": "mid",
+      "outcome": "pass",
+      "notes": "3 rounds: R1 REQUEST CHANGES (3 doc-consistency findings) -> fix cycle 1 (doc); R2 REQUEST CHANGES (3 minor: stale generated copies, stale test docstring, stale counts) -> fix cycle 2 (PR-desc heading restore, test-phase catch) + fix cycle 3 (rebuild + 2 text fixes) -> R3 APPROVE; secret-gate false positive in design doc reworded to exit 0"
+    },
+    {
+      "phase": "test",
+      "agent": "test-agent",
+      "model_tier": "budget",
+      "outcome": "pass",
+      "notes": "tests/test_mdu_62_pr_policy.py 11 cases (C1-C9) per design sec 5; mutation matrix M1-M4 in /tmp copies reds C2-C5 / C2,C5 / C4 / C6; clean-tree proof before/after; full suite 979 passed / 0 skipped; caught the PR-desc heading deletion deviation"
+    },
+    {
+      "phase": "deploy",
+      "agent": "devops",
+      "model_tier": "mid",
+      "outcome": "pass",
+      "notes": "overlay build exit 0; deploy.sh --force exit 0 with green model-probe gate; post-verify: two-tier clause live in installed opencode+grok git-autonomy skills (old directive 0 hits), Dispatch-truth clause live in deployed opencode orchestrator + grok grokestrator/orchestrator; no MCP changes (rule skipped); no unexpected git dirt"
+    },
+    {
+      "phase": "validate",
+      "agent": "qa",
+      "model_tier": "mid",
+      "outcome": "pass",
+      "notes": "GRADE PASS round 1, AC-1..AC-5 all PASS with live re-verification (own greps, both suites re-run: base 979/0, overlay 286/0, baseline unchanged at daec8ed, validator [ok], secret scan clean); 3 non-blocking follow-ups fixed pre-commit (design-doc commit-plan correction 6b, +2 QA census rows, stale probe value)"
+    }
+  ],
+  "fix_iterations": 3,
+  "autonomy_level": 3,
+  "verification": {
+    "build": true,
+    "tests_passed": 979,
+    "tests_total": 979,
+    "qa_grade": "PASS",
+    "ci_green": null
+  },
+  "artifacts": [
+    "docs/design/mdu-62-pr-policy.md",
+    "tests/test_mdu_62_pr_policy.py",
+    "skills/git-autonomy/SKILL.md",
+    "agent-improvements.md"
+  ],
+  "summary": "Two-tier PR/push policy shipped in skills/git-autonomy/SKILL.md (owned repos: no PR; others: per-action approval) + PR-desc guard; user-approved MDU-59 Dispatch-truth clause applied byte-identical to 3 orchestrator mirrors (dormant pin now active); pin suite 11 cases with mutation matrix; 3 review rounds ending APPROVE; 979/979 tests."
+}

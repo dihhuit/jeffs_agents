@@ -1,7 +1,7 @@
 ---
 type: project
 created: 2026-10-27T13:24:20Z
-updated: 2026-11-12T03:45:00Z
+updated: 2026-11-13T23:10:00Z
 ---
 
 # Project facts — open-agent-definitions (base agent-team repo)
@@ -120,4 +120,10 @@ updated: 2026-11-12T03:45:00Z
 - Mutation-matrix test-writing rule (20261112-5): re-root mutants on repo-relative labels with is_relative_to guards before ANY write; prove `git status --porcelain` clean before + after in both repos. Absolute-path re-rooting stripped the real carriers once this MDU (restored byte-exact).
 - pi smoke runs must go through the orchestrator session (children cannot access external ~/.pi; phase-routing pre-check). Isolated variant: copy agent dir minus sessions into /tmp (auth.json travels locally, never printed).
 - Scanner traps hit again in committed prose: a 40-char commit SHA (shorten to short sha) and a slash-joined camelCase run (registerCommand/registerFlag/... — insert spaces at the slashes).
+
+## 2026-11-13 (mdu-59)
+- Test suite: `timeout 300 python3 -m pytest tests/ -q` (968 tests as of 2026-11-13: 967 passed + 1 expected skip in tests/test_mdu_59_dispatch_truth.py dormant clause pin; flips to 968 passed / 0 skipped on apply).
+- The user's OpenCode session store is a single SQLite db (`~/.local/share/opencode/opencode.db`, ~2.7 GB): v2 sessions in `session`/`message`/`part` tables; LEGACY V1 sessions (imported, no `session` row) live only in `session_message`/`session_part`. Always open with `file:...?mode=ro`.
+- Direct push to `main` is the sanctioned default for dihhuit/ repos; two-tier PR policy codified in `skills/git-autonomy/SKILL.md` by MDU-62 (2026-11-13) — owned repos: no PR; any other remote: explicit per-action approval before PR or branch push.
+- MEMORY-HYGIENE GOTCHA (mdu-62 discovery): the mdu-59 session tail re-"initialized" `.agents/memory/` post-commit and destroyed 150+ lines of decision log; restored from HEAD byte-exact in mdu-62. Memory is append-only — never rewrite frontmatter-created dates or bulk-replace bodies on a fresh session start.
 

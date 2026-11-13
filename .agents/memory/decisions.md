@@ -1,7 +1,7 @@
 ---
 type: decisions
 created: 2026-10-27T13:24:20Z
-updated: 2026-11-12T04:20:00Z
+updated: 2026-11-13T23:10:00Z
 ---
 
 # Decision log
@@ -163,3 +163,13 @@ updated: 2026-11-12T04:20:00Z
 - Consequences: any MCP-server registration change in deploy.sh must be followed by per-CLI live post-state verification; the mdu-45 audit pin now has MDU-59 as sole queue head; carries 20261112-5 / 20261112-6 (definition path) + 20261110-2 fresh-session start; README playwright-args line + qa configure-bullet wording are known out-of-scope drift follow-ups.
 
 
+
+## 2026-11-13 — Dispatch-truth clause staged via apply path, 3-mirror carriers (mdu-59)
+- Context: suburb_sim forensics proved the grokestrator dispatched `grok-architect-premium` (xai/grok-4.7) correctly but described it as bare "the architect is on xAI", which reads as false against the OpenCode harness's stock `architect` (glm-5.2).
+- Decision: ship docs clarification in-MDU; stage the Dispatch-truth clause ("dispatch statements must name harness + agent id + resolved model explicitly") as `status: not applied` in agent-improvements.md for base `prompts/orchestrator.md`, base `grok/agents/orchestrator.md`, and overlay `grok/agents/grokestrator.md` — lands only on the user-invoked apply path, with dormant pin `tests/test_mdu_59_dispatch_truth.py` hardening to all-three-mirrors on apply.
+- Consequences: pin skips today (1 expected suite skip); the clause example must say "in the OpenCode harness" (the grokestrator runs inside OpenCode on xai/grok-4.7 — harness ≠ provider).
+
+## 2026-11-13 — Two-tier PR/push policy + Dispatch-truth clause applied (mdu-62)
+- Context: user ruling 2026-11-13 — PR-by-default in git-autonomy was inverted for their ~99% private-repo workflow; and the MDU-59 Dispatch-truth clause was still staged awaiting apply.
+- Decision: user pre-approved at design time (carve-out, three explicit selections): (a) two-tier push clause + PR-description conditional guard in `skills/git-autonomy/SKILL.md` — owned repos: no PR, direct push sanctioned (gates still apply); any other remote: explicit per-action approval BEFORE PR or branch push; (b) apply the Dispatch-truth clause byte-identical to the 3 orchestrator mirrors in-MDU (dormant pin tests/test_mdu_59_dispatch_truth.py now active); (c) orchestrator mirrors left as-is (census-verified no PR mandate).
+- Consequences: pin suite tests/test_mdu_62_pr_policy.py (11 cases, mutation matrix) enforces the clause; prompt-regression baseline unchanged (gate exit 0); memory-hygiene gotcha recorded — the mdu-59 session tail had destroyed the append-only decision log post-commit, restored from HEAD this MDU; next MDU should start from a fresh session (20261110-2 cache-miss recurrence driver).

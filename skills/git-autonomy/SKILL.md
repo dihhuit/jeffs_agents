@@ -25,7 +25,7 @@ Hygiene rules for committing and pushing work from autonomous runs. Follow these
 
 ## PR description
 
-Include:
+Only when a PR is actually required under Push safety (any remote you do not own, or an explicit user request). Include:
 
 - **Design ref** — link or path to the design doc or MDU spec the work implements.
 - **Test results** — what was run (build, lint, test suite) and the outcome.
@@ -36,7 +36,8 @@ Include:
 
 - NEVER force-push to shared branches; if history needs fixing, use a new commit or a dedicated branch.
 - Fetch before push: `git fetch`, then rebase/merge the latest base so the push is not rejected.
-- Push the feature branch and open the PR; do not push directly to `main` unless the project explicitly allows it.
+- **Two-tier push policy:** On repositories the user owns, no PR is required — push the branch or push directly to `main` (the sanctioned default-green path); the existing secret and prompt gates still apply, and if `main` is branch-protected the protected-branch approval rule still applies.
+- On any other remote (OSS, third-party, or unclear ownership), obtain explicit per-action human approval BEFORE opening a PR or pushing any branch; one approval never covers the next action.
 - If a push fails (non-fast-forward), fetch, rebase, and retry — never `--force`.
 
 ## Checklist before commit
