@@ -629,7 +629,7 @@ Each MDU above is sized for the repo's own orchestrator to complete in one close
 - **Artifacts:** `docs/design/mdu-65-context-window.md`. Manifest stays local under `runs/`.
 - **Status:** Done — 2026-11-14 (Grok CLI model id is grok-4.7 for both the orchestrator profile and grokestrator; OpenCode grokestrator is xai/grok-4.7; the OpenCode stock orchestrator stays opencode-go/glm-5.3-flash and is not the CLI meter. Catalog default context_window for grok-4.7 is 256000, with 500000 as a second selectable size. The meter denominator is that selected window, the same value auto-compact uses, not a display cap. No definition edit. No follow-up MDU.)
 
-### MDU-66 · Grokestrator 500k context window (queue head)
+### MDU-66 · Grokestrator 500k context window
 
 - **Why:** After MDU-65 the user asked to pin Grokestrator at a 500000 context window in the agent definitions. The catalog default for grok-4.7 is 256000. 500000 is a second size on that same id.
 - **Description:** Grokestrator only. The source file is overlay `grok/agents/grokestrator.md`. Leave the model id at grok-4.7. Leave the base Grok orchestrator and every other grok-4.7 agent on the catalog default. CLI 1.0.77 documents `context_window` on a quoted model table in the user config, and documents agent-profile frontmatter as `model`, `tools`, and `disallowedTools`. A model-wide table would change every grok-4.7 agent, so it is out of scope. Design must name a carrier the CLI reads for this agent. A frontmatter key the CLI ignores is not a ship. OpenCode's grokestrator model id stays `xai/grok-4.7` unless that registry has its own window field.
@@ -638,7 +638,7 @@ Each MDU above is sized for the repo's own orchestrator to complete in one close
   2. The base Grok orchestrator profile and other grok-4.7 agents stay at the catalog default 256000.
   3. The model id stays grok-4.7.
   4. The shipped carrier is one the CLI reads. If the only honored knob is model-wide, stop and report. Do not apply it.
-- **Artifacts:** design doc under `docs/design/`, the grokestrator source, and the installed copy after an overlay deploy.
+- **Artifacts:** `docs/design/mdu-66-grokestrator-context-window.md`. No grokestrator edit. No deploy.
 - **Suggested agents:** architect (carrier), just-code (edit), code-reviewer, test-agent, devops (overlay deploy), qa.
 - **Dependencies:** MDU-65.
-- **Status:** Open — queue head. The session that queued this row does not implement it.
+- **Status:** Done — 2026-11-14 (CLI 1.0.77 ignores a frontmatter context_window key. Probe signals stayed at contextWindowTokens 256000 with primaryModelId grok-4.7. The only honored persistent knob is the model-wide user-config table, which was not applied. No agent file edit. No deploy.)
