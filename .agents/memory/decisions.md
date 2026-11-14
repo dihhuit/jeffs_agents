@@ -1,7 +1,7 @@
 ---
 type: decisions
 created: 2026-10-27T13:24:20Z
-updated: 2026-11-14T15:16:14Z
+updated: 2026-11-14T18:50:00Z
 ---
 
 # Decision log
@@ -198,3 +198,8 @@ updated: 2026-11-14T15:16:14Z
 - Context: MDU-66 asked to pin Grokestrator at 500000 without a model-wide table and without a dead frontmatter key.
 - Decision: stop. CLI 1.0.77 ignores frontmatter context_window. Probe signals stayed at 256000. The model id stays grok-4.7. The model-wide user-config table was not applied. No agent file was edited and nothing was deployed.
 - Consequences: the backlog row is Done. The queue is empty. A 500k window for one agent is not available in the agent file. Suggestion 20261114-1 records that a resolved backlog status word is Done or Superseded, and it stays unapplied until the user asks.
+
+## 2026-11-14 — Backlog status word is Done or Superseded (mdu-67)
+- Context: MDU-66 wrote status word Stopped. The backlog audit accepts only Done or Superseded, plus an admitted Open. A second implement pass changed the word to Done. The coder prompts did not name the allowed words.
+- Decision: one Hard-constraint bullet, byte-identical to suggestion 20261114-1, immediately after the rebuild-freshness bullet, in the four base just-code carriers and the three overlay grok-just-code profiles. A deliberate stop is still Done, with the reason in that same status bullet.
+- Consequences: 20261114-1 is resolved. mdu-code and grok-mdu-code do not carry the bullet. The installed OpenCode, Grok, and Claude copies were updated from the overlay build.

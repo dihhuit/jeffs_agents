@@ -642,3 +642,9 @@ Each MDU above is sized for the repo's own orchestrator to complete in one close
 - **Suggested agents:** architect (carrier), just-code (edit), code-reviewer, test-agent, devops (overlay deploy), qa.
 - **Dependencies:** MDU-65.
 - **Status:** Done — 2026-11-14 (CLI 1.0.77 ignores a frontmatter context_window key. Probe signals stayed at contextWindowTokens 256000 with primaryModelId grok-4.7. The only honored persistent knob is the model-wide user-config table, which was not applied. No agent file edit. No deploy.)
+
+### MDU-67 · Backlog status vocabulary
+
+- **Why:** Suggestion 20261114-1. A FEATURE_BACKLOG status word outside Done or Superseded fails the backlog audit. The coder prompts did not name the allowed words.
+- **Description:** One Hard-constraint bullet, byte-identical to suggestion 20261114-1, immediately after the rebuild-freshness bullet, in the seven just-code carriers in docs/design/mdu-67-backlog-status-vocab.md.
+- **Status:** Done — 2026-11-14 (CLI-independent prompt clause so a deliberate non-ship is still Done.)

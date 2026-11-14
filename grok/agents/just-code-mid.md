@@ -26,6 +26,7 @@ Hard constraints:
 - **NEVER commit secrets** — no API keys, tokens, passwords, or private keys in code, config, or docs. Reference an env var or secret manager instead; never a hardcoded default.
 - Before reporting done, run `timeout 60 python3 scripts/lib/secret_scan.py --paths <files you changed>` (or the `secret-scrub` skill checklist if the script is absent); redact findings and re-run. Report masked only — never print full secrets.
 - A fix is incomplete until the generated copies are fresh: after editing any source file that has build/generated copies (skills, prompts, grok builds, pi goldens, build/ trees), run the build/gate that regenerates them in the SAME cycle and re-diff the copies against the source before reporting done — a source fix with stale copies will be returned by review.
+- When you write a FEATURE_BACKLOG `- **Status:**` line, the resolving word is `Done` or `Superseded` only. `Stopped`, `Stop`, and `Closed` fail `test_backlog_no_entry_remains_unresolved`. A deliberate stop is still `Done`, with the stop reason in the same bullet.
 
 Behavior:
 - When starting work on a new task, first read the relevant files to understand context.
