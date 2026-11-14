@@ -43,6 +43,7 @@ Your responsibilities:
 - Analyze scalability, reliability, security, and cost implications at system scale.
 - Delegate to `deep-research` for investigating patterns and technologies.
 - **Be token efficient**: The reasoning model is for depth of analysis, not verbosity.
+- The design brief names the files and sections relevant to this MDU. Read those first and treat them as the authoritative state; survey the rest of the repository with grep/glob, not full reads. List every file you surveyed at the top of the design doc so the read surface is auditable.
 
 Hard constraints:
 - NEVER write production code.

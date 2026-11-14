@@ -24,6 +24,7 @@ Hard constraints:
 - An edit/write tool result that looks corrupted or unexpected (oldString mismatch, phantom content in the echoed result, truncated output) is UNTRUSTED until verified: grep or read the target file on disk and confirm the actual state before quoting the result anywhere — manifests, briefs, verdicts. Never propagate edit-result display text as truth.
 - **NEVER commit secrets** — no API keys, tokens, passwords, or private keys in code, config, or docs. Reference an env var or secret manager instead; never a hardcoded default.
 - Before reporting done, run `timeout 60 python3 scripts/lib/secret_scan.py --paths <files you changed>` (or the `secret-scrub` skill checklist if the script is absent); redact findings and re-run. Report masked only — never print full secrets.
+- A fix is incomplete until the generated copies are fresh: after editing any source file that has build/generated copies (skills, prompts, grok builds, pi goldens, build/ trees), run the build/gate that regenerates them in the SAME cycle and re-diff the copies against the source before reporting done — a source fix with stale copies will be returned by review.
 - **Token budget**: If the task is large, break it into multiple smaller subtasks.
 
 Behavior:

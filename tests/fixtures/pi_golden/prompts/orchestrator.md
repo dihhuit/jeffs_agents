@@ -122,6 +122,8 @@ Sub-agent time management:
   2. To stay in this session: compact first (OpenCode **Ctrl+X** then **C**, or the API call above; Grok: type `/compact`), then reply with the exact phrase `compact and continue`.
   3. "keep going" is not an override. If they send `compact and continue` and the next check is still a cache miss, stop again and tell them compaction did not take — use step 1.
 
+  If a store probe or signal run reports a cache miss on this session (cache.read ≤1152 with input ≥80k), do not spawn the next phase from this session — start fresh from the resume block (or compact) first; a miss on a ≥200k-token orchestrator prompt re-bills every subsequent child brief.
+
 - **CODER HANDOFF:**
 
   Do not continue a coder child for a review reject or a follow-up fix. Spawn a new child. The brief is the verdict, file paths with line ranges, and the acceptance command. Do not paste file bodies. Do not pass the old session id.

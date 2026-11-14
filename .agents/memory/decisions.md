@@ -1,7 +1,7 @@
 ---
 type: decisions
 created: 2026-10-27T13:24:20Z
-updated: 2026-11-13T23:10:00Z
+updated: 2026-11-14T03:55:00Z
 ---
 
 # Decision log
@@ -173,3 +173,8 @@ updated: 2026-11-13T23:10:00Z
 - Context: user ruling 2026-11-13 — PR-by-default in git-autonomy was inverted for their ~99% private-repo workflow; and the MDU-59 Dispatch-truth clause was still staged awaiting apply.
 - Decision: user pre-approved at design time (carve-out, three explicit selections): (a) two-tier push clause + PR-description conditional guard in `skills/git-autonomy/SKILL.md` — owned repos: no PR, direct push sanctioned (gates still apply); any other remote: explicit per-action approval BEFORE PR or branch push; (b) apply the Dispatch-truth clause byte-identical to the 3 orchestrator mirrors in-MDU (dormant pin tests/test_mdu_59_dispatch_truth.py now active); (c) orchestrator mirrors left as-is (census-verified no PR mandate).
 - Consequences: pin suite tests/test_mdu_62_pr_policy.py (11 cases, mutation matrix) enforces the clause; prompt-regression baseline unchanged (gate exit 0); memory-hygiene gotcha recorded — the mdu-59 session tail had destroyed the append-only decision log post-commit, restored from HEAD this MDU; next MDU should start from a fresh session (20261110-2 cache-miss recurrence driver).
+
+## 2026-11-14 — Definition-guards batch: architect survey + rebuild freshness + fresh-session gate (mdu-63)
+- Context: backlog empty; user picked a three-clause batch from open introspector suggestions (2026-11-14): 20261024-1 (architect token hotspot, record 285k in mdu-62, band never broken by the brief-side remedy), 20261113-1 (rebuild debt cost 2 of 3 fix cycles in mdu-62), 20261110-2 (orchestrator cache misses on carried-transcript sessions).
+- Decision: three clauses shipped byte-identical to the drafted log text in 15 carriers — architect survey discipline in 5 (after the token-efficiency bullet), rebuild freshness in 7 just-code carriers (base after the before-done secret bullet, overlay after the D5 display-integrity bullet), fresh-session cache gate in 3 orchestrator mirrors (indented paragraph inside CACHE MISS GATE after step 3). Design Q-1 resolved ship-as-approved (spurious-fire carve-out = measured fast-follow); Q-2 overlay grok-architect variants included by default.
+- Consequences: pins tests/test_mdu_63_guards.py (60) + overlay tests/test_mdu_63_overlay.py (33) + mutation matrix M1-M7; pi goldens refreshed (Gate C 23 preserved); deployed live with installed-copy verification across OpenCode/Grok/Claude/pi; reopen trigger = first post-deploy exercise still firing the signal; carried apply-nows: fresh-session start for the next MDU, QA verdict lists denied command strings (20261111-3, third consecutive), guards-review briefs carry clause excerpts instead of log re-reads.

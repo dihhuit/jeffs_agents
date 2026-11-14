@@ -1,7 +1,7 @@
 ---
 type: project
 created: 2026-10-27T13:24:20Z
-updated: 2026-11-13T23:10:00Z
+updated: 2026-11-14T03:55:00Z
 ---
 
 # Project facts — open-agent-definitions (base agent-team repo)
@@ -126,4 +126,10 @@ updated: 2026-11-13T23:10:00Z
 - The user's OpenCode session store is a single SQLite db (`~/.local/share/opencode/opencode.db`, ~2.7 GB): v2 sessions in `session`/`message`/`part` tables; LEGACY V1 sessions (imported, no `session` row) live only in `session_message`/`session_part`. Always open with `file:...?mode=ro`.
 - Direct push to `main` is the sanctioned default for dihhuit/ repos; two-tier PR policy codified in `skills/git-autonomy/SKILL.md` by MDU-62 (2026-11-13) — owned repos: no PR; any other remote: explicit per-action approval before PR or branch push.
 - MEMORY-HYGIENE GOTCHA (mdu-62 discovery): the mdu-59 session tail re-"initialized" `.agents/memory/` post-commit and destroyed 150+ lines of decision log; restored from HEAD byte-exact in mdu-62. Memory is append-only — never rewrite frontmatter-created dates or bulk-replace bodies on a fresh session start.
+
+## 2026-11-14 (mdu-63)
+- Three clause families shipped and deployed: architect survey discipline (5 carriers, after the token-efficiency bullet), rebuild freshness (7 just-code carriers), fresh-session cache gate (3 orchestrator mirrors, inside CACHE MISS GATE). Pins: tests/test_mdu_63_guards.py (60) + overlay tests/test_mdu_63_overlay.py (33); suite 1039 base / 319 overlay.
+- Base suite skip count is build-conditional: before a build some build-output-conditional tests skip (2 skipped observed); after ./build.sh they resolve (0 skipped, 1039 passed). Do not read a nonzero skip count as a lost check mid-run.
+- MDU-63 mutations: two fresh mutation checks beyond the M1-M7 matrix (fix-cycle span move; test-battery overlay clause delete) — mutation matrix drivers cover base carriers only; overlay-side mutation evidence lives in the fix/test reports, not in a persisted log (introspector info note).
+- QA verdict protocol carry (20261111-3, third consecutive unprobed-QA-shell-error run): next QA briefs must ask the QA child to LIST the denied command strings in its verdict.
 
