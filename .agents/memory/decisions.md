@@ -1,7 +1,7 @@
 ---
 type: decisions
 created: 2026-10-27T13:24:20Z
-updated: 2026-11-14T14:31:00Z
+updated: 2026-11-14T14:50:00Z
 ---
 
 # Decision log
@@ -188,3 +188,8 @@ updated: 2026-11-14T14:31:00Z
 - Context: the Grok CLI meter showed about 50k of 256k. Grokestrator and the Grok orchestrator are declared grok-4.7, and the mdu-23 design note calls that model a 500k window.
 - Decision: the model id is already correct. Do not edit agent definitions and do not queue a model-change MDU. 256000 is the catalog default context window. 500000 is a second size on the same id, chosen with /context-window or a user-config context_window, not by the agent file.
 - Consequences: the backlog records the finding and stops. The mdu-23 sentence stays as historical text. A 500k default would be a user-config change, outside this repo, and only if the user asks.
+
+## 2026-11-14 — User queued a Grokestrator-only 500k window (mdu-66)
+- Context: MDU-65 found the model id already correct and did not queue a change. The user then asked to set context_window to 500000 for Grokestrator in the agent definitions.
+- Decision: queue MDU-66 at the head. Scope is overlay grokestrator only. Do not use a model-wide config table, because that would move every grok-4.7 agent off the 256000 catalog default. The next session implements it. This session only queues it.
+- Consequences: FEATURE_BACKLOG.md carries one Open queue-head row. The model id stays grok-4.7. A dead frontmatter key is not an acceptable ship.
