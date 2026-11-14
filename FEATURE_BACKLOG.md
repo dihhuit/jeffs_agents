@@ -617,3 +617,14 @@ Each MDU above is sized for the repo's own orchestrator to complete in one close
 ### MDU-64 — Pre-introspect manifest rows
 
 - **Status:** Done — 2026-11-14
+
+### MDU-65 · Grok CLI context window check
+
+- **Why:** The Grok CLI meter shows about 50k of 256k while grokestrator and the Grok orchestrator are declared as Grok 4.7, and an older design note calls that model a 500k window.
+- **Description:** Read-only check of the resolved model id in source frontmatter, installed copies, both opencode.json registries, the Grok allowlist, the user Grok config, and the live CLI catalog. No agent-definition edits.
+- **Acceptance criteria:**
+  1. The row records the resolved model id and whether 256k is the window or a display cap.
+  2. No agent definition file changes.
+  3. No follow-up model-change MDU is added when the id is already correct.
+- **Artifacts:** `docs/design/mdu-65-context-window.md`. Manifest stays local under `runs/`.
+- **Status:** Done — 2026-11-14 (Grok CLI model id is grok-4.7 for both the orchestrator profile and grokestrator; OpenCode grokestrator is xai/grok-4.7; the OpenCode stock orchestrator stays opencode-go/glm-5.3-flash and is not the CLI meter. Catalog default context_window for grok-4.7 is 256000, with 500000 as a second selectable size. The meter denominator is that selected window, the same value auto-compact uses, not a display cap. No definition edit. No follow-up MDU.)

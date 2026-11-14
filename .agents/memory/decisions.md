@@ -1,7 +1,7 @@
 ---
 type: decisions
 created: 2026-10-27T13:24:20Z
-updated: 2026-11-14T13:28:00Z
+updated: 2026-11-14T14:31:00Z
 ---
 
 # Decision log
@@ -183,3 +183,8 @@ updated: 2026-11-14T13:28:00Z
 - Context: backlog rows are all Done. The fresh session after mdu-63 offered three candidate batches. The MDU-63 clauses stay resolved until this session's introspection measures architect tokens and orchestrator cache_miss.
 - Decision: user selected the narrow option — ship suggestion 20261029-4 only (orchestrator must record qa/validate rows before introspection). 20261112-5, 20261112-6, 20261111-3, and 20261110-3 stay unshipped. The logged sentence says "status to complete"; the ledger enum is `completed`, so the design reconciles that word before implement.
 - Consequences: one clause across the three orchestrator source mirrors; generated build copies and the pi golden regenerate; commit-row and `model` field remain standing applies at commit time, not part of the pre-introspect bar.
+
+## 2026-11-14 — Grok 4.7 CLI default window is 256k; model id stays (mdu-65)
+- Context: the Grok CLI meter showed about 50k of 256k. Grokestrator and the Grok orchestrator are declared grok-4.7, and the mdu-23 design note calls that model a 500k window.
+- Decision: the model id is already correct. Do not edit agent definitions and do not queue a model-change MDU. 256000 is the catalog default context window. 500000 is a second size on the same id, chosen with /context-window or a user-config context_window, not by the agent file.
+- Consequences: the backlog records the finding and stops. The mdu-23 sentence stays as historical text. A 500k default would be a user-config change, outside this repo, and only if the user asks.

@@ -1,7 +1,7 @@
 ---
 type: project
 created: 2026-10-27T13:24:20Z
-updated: 2026-11-14T03:55:00Z
+updated: 2026-11-14T14:31:00Z
 ---
 
 # Project facts — open-agent-definitions (base agent-team repo)
@@ -132,4 +132,9 @@ updated: 2026-11-14T03:55:00Z
 - Base suite skip count is build-conditional: before a build some build-output-conditional tests skip (2 skipped observed); after ./build.sh they resolve (0 skipped, 1039 passed). Do not read a nonzero skip count as a lost check mid-run.
 - MDU-63 mutations: two fresh mutation checks beyond the M1-M7 matrix (fix-cycle span move; test-battery overlay clause delete) — mutation matrix drivers cover base carriers only; overlay-side mutation evidence lives in the fix/test reports, not in a persisted log (introspector info note).
 - QA verdict protocol carry (20261111-3, third consecutive unprobed-QA-shell-error run): next QA briefs must ask the QA child to LIST the denied command strings in its verdict.
+
+## 2026-11-14 (mdu-65)
+- Grok CLI catalog 1.0.77: grok-4.7 `context_window` default is 256000, and `context_windows` also lists 500000. The meter denominator is the selected window. Auto-compact uses that same number. It is not a display cap.
+- User Grok config names the active agent grokestrator and has no model `context_window` override. Installed and source frontmatter for the orchestrator profile and grokestrator are `model: grok-4.7`. grok-build-0.1 is not in that CLI catalog.
+- OpenCode stock orchestrator stays on opencode-go/glm-5.3-flash. OpenCode grokestrator stays on xai/grok-4.7. Grok session logs for this workspace live under the workspace directory, not under the child repo directory.
 
