@@ -613,3 +613,7 @@ Each MDU above is sized for the repo's own orchestrator to complete in one close
 - **Description:** one new indented sub-bullet under the loop-mode read bullet in both introspector mirrors (byte-identical bodies; grok keeps its frontmatter) carrying the grep-open-ids / targeted-edit / one-script-run / 140k wrap-up discipline; the SKILL.md run-timing subsection; a 12-case pin file; the suggestion flip to resolved pending live exercise.
 - **Artifacts:** `prompts/introspector.md`, `grok/agents/introspector.md`, `skills/session-introspect/SKILL.md`, `tests/test_mdu_55_introspector_discipline.py`, `agent-improvements.md` flip; design doc `docs/design/mdu-55-introspector-self-cost-discipline.md`.
 - **Status:** Done — 2026-11-10 (clause and note shipped and pinned, 12 new tests, base suite 825 green; no deploy — static acceptance, pending the first post-deploy live exercise)
+
+### MDU-64 — Pre-introspect manifest rows
+
+- **Status:** Done — 2026-11-14

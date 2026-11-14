@@ -1,7 +1,7 @@
 ---
 type: decisions
 created: 2026-10-27T13:24:20Z
-updated: 2026-11-14T03:55:00Z
+updated: 2026-11-14T13:28:00Z
 ---
 
 # Decision log
@@ -178,3 +178,8 @@ updated: 2026-11-14T03:55:00Z
 - Context: backlog empty; user picked a three-clause batch from open introspector suggestions (2026-11-14): 20261024-1 (architect token hotspot, record 285k in mdu-62, band never broken by the brief-side remedy), 20261113-1 (rebuild debt cost 2 of 3 fix cycles in mdu-62), 20261110-2 (orchestrator cache misses on carried-transcript sessions).
 - Decision: three clauses shipped byte-identical to the drafted log text in 15 carriers — architect survey discipline in 5 (after the token-efficiency bullet), rebuild freshness in 7 just-code carriers (base after the before-done secret bullet, overlay after the D5 display-integrity bullet), fresh-session cache gate in 3 orchestrator mirrors (indented paragraph inside CACHE MISS GATE after step 3). Design Q-1 resolved ship-as-approved (spurious-fire carve-out = measured fast-follow); Q-2 overlay grok-architect variants included by default.
 - Consequences: pins tests/test_mdu_63_guards.py (60) + overlay tests/test_mdu_63_overlay.py (33) + mutation matrix M1-M7; pi goldens refreshed (Gate C 23 preserved); deployed live with installed-copy verification across OpenCode/Grok/Claude/pi; reopen trigger = first post-deploy exercise still firing the signal; carried apply-nows: fresh-session start for the next MDU, QA verdict lists denied command strings (20261111-3, third consecutive), guards-review briefs carry clause excerpts instead of log re-reads.
+
+## 2026-11-14 — MDU-64 scope is the manifest qa-row clause only (mdu-64)
+- Context: backlog rows are all Done. The fresh session after mdu-63 offered three candidate batches. The MDU-63 clauses stay resolved until this session's introspection measures architect tokens and orchestrator cache_miss.
+- Decision: user selected the narrow option — ship suggestion 20261029-4 only (orchestrator must record qa/validate rows before introspection). 20261112-5, 20261112-6, 20261111-3, and 20261110-3 stay unshipped. The logged sentence says "status to complete"; the ledger enum is `completed`, so the design reconciles that word before implement.
+- Consequences: one clause across the three orchestrator source mirrors; generated build copies and the pi golden regenerate; commit-row and `model` field remain standing applies at commit time, not part of the pre-introspect bar.
