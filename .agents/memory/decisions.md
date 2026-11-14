@@ -1,7 +1,7 @@
 ---
 type: decisions
 created: 2026-10-27T13:24:20Z
-updated: 2026-11-14T14:50:00Z
+updated: 2026-11-14T15:16:14Z
 ---
 
 # Decision log
@@ -193,3 +193,8 @@ updated: 2026-11-14T14:50:00Z
 - Context: MDU-65 found the model id already correct and did not queue a change. The user then asked to set context_window to 500000 for Grokestrator in the agent definitions.
 - Decision: queue MDU-66 at the head. Scope is overlay grokestrator only. Do not use a model-wide config table, because that would move every grok-4.7 agent off the 256000 catalog default. The next session implements it. This session only queues it.
 - Consequences: FEATURE_BACKLOG.md carries one Open queue-head row. The model id stays grok-4.7. A dead frontmatter key is not an acceptable ship.
+
+## 2026-11-14 — No per-agent carrier for a 500k window (mdu-66)
+- Context: MDU-66 asked to pin Grokestrator at 500000 without a model-wide table and without a dead frontmatter key.
+- Decision: stop. CLI 1.0.77 ignores frontmatter context_window. Probe signals stayed at 256000. The model id stays grok-4.7. The model-wide user-config table was not applied. No agent file was edited and nothing was deployed.
+- Consequences: the backlog row is Done. The queue is empty. A 500k window for one agent is not available in the agent file. Suggestion 20261114-1 records that a resolved backlog status word is Done or Superseded, and it stays unapplied until the user asks.

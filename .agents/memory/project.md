@@ -1,7 +1,7 @@
 ---
 type: project
 created: 2026-10-27T13:24:20Z
-updated: 2026-11-14T14:31:00Z
+updated: 2026-11-14T15:16:14Z
 ---
 
 # Project facts — open-agent-definitions (base agent-team repo)
@@ -137,4 +137,8 @@ updated: 2026-11-14T14:31:00Z
 - Grok CLI catalog 1.0.77: grok-4.7 `context_window` default is 256000, and `context_windows` also lists 500000. The meter denominator is the selected window. Auto-compact uses that same number. It is not a display cap.
 - User Grok config names the active agent grokestrator and has no model `context_window` override. Installed and source frontmatter for the orchestrator profile and grokestrator are `model: grok-4.7`. grok-build-0.1 is not in that CLI catalog.
 - OpenCode stock orchestrator stays on opencode-go/glm-5.3-flash. OpenCode grokestrator stays on xai/grok-4.7. Grok session logs for this workspace live under the workspace directory, not under the child repo directory.
+
+## 2026-11-14 (mdu-66)
+- Grok CLI 1.0.77 ignores an agent-file context_window key. Two probe sessions stayed at contextWindowTokens 256000 with primaryModelId grok-4.7. Unknown frontmatter keys load and are ignored. A model id cannot carry a window suffix. The honored persistent knob is the model-wide user-config table, which moves every agent on that model id.
+- Backlog audit accepts only Done or Superseded on a resolved row (or an admitted Open). The word Stopped fails test_backlog_no_entry_remains_unresolved. A deliberate stop is still Done.
 
