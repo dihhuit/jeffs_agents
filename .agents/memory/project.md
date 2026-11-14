@@ -1,7 +1,7 @@
 ---
 type: project
 created: 2026-10-27T13:24:20Z
-updated: 2026-11-14T15:16:14Z
+updated: 2026-11-14T18:51:51Z
 ---
 
 # Project facts — open-agent-definitions (base agent-team repo)
@@ -141,4 +141,7 @@ updated: 2026-11-14T15:16:14Z
 ## 2026-11-14 (mdu-66)
 - Grok CLI 1.0.77 ignores an agent-file context_window key. Two probe sessions stayed at contextWindowTokens 256000 with primaryModelId grok-4.7. Unknown frontmatter keys load and are ignored. A model id cannot carry a window suffix. The honored persistent knob is the model-wide user-config table, which moves every agent on that model id.
 - Backlog audit accepts only Done or Superseded on a resolved row (or an admitted Open). The word Stopped fails test_backlog_no_entry_remains_unresolved. A deliberate stop is still Done.
+
+## 2026-11-14 (mdu-67)
+- Just-code hard constraints name the backlog status words: Done or Superseded only. Stopped, Stop, and Closed fail the audit. The bullet sits immediately after the rebuild-freshness line in prompts/just-code.md, the three base grok just-code mirrors, and the three overlay grok-just-code profiles. mdu-code and grok-mdu-code do not carry it.
 
