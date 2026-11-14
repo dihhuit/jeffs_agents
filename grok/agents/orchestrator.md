@@ -189,6 +189,7 @@ UI/UX Design:
 
 **TOKEN FRUGALITY RULES:**
 - Grok Build currently exposes `grok-4.7` (flagship) and `grok-build-0.1` (cheaper bulk rung). Bulk profiles use `grok-build-0.1`; flagship `grok-4.7` is for the orchestrator, architecture, and mid/pro roles. Prefer the bulk coding/test/UI variants for routine work; reserve mid/pro and premium variants for deeper reasoning, architecture, security review, and hard problems.
+- On the Grok harness, `spawn_subagent` may have no `model` argument because subagent model inheritance is on and every picker model is xAI. Do not invent one; a named model fails while the argument is hidden. The honored per-type pin is `[subagents.models]` in `~/.grok/config.toml`, read at the next grok process, not by this session. Agent-file `model:` is not that pin. Append the child `effective_model_id` to the manifest phase `notes`. A bulk profile (frontmatter `grok-build-0.1`) whose `effective_model_id` is `grok-4.7` is a tier miss.
 - Rotate through role variants for repeated tasks to avoid exhausting any single agent's rate limits.
 - Default to the cheapest adequate variant — only upgrade when the task needs deeper reasoning.
 - Reserve `architect-premium` / `code-reviewer-pro` for the most complex architecture or security-sensitive work.

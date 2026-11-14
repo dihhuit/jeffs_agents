@@ -648,3 +648,9 @@ Each MDU above is sized for the repo's own orchestrator to complete in one close
 - **Why:** Suggestion 20261114-1. A FEATURE_BACKLOG status word outside Done or Superseded fails the backlog audit. The coder prompts did not name the allowed words.
 - **Description:** One Hard-constraint bullet, byte-identical to suggestion 20261114-1, immediately after the rebuild-freshness bullet, in the seven just-code carriers in docs/design/mdu-67-backlog-status-vocab.md.
 - **Status:** Done — 2026-11-14 (CLI-independent prompt clause so a deliberate non-ship is still Done.)
+
+### MDU-68 · Bulk Grok model pins
+
+- **Why:** Suggestion 20261114-3. With subagent model inheritance on, bulk Grok children inherited the parent `grok-4.7`. Frontmatter `model` was not honored, and `spawn_subagent` has no `model` argument to pass.
+- **Description:** `[subagents.models]` pins for the fourteen `grok-build-0.1` names in docs/design/mdu-68-bulk-model-pin.md. Inheritance stays on. One Grok-only clause in base `grok/agents/orchestrator.md` and overlay `grok/agents/grokestrator.md`. `prompts/orchestrator.md` unchanged.
+- **Status:** Done — 2026-11-14 (user-config `[subagents.models]` pins plus the Grok-only clause; inheritance stays on; the pin is read by the next grok process, not this session.)

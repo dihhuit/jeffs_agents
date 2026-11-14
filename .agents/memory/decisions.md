@@ -203,3 +203,8 @@ updated: 2026-11-14T18:50:00Z
 - Context: MDU-66 wrote status word Stopped. The backlog audit accepts only Done or Superseded, plus an admitted Open. A second implement pass changed the word to Done. The coder prompts did not name the allowed words.
 - Decision: one Hard-constraint bullet, byte-identical to suggestion 20261114-1, immediately after the rebuild-freshness bullet, in the four base just-code carriers and the three overlay grok-just-code profiles. A deliberate stop is still Done, with the reason in that same status bullet.
 - Consequences: 20261114-1 is resolved. mdu-code and grok-mdu-code do not carry the bullet. The installed OpenCode, Grok, and Claude copies were updated from the overlay build.
+
+## 2026-11-14 — Bulk Grok children are pinned in user config, not by a spawn argument (mdu-68)
+- Context: With subagent model inheritance on, spawn_subagent has no model argument. Bulk profiles whose frontmatter says grok-build-0.1 ran as grok-4.7. The suggestion sentence that says to pass the frontmatter model is false on this CLI.
+- Decision: Keep inheritance on. Pin the fourteen grok-build-0.1 names in ~/.grok/config.toml [subagents.models]. Add one true clause to base grok/agents/orchestrator.md and overlay grok/agents/grokestrator.md. Leave prompts/orchestrator.md unchanged. Do not pin mdu-code or grok-mdu-code.
+- Consequences: The pin is outside git and is read by the next grok process. This session's children still inherit grok-4.7. 20261114-3 is resolved by the pin plus the clause, not by the original sentence. 20261114-2 stays open.

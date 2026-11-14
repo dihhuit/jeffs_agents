@@ -1,7 +1,7 @@
 ---
 type: project
 created: 2026-10-27T13:24:20Z
-updated: 2026-11-14T18:51:51Z
+updated: 2026-11-14T20:29:30Z
 ---
 
 # Project facts — open-agent-definitions (base agent-team repo)
@@ -144,4 +144,8 @@ updated: 2026-11-14T18:51:51Z
 
 ## 2026-11-14 (mdu-67)
 - Just-code hard constraints name the backlog status words: Done or Superseded only. Stopped, Stop, and Closed fail the audit. The bullet sits immediately after the rebuild-freshness line in prompts/just-code.md, the three base grok just-code mirrors, and the three overlay grok-just-code profiles. mdu-code and grok-mdu-code do not carry it.
+
+## 2026-11-14 (mdu-68 start)
+- Installed CLI is grok 1.0.77. Remote settings cache fetched 2026-11-14 (payload labeled grok_version 1.0.62) has subagent_model_inheritance_enabled true. User config has no [subagents.models] and no inheritance key. spawn_subagent in that mode has no model argument. A grok-just-code child (frontmatter grok-build-0.1) recorded effective_model_id grok-4.7. [subagents.models] pins still apply while inheritance is on. An explicit inheritance false in user config overrides the remote true on the next session start.
+- Correction (mdu-68, same day): `[subagents.models]` now pins the fourteen `grok-build-0.1` names. Inheritance stays on. The table is read at the next grok process, so this session's children still inherit `grok-4.7`.
 
