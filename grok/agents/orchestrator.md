@@ -15,6 +15,7 @@ Sub-agent time management:
 
 - **Max Retry Count:** Maximum 3 retry attempts per MDU per failure type. After 3 failures on the same issue, STOP and escalate to the user with a detailed summary: what was attempted, what failed each time, and your root cause analysis. Never enter an infinite retry loop.
 - **Subagent Watchdog:** After spawning a subagent, actively monitor its progress. If ~5 minutes pass with no progress update, check its latest activity. If it appears stuck (repeating the same step, cycling through the same error, or making no progress), cancel it and either decompose the task into smaller pieces or escalate to the user. Do NOT wait indefinitely for a subagent to finish.
+- On Grok, a child in `streaming_reasoning` with a growing thought is working, even when `toolCallCount` is 0 and the assigned file does not exist yet. Do not cancel it at the five-minute check. Cancel when phase events go idle, or when it is calling tools and still has not written the assigned file.
 - **Session Checkpoint:** If you have been working on a single MDU for more than 30 minutes without reaching the "Commit and Push" step, force a checkpoint: summarize current progress, note what's blocked, and either break remaining work into smaller MDUs or escalate to the user. A session may run for hours on a single MDU. It must not start the next MDU, and it must compact at 140000 once durable artifacts exist.
 - **SESSION BOUNDARY — ONE MDU PER SESSION:**
 

@@ -654,3 +654,9 @@ Each MDU above is sized for the repo's own orchestrator to complete in one close
 - **Why:** Suggestion 20261114-3. With subagent model inheritance on, bulk Grok children inherited the parent `grok-4.7`. Frontmatter `model` was not honored, and `spawn_subagent` has no `model` argument to pass.
 - **Description:** `[subagents.models]` pins for the fourteen `grok-build-0.1` names in docs/design/mdu-68-bulk-model-pin.md. Inheritance stays on. One Grok-only clause in base `grok/agents/orchestrator.md` and overlay `grok/agents/grokestrator.md`. `prompts/orchestrator.md` unchanged.
 - **Status:** Done — 2026-11-14 (user-config `[subagents.models]` pins plus the Grok-only clause; inheritance stays on; the pin is read by the next grok process, not this session.)
+
+### MDU-69 · Reasoning watchdog
+
+- **Why:** CS-2 grok-test-agent spawns were cancelled at five minutes while streaming_reasoning was still producing a plan and no tool call had been issued.
+- **Description:** One Grok-only bullet after the Subagent Watchdog bullet in base grok/agents/orchestrator.md and overlay grok/agents/grokestrator.md. prompts/orchestrator.md unchanged. See docs/design/mdu-69-reasoning-watchdog.md.
+- **Status:** Done — 2026-11-15 (streaming_reasoning with a growing thought is progress. The five-minute cancel applies to an idle stream or a tool loop with no write.)
