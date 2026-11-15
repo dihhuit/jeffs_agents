@@ -1,7 +1,7 @@
 ---
 type: decisions
 created: 2026-10-27T13:24:20Z
-updated: 2026-11-14T18:50:00Z
+updated: 2026-11-15T18:05:00Z
 ---
 
 # Decision log
@@ -208,3 +208,8 @@ updated: 2026-11-14T18:50:00Z
 - Context: With subagent model inheritance on, spawn_subagent has no model argument. Bulk profiles whose frontmatter says grok-build-0.1 ran as grok-4.7. The suggestion sentence that says to pass the frontmatter model is false on this CLI.
 - Decision: Keep inheritance on. Pin the fourteen grok-build-0.1 names in ~/.grok/config.toml [subagents.models]. Add one true clause to base grok/agents/orchestrator.md and overlay grok/agents/grokestrator.md. Leave prompts/orchestrator.md unchanged. Do not pin mdu-code or grok-mdu-code.
 - Consequences: The pin is outside git and is read by the next grok process. This session's children still inherit grok-4.7. 20261114-3 is resolved by the pin plus the clause, not by the original sentence. 20261114-2 stays open.
+
+## 2026-11-15 — A growing reasoning trace is progress (mdu-69)
+- Context: Four CS-2 grok-test-agent turns stayed in streaming_reasoning for about 345 seconds with a unique plan and no tool call. The parent cancelled each one because no test file existed. The fourth trace ended on "The code is now considered ready."
+- Decision: One Grok-only bullet after the Subagent Watchdog bullet in base grok/agents/orchestrator.md and overlay grok/agents/grokestrator.md. Do not cancel a child in streaming_reasoning with a growing thought at the five-minute check. Cancel when phase events go idle, or when it is calling tools and still has not written the assigned file. prompts/orchestrator.md stays unchanged.
+- Consequences: The clause is installed in ~/.grok/agents. 20261114-3 is reopened because every bulk child in this session still ran as grok-4.7. The grok-build-0.1 pin is not a live catalog id. That retarget is the next unit, not this one.
